@@ -43,6 +43,7 @@ interface GameStore {
   player: PlayerProfile | null;
   stats: PlayerStats;
   currentWeek: number;
+  currentSceneIndex: number;
   relationships: Record<string, CharacterRelationship>;
   schedule: WeekSchedule | null;
   currentScene: Scene | null;
@@ -60,6 +61,7 @@ interface GameStore {
   loadScene: (scene: Scene) => void;
   nextScene: () => void;
   setSceneQueue: (scenes: Scene[]) => void;
+  setCurrentSceneIndex: (index: number) => void;
   setWeekStatDeltas: (deltas: Partial<PlayerStats>) => void;
   resetGame: () => void;
 }
@@ -72,6 +74,7 @@ export const useGameStore = create<GameStore>()(
       player: null,
       stats: { ...INITIAL_STATS },
       currentWeek: 1,
+      currentSceneIndex: 0,
       relationships: {},
       schedule: null,
       currentScene: null,
@@ -90,6 +93,7 @@ export const useGameStore = create<GameStore>()(
           player: profile,
           stats: { ...INITIAL_STATS },
           currentWeek: 1,
+          currentSceneIndex: 0,
           relationships: {},
           schedule: null,
           currentScene: null,
@@ -144,6 +148,7 @@ export const useGameStore = create<GameStore>()(
       advanceWeek() {
         set((state) => ({
           currentWeek: state.currentWeek + 1,
+          currentSceneIndex: 0,
           schedule: null,
           currentScene: null,
           sceneQueue: [],
@@ -170,6 +175,10 @@ export const useGameStore = create<GameStore>()(
         set({ sceneQueue: scenes });
       },
 
+      setCurrentSceneIndex(index) {
+        set({ currentSceneIndex: index });
+      },
+
       setWeekStatDeltas(deltas) {
         set({ weekStatDeltas: deltas });
       },
@@ -180,6 +189,7 @@ export const useGameStore = create<GameStore>()(
           player: null,
           stats: { ...INITIAL_STATS },
           currentWeek: 1,
+          currentSceneIndex: 0,
           relationships: {},
           schedule: null,
           currentScene: null,
@@ -191,11 +201,12 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'kusm-save',
-      version: 1,
+      version: 2,
       migrate(persisted: unknown, version: number) {
-        if (version === 0 || version === undefined) {
-          // v0 → v1: no structural changes, just reset to clean state
-          return persisted as GameStore;
+        const state = persisted as Record<string, unknown>;
+        if (version < 2) {
+          // v1 → v2: add currentSceneIndex to persisted state
+          return { ...state, currentSceneIndex: 0 } as unknown as GameStore;
         }
         return persisted as GameStore;
       },
