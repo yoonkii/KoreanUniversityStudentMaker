@@ -1,0 +1,12 @@
+{
+  "name": "korean-university-student-maker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate-assets": "node scripts/generate-assets.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.0"
+  }
+}

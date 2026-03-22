@@ -1,0 +1,7 @@
+node_modules/
+.env.local
+.env
+.gstack/
+.claude/
+design-preview-local.html
+*.retry.png

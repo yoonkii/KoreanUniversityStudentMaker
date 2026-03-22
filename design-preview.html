@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>한국 대학생 키우기 — 디자인 시스템 프리뷰</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: { DEFAULT: '#0F1A2E', light: '#162038' },
+            surface: { dark: '#162038', light: '#1E2A45' },
+            teal: { DEFAULT: '#4ECDC4' },
+            pink: { DEFAULT: '#F5A0B5' },
+            gold: { DEFAULT: '#FFD166' },
+            coral: { DEFAULT: '#FF6B6B' },
+            lavender: { DEFAULT: '#A78BFA' },
+            txt: { primary: '#E8ECF4', secondary: '#8B95A8' },
+          },
+          fontFamily: {
+            sans: ['Pretendard', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    *, *::before, *::after {
+      font-family: 'Pretendard', system-ui, sans-serif;
+    }
+
+    /* Noise grain overlay */
+    .noise-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      pointer-events: none;
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 256px 256px;
+    }
+
+    /* Frosted glass base */
+    .glass {
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .glass-strong {
+      backdrop-filter: blur(32px) saturate(1.6);
+      -webkit-backdrop-filter: blur(32px) saturate(1.6);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.7; }
+    }
+
+    @keyframes typewriter {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+
+    .reveal.visible {
+      animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: calc(var(--index, 0) * 100ms);
+    }
+
+    .float-anim {
+      animation: floatSlow 4s ease-in-out infinite;
+    }
+
+    .pulse-anim {
+      animation: pulseGlow 3s ease-in-out infinite;
+    }
+
+    /* Choice button transitions */
+    .choice-btn {
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .choice-btn:hover {
+      transform: scale(1.02);
+      border-color: #4ECDC4;
+      background: rgba(78, 205, 196, 0.08);
+    }
+
+    .choice-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* Stat bar animations */
+    .stat-fill {
+      transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0F1A2E;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1E2A45;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2A3A5C;
+    }
+
+    /* Schedule cell hover */
+    .schedule-cell {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .schedule-cell:hover {
+      transform: scale(1.05);
+      z-index: 10;
+    }
+
+    /* Character card hover */
+    .char-card {
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .char-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Toast slide-in */
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(100%);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .toast-enter {
+      animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Gradient mesh helper */
+    .gradient-mesh {
+      background:
+        radial-gradient(ellipse 600px 400px at 20% 30%, rgba(78, 205, 196, 0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 500px 500px at 80% 20%, rgba(167, 139, 250, 0.06) 0%, transparent 70%),
+        radial-gradient(ellipse 400px 300px at 60% 80%, rgba(245, 160, 181, 0.05) 0%, transparent 70%);
+    }
+  </style>
+</head>
+<body class="bg-navy text-txt-primary min-h-[100dvh]">
+
+  <!-- Noise Overlay -->
+  <div class="noise-overlay"></div>
+
+  <!-- ================================================================ -->
+  <!-- SECTION 1: Header / Title                                        -->
+  <!-- ================================================================ -->
+  <header class="relative overflow-hidden">
+    <!-- Gradient mesh background -->
+    <div class="absolute inset-0 gradient-mesh"></div>
+    <!-- Floating decorative orbs -->
+    <div class="absolute top-12 left-[15%] w-32 h-32 rounded-full bg-teal/10 blur-3xl float-anim" style="animation-delay: 0s;"></div>
+    <div class="absolute top-24 right-[20%] w-40 h-40 rounded-full bg-lavender/8 blur-3xl float-anim" style="animation-delay: 1.5s;"></div>
+    <div class="absolute bottom-8 left-[40%] w-24 h-24 rounded-full bg-pink/8 blur-3xl float-anim" style="animation-delay: 0.8s;"></div>
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 text-center">
+      <p class="text-teal text-sm font-semibold tracking-widest uppercase mb-4 reveal" style="--index: 0;">Design System Preview</p>
+      <h1 class="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-snug break-keep reveal" style="--index: 1;">
+        한국 대학생 키우기
+      </h1>
+      <p class="mt-4 text-xl sm:text-2xl text-txt-secondary font-medium tracking-tight leading-snug break-keep reveal" style="--index: 2;">
+        디자인 시스템 프리뷰
+      </p>
+      <p class="mt-6 text-txt-secondary text-sm max-w-md mx-auto leading-relaxed reveal" style="--index: 3;">
+        비주얼 노벨 스탯 육성 시뮬레이션 게임의 전체 UI 구성 요소, 색상 팔레트, 타이포그래피 및 인터랙션 패턴을 정리한 문서입니다.
+      </p>
+    </div>
+    <!-- Bottom fade -->
+    <div class="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-navy to-transparent"></div>
+  </header>
+
+  <!-- ================================================================ -->
+  <!-- SECTION 2: Typography                                            -->
+  <!-- ================================================================ -->
+  <section class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="mb-10 reveal" style="--index: 0;">
+      <p class="text-teal text-xs font-semibold tracking-widest uppercase mb-2">Typography</p>
+      <h2 class="text-3xl font-bold tracking-tight leading-snug break-keep">타이포그래피</h2>
+      <p class="mt-2 text-txt-secondary text-sm">Pretendard 서체 기반, 다양한 크기와 두께 미리보기</p>
+    </div>
+
+    <div class="glass rounded-2xl p-6 sm:p-8 space-y-8">
+      <!-- Display -->
+      <div class="reveal" style="--index: 1;">
+        <p class="text-xs text-txt-secondary font-mono mb-1">Display / text-6xl / font-black / tracking-tight</p>
+        <p class="text-6xl font-black tracking-tight leading-snug break-keep">
+          나의 대학 생활을 시작하자
+        </p>
+      </div>
+
+      <!-- H1 -->
+      <div class="reveal" style="--index: 2;">
+        <p class="text-xs text-txt-secondary font-mono mb-1">H1 / text-4xl / font-bold / tracking-tight</p>
+        <p class="text-4xl font-bold tracking-tight leading-snug break-keep">
+          새 학기가 시작되었습니다
+        </p>
+      </div>
+
+      <!-- H2 -->
+      <div class="reveal" style="--index: 3;">
+        <p class="text-xs text-txt-secondary font-mono mb-1">H2 / text-2xl / font-semibold</p>
+        <p class="text-2xl font-semibold leading-snug break-keep">
+          오늘의 일정을 확인해 보세요
+        </p>
+      </div>
+
+      <!-- H3 -->
+      <div class="reveal" style="--index: 4;">
+        <p class="text-xs text-txt-secondary font-mono mb-1">H3 / text-xl / font-medium</p>
+        <p class="text-xl font-medium leading-snug break-keep">
+          동아리 활동으로 인간관계를 넓힐 수 있습니다
+        </p>
+      </div>
+
+      <!-- Body -->
+      <div class="reveal" style="--index: 5;">
+        <p class="text-xs text-txt-secondary font-mono mb-1">Body / text-base / font-normal</p>
+        <p class="text-base font-normal leading-relaxed break-keep text-txt-secondary">
+          기말고사까지 남은 시간이 얼마 없습니다. 학점을 올리려면 도서관에서 공부하거나 스터디 그룹에 참여하는 것이 좋겠습니다. 하지만 체력 관리도 잊지 마세요.
+        </p>
+      </div>
+
+      <!-- Caption -->
+      <div class="reveal" style="--index: 6;">
+        <p class="text-xs text-txt-secondary font-mono mb-1">Caption / text-sm / font-normal</p>
+        <p class="text-sm font-normal leading-relaxed text-txt-secondary">
+          잔여 학점: 18 / 21 | 현재 학기: 2학년 1학기 | 시간: 오후 3시
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- SECTION 3: Color Palette                                         -->
+  <!-- ================================================================ -->
+  <section class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="mb-10 reveal" style="--index: 0;">
+      <p class="text-teal text-xs font-semibold tracking-widest uppercase mb-2">Color Palette</p>
+      <h2 class="text-3xl font-bold tracking-tight leading-snug break-keep">색상 팔레트</h2>
+      <p class="mt-2 text-txt-secondary text-sm">게임 전반에 사용되는 핵심 색상 체계</p>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <!-- Deep Navy -->
+      <div class="reveal" style="--index: 1;">
+        <div class="h-24 rounded-t-xl" style="background: #0F1A2E; border: 1px solid rgba(255,255,255,0.08);"></div>
+        <div class="glass rounded-b-xl p-3">
+          <p class="text-sm font-semibold">Deep Navy</p>
+          <p class="text-xs text-txt-secondary font-mono">#0F1A2E</p>
+          <p class="text-xs text-txt-secondary mt-1">메인 배경</p>
+        </div>
+      </div>
+
+      <!-- Surface Dark -->
+      <div class="reveal" style="--index: 2;">
+        <div class="h-24 rounded-t-xl" style="background: #162038; border: 1px solid rgba(255,255,255,0.08);"></div>
+        <div class="glass rounded-b-xl p-3">
+          <p class="text-sm font-semibold">Surface Dark</p>
+          <p class="text-xs text-txt-secondary font-mono">#162038</p>
+          <p class="text-xs text-txt-secondary mt-1">카드 배경</p>
+        </div>
+      </div>
+
+      <!-- Surface Light -->
+      <div class="reveal" style="--index: 3;">
+        <div class="h-24 rounded-t-xl" style="background: #1E2A45; border: 1px solid rgba(255,255,255,0.08);"></div>
+        <div class="glass rounded-b-xl p-3">
+          <p class="text-sm font-semibold">Surface Light</p>
+          <p class="text-xs text-txt-secondary font-mono">#1E2A45</p>
+          <p class="text-xs text-txt-secondary mt-1">활성 영역</p>
+        </div>
+      </div>
+
+      <!-- Text Primary -->
+      <div class="reveal" style="--index: 4;">
+        <div class="h-24 rounded-t-xl" style="background: #E8ECF4; border: 1px solid rgba(255,255,255,0.08);"></div>
+        <div class="glass rounded-b-xl p-3">
+          <p class="text-sm font-semibold">Text Primary</p>
+          <p class="text-xs text-txt-secondary font-mono">#E8ECF4</p>
+          <p class="text-xs text-txt-secondary mt-1">주요 텍스트</p>
+        </div>
+      </div>
+
+      <!-- Text Secondary -->
+      <div class="reveal" style="--index: 5;">
+        <div class="h-24 rounded-t-xl" style="background: #8B95A8; border: 1px solid rgba(255,255,255,0.08);"></div>
+        <div class="glass rounded-b-xl p-3">
+          <p class="text-sm font-semibold">Text Secondary</p>
+          <p class="text-xs text-txt-secondary font-mono">#8B95A8</p>
+          <p class="text-xs text-txt-secondary mt-1">보조 텍스트</p>
+        </div>
+      </div>
+
+      <!-- Teal Accent -->
+      <div class="reveal" style="--index: 6;">
+        <div class="h-24 rounded-t-xl" style="background: #4ECDC4;"></div>
+        <div class="glass rounded-b-xl p-3">
+          <p class="text-sm font-semibold">Teal Accent</p>
+          <p class="text-xs text-txt-secondary font-mono">#4ECDC4</p>
+          <p class="text-xs text-txt-secondary mt-1">주요 액션</p>
+        </div>
+      </div>
+
+      <!-- Soft Pink -->
+      <div class="reveal" style="--index: 7;">
+        <div class="h-24 rounded-t-xl" style="background: #F5A0B5;"></div>
+        <div class="glass rounded-b-xl p-3">
+          <p class="text-sm font-semibold">Soft Pink</p>
+          <p class="text-xs text-txt-secondary font-mono">#F5A0B5</p>
+          <p class="text-xs text-txt-secondary mt-1">연애 / 관계</p>
+        </div>
+      </div>
+
+      <!-- Warm Gold -->
+      <div class="reveal" style="--index: 8;">
+        <div class="h-24 rounded-t-xl" style="background: #FFD166;"></div>
+        <div class="glass rounded-b-xl p-3">
+          <p class="text-sm font-semibold">Warm Gold</p>
+          <p class="text-xs text-txt-secondary font-mono">#FFD166</p>
+          <p class="text-xs text-txt-secondary mt-1">성취 / 스탯</p>
+        </div>
+      </div>
+
+      <!-- Coral Red -->
+      <div class="reveal" style="--index: 9;">
+        <div class="h-24 rounded-t-xl" style="background: #FF6B6B;"></div>
+        <div class="glass rounded-b-xl p-3">
+          <p class="text-sm font-semibold">Coral Red</p>
+          <p class="text-xs text-txt-secondary font-mono">#FF6B6B</p>
+          <p class="text-xs text-txt-secondary mt-1">긴급 / 경고</p>
+        </div>
+      </div>
+
+      <!-- Lavender -->
+      <div class="reveal" style="--index: 10;">
+        <div class="h-24 rounded-t-xl" style="background: #A78BFA;"></div>
+        <div class="glass rounded-b-xl p-3">
+          <p class="text-sm font-semibold">Lavender</p>
+          <p class="text-xs text-txt-secondary font-mono">#A78BFA</p>
+          <p class="text-xs text-txt-secondary mt-1">소셜 / 동아리</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- SECTION 4a: Dialogue Box                                         -->
+  <!-- ================================================================ -->
+  <section class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="mb-10 reveal" style="--index: 0;">
+      <p class="text-teal text-xs font-semibold tracking-widest uppercase mb-2">Dialogue Box</p>
+      <h2 class="text-3xl font-bold tracking-tight leading-snug break-keep">대화 상자</h2>
+      <p class="mt-2 text-txt-secondary text-sm">게임의 핵심 UI 요소 - 캐릭터 대화 인터페이스</p>
+    </div>
+
+    <!-- Dialogue scene with background -->
+    <div class="reveal relative rounded-2xl overflow-hidden" style="--index: 1; min-height: 480px;">
+      <!-- Background image -->
+      <img
+        src="file:///Users/yoonkihong/KoreanUniversityStudentMaker/assets/backgrounds/campus/day.png"
+        alt="캠퍼스 낮 배경"
+        class="absolute inset-0 w-full h-full object-cover"
+      >
+      <!-- Dark overlay for readability -->
+      <div class="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/30 to-navy/10"></div>
+
+      <!-- Character portrait -->
+      <div class="absolute bottom-0 right-4 sm:right-12 h-full flex items-end">
+        <img
+          src="file:///Users/yoonkihong/KoreanUniversityStudentMaker/assets/characters/soyeon/happy.png"
+          alt="소연 - 행복한 표정"
+          class="h-[85%] w-auto object-contain drop-shadow-2xl"
+        >
+      </div>
+
+      <!-- Dialogue box at bottom -->
+      <div class="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
+        <div class="glass-strong rounded-xl p-5 sm:p-6 max-w-2xl">
+          <!-- Character name tag -->
+          <div class="inline-flex items-center gap-2 mb-3">
+            <div class="w-1 h-4 rounded-full bg-teal"></div>
+            <span class="text-teal font-bold text-sm">이소연</span>
+            <span class="text-txt-secondary text-xs">같은 과 동기</span>
+          </div>
+          <!-- Dialogue text -->
+          <p class="text-base sm:text-lg leading-relaxed break-keep text-txt-primary">
+            "오늘 도서관에서 같이 공부할래? 중간고사 범위가 너무 많아서 혼자 하면 끝이 안 날 것 같아. 커피는 내가 살게!"
+          </p>
+          <!-- Continue indicator -->
+          <div class="flex justify-end mt-3">
+            <div class="flex items-center gap-1 text-txt-secondary text-xs">
+              <span>계속하기</span>
+              <iconify-icon icon="solar:alt-arrow-right-linear" width="14"></iconify-icon>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- SECTION 4b: Choice Buttons                                       -->
+  <!-- ================================================================ -->
+  <section class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="mb-10 reveal" style="--index: 0;">
+      <p class="text-teal text-xs font-semibold tracking-widest uppercase mb-2">Choice Buttons</p>
+      <h2 class="text-3xl font-bold tracking-tight leading-snug break-keep">선택지</h2>
+      <p class="mt-2 text-txt-secondary text-sm">플레이어의 의사 결정을 위한 선택지 버튼 인터페이스</p>
+    </div>
+
+    <div class="max-w-xl mx-auto space-y-3">
+      <div class="reveal" style="--index: 1;">
+        <button class="choice-btn glass w-full text-left rounded-xl px-5 py-4 group">
+          <div class="flex items-center gap-3">
+            <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-teal/10 flex items-center justify-center text-teal font-bold text-sm">1</div>
+            <div>
+              <p class="font-medium leading-snug break-keep">"좋아! 같이 공부하자. 몇 시에 만날까?"</p>
+              <p class="text-xs text-txt-secondary mt-1 flex items-center gap-2">
+                <iconify-icon icon="solar:book-2-linear" width="12"></iconify-icon>
+                <span>학점 +3</span>
+                <iconify-icon icon="solar:heart-linear" width="12" class="text-pink"></iconify-icon>
+                <span class="text-pink">소연 호감도 +2</span>
+              </p>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <div class="reveal" style="--index: 2;">
+        <button class="choice-btn glass w-full text-left rounded-xl px-5 py-4 group">
+          <div class="flex items-center gap-3">
+            <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-teal/10 flex items-center justify-center text-teal font-bold text-sm">2</div>
+            <div>
+              <p class="font-medium leading-snug break-keep">"미안, 오늘은 동아리 모임이 있어서 안 될 것 같아."</p>
+              <p class="text-xs text-txt-secondary mt-1 flex items-center gap-2">
+                <iconify-icon icon="solar:users-group-rounded-linear" width="12"></iconify-icon>
+                <span>인간관계 +2</span>
+                <iconify-icon icon="solar:heart-broken-linear" width="12" class="text-txt-secondary"></iconify-icon>
+                <span>소연 호감도 -1</span>
+              </p>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <div class="reveal" style="--index: 3;">
+        <button class="choice-btn glass w-full text-left rounded-xl px-5 py-4 group">
+          <div class="flex items-center gap-3">
+            <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-teal/10 flex items-center justify-center text-teal font-bold text-sm">3</div>
+            <div>
+              <p class="font-medium leading-snug break-keep">"공부는 무슨... 날씨가 좋은데 캠퍼스 산책이나 하자!"</p>
+              <p class="text-xs text-txt-secondary mt-1 flex items-center gap-2">
+                <iconify-icon icon="solar:running-round-linear" width="12"></iconify-icon>
+                <span>체력 +1</span>
+                <iconify-icon icon="solar:heart-linear" width="12" class="text-pink"></iconify-icon>
+                <span class="text-pink">소연 호감도 +1</span>
+                <iconify-icon icon="solar:book-2-linear" width="12" class="text-coral"></iconify-icon>
+                <span class="text-coral">학점 -1</span>
+              </p>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- SECTION 4c: Stat Sidebar                                         -->
+  <!-- ================================================================ -->
+  <section class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="mb-10 reveal" style="--index: 0;">
+      <p class="text-teal text-xs font-semibold tracking-widest uppercase mb-2">Stat Sidebar</p>
+      <h2 class="text-3xl font-bold tracking-tight leading-snug break-keep">능력치 패널</h2>
+      <p class="mt-2 text-txt-secondary text-sm">플레이어의 현재 상태를 시각적으로 표시하는 사이드바</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl">
+      <!-- Stat sidebar card -->
+      <div class="glass rounded-2xl p-5 reveal" style="--index: 1;">
+        <div class="flex items-center gap-2 mb-5">
+          <iconify-icon icon="solar:chart-2-bold-duotone" width="20" class="text-teal"></iconify-icon>
+          <h3 class="font-bold text-sm">현재 능력치</h3>
+          <span class="ml-auto text-xs text-txt-secondary">2학년 1학기 5주차</span>
+        </div>
+
+        <div class="space-y-4">
+          <!-- GPA -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-2">
+                <iconify-icon icon="solar:diploma-linear" width="16" class="text-gold"></iconify-icon>
+                <span class="text-sm font-medium">학점</span>
+              </div>
+              <span class="text-sm font-bold text-gold">3.7 / 4.5</span>
+            </div>
+            <div class="h-2 rounded-full bg-surface-light overflow-hidden">
+              <div class="stat-fill h-full rounded-full bg-gradient-to-r from-gold/80 to-gold" style="width: 82%;"></div>
+            </div>
+          </div>
+
+          <!-- Stamina -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-2">
+                <iconify-icon icon="solar:heart-pulse-linear" width="16" class="text-teal"></iconify-icon>
+                <span class="text-sm font-medium">체력</span>
+              </div>
+              <span class="text-sm font-bold text-teal">68 / 100</span>
+            </div>
+            <div class="h-2 rounded-full bg-surface-light overflow-hidden">
+              <div class="stat-fill h-full rounded-full bg-gradient-to-r from-teal/80 to-teal" style="width: 68%;"></div>
+            </div>
+          </div>
+
+          <!-- Social -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-2">
+                <iconify-icon icon="solar:users-group-rounded-linear" width="16" class="text-lavender"></iconify-icon>
+                <span class="text-sm font-medium">인간관계</span>
+              </div>
+              <span class="text-sm font-bold text-lavender">45 / 100</span>
+            </div>
+            <div class="h-2 rounded-full bg-surface-light overflow-hidden">
+              <div class="stat-fill h-full rounded-full bg-gradient-to-r from-lavender/80 to-lavender" style="width: 45%;"></div>
+            </div>
+          </div>
+
+          <!-- Money -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-2">
+                <iconify-icon icon="solar:wallet-money-linear" width="16" class="text-gold"></iconify-icon>
+                <span class="text-sm font-medium">돈</span>
+              </div>
+              <span class="text-sm font-bold text-gold">320,000원</span>
+            </div>
+            <div class="h-2 rounded-full bg-surface-light overflow-hidden">
+              <div class="stat-fill h-full rounded-full bg-gradient-to-r from-gold/60 to-gold/80" style="width: 32%;"></div>
+            </div>
+          </div>
+
+          <!-- Stress -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-2">
+                <iconify-icon icon="solar:fire-linear" width="16" class="text-coral"></iconify-icon>
+                <span class="text-sm font-medium">스트레스</span>
+              </div>
+              <span class="text-sm font-bold text-coral">72 / 100</span>
+            </div>
+            <div class="h-2 rounded-full bg-surface-light overflow-hidden">
+              <div class="stat-fill h-full rounded-full bg-gradient-to-r from-coral/60 to-coral" style="width: 72%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick actions card -->
+      <div class="glass rounded-2xl p-5 reveal" style="--index: 2;">
+        <div class="flex items-center gap-2 mb-5">
+          <iconify-icon icon="solar:widget-2-bold-duotone" width="20" class="text-teal"></iconify-icon>
+          <h3 class="font-bold text-sm">빠른 행동</h3>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button class="choice-btn glass rounded-xl p-3 text-center">
+            <iconify-icon icon="solar:book-2-bold-duotone" width="24" class="text-gold mb-1"></iconify-icon>
+            <p class="text-xs font-medium">공부하기</p>
+          </button>
+          <button class="choice-btn glass rounded-xl p-3 text-center">
+            <iconify-icon icon="solar:running-round-bold-duotone" width="24" class="text-teal mb-1"></iconify-icon>
+            <p class="text-xs font-medium">운동하기</p>
+          </button>
+          <button class="choice-btn glass rounded-xl p-3 text-center">
+            <iconify-icon icon="solar:shop-bold-duotone" width="24" class="text-pink mb-1"></iconify-icon>
+            <p class="text-xs font-medium">아르바이트</p>
+          </button>
+          <button class="choice-btn glass rounded-xl p-3 text-center">
+            <iconify-icon icon="solar:bed-bold-duotone" width="24" class="text-lavender mb-1"></iconify-icon>
+            <p class="text-xs font-medium">휴식하기</p>
+          </button>
+          <button class="choice-btn glass rounded-xl p-3 text-center">
+            <iconify-icon icon="solar:chat-round-dots-bold-duotone" width="24" class="text-pink mb-1"></iconify-icon>
+            <p class="text-xs font-medium">친구 만나기</p>
+          </button>
+          <button class="choice-btn glass rounded-xl p-3 text-center">
+            <iconify-icon icon="solar:music-notes-bold-duotone" width="24" class="text-lavender mb-1"></iconify-icon>
+            <p class="text-xs font-medium">동아리</p>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- SECTION 4d: Schedule Planner                                     -->
+  <!-- ================================================================ -->
+  <section class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="mb-10 reveal" style="--index: 0;">
+      <p class="text-teal text-xs font-semibold tracking-widest uppercase mb-2">Schedule Planner</p>
+      <h2 class="text-3xl font-bold tracking-tight leading-snug break-keep">주간 시간표</h2>
+      <p class="mt-2 text-txt-secondary text-sm">요일별 일정을 관리하는 계획표 UI</p>
+    </div>
+
+    <div class="glass rounded-2xl p-5 sm:p-6 overflow-x-auto reveal" style="--index: 1;">
+      <table class="w-full min-w-[540px] border-collapse">
+        <thead>
+          <tr>
+            <th class="w-20 p-2 text-xs text-txt-secondary font-medium text-left">시간</th>
+            <th class="p-2 text-xs font-semibold text-center">월</th>
+            <th class="p-2 text-xs font-semibold text-center">화</th>
+            <th class="p-2 text-xs font-semibold text-center">수</th>
+            <th class="p-2 text-xs font-semibold text-center">목</th>
+            <th class="p-2 text-xs font-semibold text-center">금</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- 9AM -->
+          <tr>
+            <td class="p-2 text-xs text-txt-secondary font-mono">09:00</td>
+            <td class="p-1">
+              <div class="schedule-cell rounded-lg p-2 text-center text-xs font-medium bg-gold/15 text-gold border border-gold/20">
+                <p class="font-semibold">경영학원론</p>
+                <p class="text-[10px] opacity-70 mt-0.5">본관 301호</p>
+              </div>
+            </td>
+            <td class="p-1"></td>
+            <td class="p-1">
+              <div class="schedule-cell rounded-lg p-2 text-center text-xs font-medium bg-gold/15 text-gold border border-gold/20">
+                <p class="font-semibold">경영학원론</p>
+                <p class="text-[10px] opacity-70 mt-0.5">본관 301호</p>
+              </div>
+            </td>
+            <td class="p-1"></td>
+            <td class="p-1">
+              <div class="schedule-cell rounded-lg p-2 text-center text-xs font-medium bg-gold/15 text-gold border border-gold/20">
+                <p class="font-semibold">경영학원론</p>
+                <p class="text-[10px] opacity-70 mt-0.5">본관 301호</p>
+              </div>
+            </td>
+          </tr>
+          <!-- 10:30 -->
+          <tr>
+            <td class="p-2 text-xs text-txt-secondary font-mono">10:30</td>
+            <td class="p-1"></td>
+            <td class="p-1">
+              <div class="schedule-cell rounded-lg p-2 text-center text-xs font-medium bg-teal/15 text-teal border border-teal/20">
+                <p class="font-semibold">통계학</p>
+                <p class="text-[10px] opacity-70 mt-0.5">공학관 205호</p>
+              </div>
+            </td>
+            <td class="p-1"></td>
+            <td class="p-1">
+              <div class="schedule-cell rounded-lg p-2 text-center text-xs font-medium bg-teal/15 text-teal border border-teal/20">
+                <p class="font-semibold">통계학</p>
+                <p class="text-[10px] opacity-70 mt-0.5">공학관 205호</p>
+              </div>
+            </td>
+            <td class="p-1"></td>
+          </tr>
+          <!-- 13:00 -->
+          <tr>
+            <td class="p-2 text-xs text-txt-secondary font-mono">13:00</td>
+            <td class="p-1">
+              <div class="schedule-cell rounded-lg p-2 text-center text-xs font-medium bg-lavender/15 text-lavender border border-lavender/20">
+                <p class="font-semibold">심리학개론</p>
+                <p class="text-[10px] opacity-70 mt-0.5">인문관 102호</p>
+              </div>
+            </td>
+            <td class="p-1"></td>
+            <td class="p-1">
+              <div class="schedule-cell rounded-lg p-2 text-center text-xs font-medium bg-lavender/15 text-lavender border border-lavender/20">
+                <p class="font-semibold">심리학개론</p>
+                <p class="text-[10px] opacity-70 mt-0.5">인문관 102호</p>
+              </div>
+            </td>
+            <td class="p-1"></td>
+            <td class="p-1">
+              <div class="schedule-cell rounded-lg p-2 text-center text-xs font-medium bg-pink/15 text-pink border border-pink/20">
+                <p class="font-semibold">동아리 활동</p>
+                <p class="text-[10px] opacity-70 mt-0.5">학생회관</p>
+              </div>
+            </td>
+          </tr>
+          <!-- 15:00 -->
+          <tr>
+            <td class="p-2 text-xs text-txt-secondary font-mono">15:00</td>
+            <td class="p-1"></td>
+            <td class="p-1">
+              <div class="schedule-cell rounded-lg p-2 text-center text-xs font-medium bg-pink/15 text-pink border border-pink/20">
+                <p class="font-semibold">영어회화</p>
+                <p class="text-[10px] opacity-70 mt-0.5">어학관 401호</p>
+              </div>
+            </td>
+            <td class="p-1"></td>
+            <td class="p-1">
+              <div class="schedule-cell rounded-lg p-2 text-center text-xs font-medium bg-pink/15 text-pink border border-pink/20">
+                <p class="font-semibold">영어회화</p>
+                <p class="text-[10px] opacity-70 mt-0.5">어학관 401호</p>
+              </div>
+            </td>
+            <td class="p-1"></td>
+          </tr>
+          <!-- 18:00 -->
+          <tr>
+            <td class="p-2 text-xs text-txt-secondary font-mono">18:00</td>
+            <td class="p-1">
+              <div class="schedule-cell rounded-lg p-2 text-center text-xs font-medium bg-coral/15 text-coral border border-coral/20">
+                <p class="font-semibold">아르바이트</p>
+                <p class="text-[10px] opacity-70 mt-0.5">편의점</p>
+              </div>
+            </td>
+            <td class="p-1"></td>
+            <td class="p-1">
+              <div class="schedule-cell rounded-lg p-2 text-center text-xs font-medium bg-coral/15 text-coral border border-coral/20">
+                <p class="font-semibold">아르바이트</p>
+                <p class="text-[10px] opacity-70 mt-0.5">편의점</p>
+              </div>
+            </td>
+            <td class="p-1"></td>
+            <td class="p-1">
+              <div class="schedule-cell rounded-lg p-2 text-center text-xs font-medium bg-coral/15 text-coral border border-coral/20">
+                <p class="font-semibold">아르바이트</p>
+                <p class="text-[10px] opacity-70 mt-0.5">편의점</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- SECTION 4e: Character Cards Grid                                 -->
+  <!-- ================================================================ -->
+  <section class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="mb-10 reveal" style="--index: 0;">
+      <p class="text-teal text-xs font-semibold tracking-widest uppercase mb-2">Character Cards</p>
+      <h2 class="text-3xl font-bold tracking-tight leading-snug break-keep">등장인물</h2>
+      <p class="mt-2 text-txt-secondary text-sm">플레이어와 상호작용하는 주요 캐릭터들</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Soyeon -->
+      <div class="char-card glass rounded-2xl overflow-hidden reveal" style="--index: 1;">
+        <div class="relative h-64 bg-gradient-to-b from-pink/10 to-transparent overflow-hidden">
+          <img
+            src="file:///Users/yoonkihong/KoreanUniversityStudentMaker/assets/characters/soyeon/neutral.png"
+            alt="이소연"
+            class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[95%] w-auto object-contain"
+            loading="lazy"
+            decoding="async"
+          >
+        </div>
+        <div class="p-4">
+          <div class="flex items-center gap-2 mb-2">
+            <h3 class="font-bold text-base">이소연</h3>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-pink/15 text-pink font-medium">같은 과</span>
+          </div>
+          <p class="text-sm text-txt-secondary leading-relaxed break-keep">
+            성실하고 밝은 성격의 경영학과 동기. 항상 도서관에서 볼 수 있으며, 은근히 승부욕이 강하다.
+          </p>
+          <div class="mt-3 flex items-center gap-2">
+            <iconify-icon icon="solar:heart-bold" width="14" class="text-pink"></iconify-icon>
+            <div class="flex-1 h-1.5 rounded-full bg-surface-light overflow-hidden">
+              <div class="h-full rounded-full bg-pink" style="width: 35%;"></div>
+            </div>
+            <span class="text-xs text-txt-secondary">35</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Jaemin -->
+      <div class="char-card glass rounded-2xl overflow-hidden reveal" style="--index: 2;">
+        <div class="relative h-64 bg-gradient-to-b from-teal/10 to-transparent overflow-hidden">
+          <img
+            src="file:///Users/yoonkihong/KoreanUniversityStudentMaker/assets/characters/jaemin/neutral.png"
+            alt="박재민"
+            class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[95%] w-auto object-contain"
+            loading="lazy"
+            decoding="async"
+          >
+        </div>
+        <div class="p-4">
+          <div class="flex items-center gap-2 mb-2">
+            <h3 class="font-bold text-base">박재민</h3>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-teal/15 text-teal font-medium">룸메이트</span>
+          </div>
+          <p class="text-sm text-txt-secondary leading-relaxed break-keep">
+            기숙사 룸메이트이자 컴퓨터공학과 학생. 게임을 좋아하고 느긋하지만 의외로 정이 많다.
+          </p>
+          <div class="mt-3 flex items-center gap-2">
+            <iconify-icon icon="solar:heart-bold" width="14" class="text-teal"></iconify-icon>
+            <div class="flex-1 h-1.5 rounded-full bg-surface-light overflow-hidden">
+              <div class="h-full rounded-full bg-teal" style="width: 60%;"></div>
+            </div>
+            <span class="text-xs text-txt-secondary">60</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Minji -->
+      <div class="char-card glass rounded-2xl overflow-hidden reveal" style="--index: 3;">
+        <div class="relative h-64 bg-gradient-to-b from-lavender/10 to-transparent overflow-hidden">
+          <img
+            src="file:///Users/yoonkihong/KoreanUniversityStudentMaker/assets/characters/minji/neutral.png"
+            alt="한민지"
+            class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[95%] w-auto object-contain"
+            loading="lazy"
+            decoding="async"
+          >
+        </div>
+        <div class="p-4">
+          <div class="flex items-center gap-2 mb-2">
+            <h3 class="font-bold text-base">한민지</h3>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-lavender/15 text-lavender font-medium">동아리 선배</span>
+          </div>
+          <p class="text-sm text-txt-secondary leading-relaxed break-keep">
+            밴드 동아리의 카리스마 넘치는 보컬 선배. 자신감이 넘치고 경쟁심이 강하지만 후배를 챙기는 면도 있다.
+          </p>
+          <div class="mt-3 flex items-center gap-2">
+            <iconify-icon icon="solar:heart-bold" width="14" class="text-lavender"></iconify-icon>
+            <div class="flex-1 h-1.5 rounded-full bg-surface-light overflow-hidden">
+              <div class="h-full rounded-full bg-lavender" style="width: 20%;"></div>
+            </div>
+            <span class="text-xs text-txt-secondary">20</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hyunwoo -->
+      <div class="char-card glass rounded-2xl overflow-hidden reveal" style="--index: 4;">
+        <div class="relative h-64 bg-gradient-to-b from-gold/10 to-transparent overflow-hidden">
+          <img
+            src="file:///Users/yoonkihong/KoreanUniversityStudentMaker/assets/characters/hyunwoo/neutral.png"
+            alt="최현우"
+            class="absolute bottom-0 left-1/2 -translate-x-1/2 h-[95%] w-auto object-contain"
+            loading="lazy"
+            decoding="async"
+          >
+        </div>
+        <div class="p-4">
+          <div class="flex items-center gap-2 mb-2">
+            <h3 class="font-bold text-base">최현우</h3>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-gold/15 text-gold font-medium">학생회장</span>
+          </div>
+          <p class="text-sm text-txt-secondary leading-relaxed break-keep">
+            모든 일에 능숙한 만능 학생회장. 쿨한 외모와 달리 의외로 허당끼가 있으며, 비밀스러운 면이 있다.
+          </p>
+          <div class="mt-3 flex items-center gap-2">
+            <iconify-icon icon="solar:heart-bold" width="14" class="text-gold"></iconify-icon>
+            <div class="flex-1 h-1.5 rounded-full bg-surface-light overflow-hidden">
+              <div class="h-full rounded-full bg-gold" style="width: 10%;"></div>
+            </div>
+            <span class="text-xs text-txt-secondary">10</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- SECTION 4f: Notification / Event Toast                           -->
+  <!-- ================================================================ -->
+  <section class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="mb-10 reveal" style="--index: 0;">
+      <p class="text-teal text-xs font-semibold tracking-widest uppercase mb-2">Notifications</p>
+      <h2 class="text-3xl font-bold tracking-tight leading-snug break-keep">알림 토스트</h2>
+      <p class="mt-2 text-txt-secondary text-sm">게임 이벤트 발생 시 표시되는 알림 UI</p>
+    </div>
+
+    <div class="max-w-md ml-auto space-y-3">
+      <!-- Event toast 1 -->
+      <div class="toast-enter glass-strong rounded-xl p-4 reveal" style="--index: 1;">
+        <div class="flex items-start gap-3">
+          <div class="flex-shrink-0 w-9 h-9 rounded-lg bg-gold/15 flex items-center justify-center">
+            <iconify-icon icon="solar:star-bold-duotone" width="20" class="text-gold"></iconify-icon>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-sm">중간고사 성적 발표</p>
+            <p class="text-xs text-txt-secondary mt-0.5 break-keep leading-relaxed">경영학원론 A+를 받았습니다! 학점이 크게 올랐습니다.</p>
+          </div>
+          <button class="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-txt-secondary hover:text-txt-primary hover:bg-white/5 transition-colors">
+            <iconify-icon icon="solar:close-circle-linear" width="16"></iconify-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Event toast 2 -->
+      <div class="toast-enter glass-strong rounded-xl p-4 reveal" style="--index: 2;">
+        <div class="flex items-start gap-3">
+          <div class="flex-shrink-0 w-9 h-9 rounded-lg bg-pink/15 flex items-center justify-center">
+            <iconify-icon icon="solar:letter-bold-duotone" width="20" class="text-pink"></iconify-icon>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-sm">새 메시지 도착</p>
+            <p class="text-xs text-txt-secondary mt-0.5 break-keep leading-relaxed">이소연: "내일 학교 앞 카페에서 볼래? 할 얘기가 있어."</p>
+          </div>
+          <button class="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-txt-secondary hover:text-txt-primary hover:bg-white/5 transition-colors">
+            <iconify-icon icon="solar:close-circle-linear" width="16"></iconify-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Event toast 3 - warning -->
+      <div class="toast-enter glass-strong rounded-xl p-4 border-coral/30 reveal" style="--index: 3;">
+        <div class="flex items-start gap-3">
+          <div class="flex-shrink-0 w-9 h-9 rounded-lg bg-coral/15 flex items-center justify-center">
+            <iconify-icon icon="solar:danger-triangle-bold-duotone" width="20" class="text-coral"></iconify-icon>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-sm text-coral">스트레스 경고</p>
+            <p class="text-xs text-txt-secondary mt-0.5 break-keep leading-relaxed">스트레스 수치가 위험 수준입니다. 휴식을 취하지 않으면 건강이 나빠질 수 있습니다.</p>
+          </div>
+          <button class="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-txt-secondary hover:text-txt-primary hover:bg-white/5 transition-colors">
+            <iconify-icon icon="solar:close-circle-linear" width="16"></iconify-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- SECTION 5: Game Screen Mockup                                    -->
+  <!-- ================================================================ -->
+  <section class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="mb-10 reveal" style="--index: 0;">
+      <p class="text-teal text-xs font-semibold tracking-widest uppercase mb-2">Game Mockup</p>
+      <h2 class="text-3xl font-bold tracking-tight leading-snug break-keep">실제 게임 화면</h2>
+      <p class="mt-2 text-txt-secondary text-sm">플레이 중 보게 될 실제 게임 화면 모형</p>
+    </div>
+
+    <div class="reveal relative rounded-2xl overflow-hidden border border-white/10" style="--index: 1; aspect-ratio: 16 / 9; min-height: 500px;">
+      <!-- Background -->
+      <img
+        src="file:///Users/yoonkihong/KoreanUniversityStudentMaker/assets/backgrounds/campus/day.png"
+        alt="캠퍼스 배경"
+        class="absolute inset-0 w-full h-full object-cover"
+      >
+      <!-- Gradient overlays -->
+      <div class="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-navy/20"></div>
+      <div class="absolute inset-0 bg-gradient-to-r from-navy/60 via-transparent to-transparent"></div>
+
+      <!-- Top bar - date/time info -->
+      <div class="absolute top-0 left-0 right-0 p-3 sm:p-4 flex items-center justify-between">
+        <div class="glass rounded-lg px-3 py-1.5 flex items-center gap-2">
+          <iconify-icon icon="solar:calendar-bold-duotone" width="14" class="text-teal"></iconify-icon>
+          <span class="text-xs font-semibold">2학년 1학기</span>
+          <span class="text-xs text-txt-secondary">5주차 월요일</span>
+        </div>
+        <div class="glass rounded-lg px-3 py-1.5 flex items-center gap-2">
+          <iconify-icon icon="solar:clock-circle-bold-duotone" width="14" class="text-gold"></iconify-icon>
+          <span class="text-xs font-semibold">오후 2:00</span>
+        </div>
+      </div>
+
+      <!-- Stat sidebar (left) -->
+      <div class="absolute top-14 left-3 sm:left-4 w-44 glass rounded-xl p-3 space-y-2.5">
+        <!-- GPA -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center gap-1.5">
+              <iconify-icon icon="solar:diploma-linear" width="12" class="text-gold"></iconify-icon>
+              <span class="text-[11px] font-medium">학점</span>
+            </div>
+            <span class="text-[11px] font-bold text-gold">3.7</span>
+          </div>
+          <div class="h-1.5 rounded-full bg-white/5 overflow-hidden">
+            <div class="h-full rounded-full bg-gold" style="width: 82%;"></div>
+          </div>
+        </div>
+        <!-- Stamina -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center gap-1.5">
+              <iconify-icon icon="solar:heart-pulse-linear" width="12" class="text-teal"></iconify-icon>
+              <span class="text-[11px] font-medium">체력</span>
+            </div>
+            <span class="text-[11px] font-bold text-teal">68</span>
+          </div>
+          <div class="h-1.5 rounded-full bg-white/5 overflow-hidden">
+            <div class="h-full rounded-full bg-teal" style="width: 68%;"></div>
+          </div>
+        </div>
+        <!-- Social -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center gap-1.5">
+              <iconify-icon icon="solar:users-group-rounded-linear" width="12" class="text-lavender"></iconify-icon>
+              <span class="text-[11px] font-medium">인간관계</span>
+            </div>
+            <span class="text-[11px] font-bold text-lavender">45</span>
+          </div>
+          <div class="h-1.5 rounded-full bg-white/5 overflow-hidden">
+            <div class="h-full rounded-full bg-lavender" style="width: 45%;"></div>
+          </div>
+        </div>
+        <!-- Money -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center gap-1.5">
+              <iconify-icon icon="solar:wallet-money-linear" width="12" class="text-gold"></iconify-icon>
+              <span class="text-[11px] font-medium">돈</span>
+            </div>
+            <span class="text-[11px] font-bold text-gold">32만</span>
+          </div>
+          <div class="h-1.5 rounded-full bg-white/5 overflow-hidden">
+            <div class="h-full rounded-full bg-gold/70" style="width: 32%;"></div>
+          </div>
+        </div>
+        <!-- Stress -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center gap-1.5">
+              <iconify-icon icon="solar:fire-linear" width="12" class="text-coral"></iconify-icon>
+              <span class="text-[11px] font-medium">스트레스</span>
+            </div>
+            <span class="text-[11px] font-bold text-coral">72</span>
+          </div>
+          <div class="h-1.5 rounded-full bg-white/5 overflow-hidden">
+            <div class="h-full rounded-full bg-coral" style="width: 72%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Character (Soyeon, right side) -->
+      <div class="absolute bottom-0 right-[5%] sm:right-[10%] h-[85%] flex items-end">
+        <img
+          src="file:///Users/yoonkihong/KoreanUniversityStudentMaker/assets/characters/soyeon/happy.png"
+          alt="이소연"
+          class="h-full w-auto object-contain drop-shadow-2xl"
+        >
+      </div>
+
+      <!-- Dialogue box at bottom -->
+      <div class="absolute bottom-0 left-0 right-0 p-3 sm:p-4">
+        <div class="glass-strong rounded-xl p-4 sm:p-5">
+          <!-- Name tag -->
+          <div class="inline-flex items-center gap-2 mb-2">
+            <div class="w-1 h-3.5 rounded-full bg-teal"></div>
+            <span class="text-teal font-bold text-xs">이소연</span>
+          </div>
+          <!-- Dialogue -->
+          <p class="text-sm sm:text-base leading-relaxed break-keep">
+            "여기 있었구나! 아까 교수님이 다음 주에 팀 프로젝트 발표라고 했잖아. 우리 같은 조인데 언제 모여서 준비할지 정하자."
+          </p>
+          <!-- Continue -->
+          <div class="flex justify-end mt-2">
+            <div class="flex items-center gap-1 text-txt-secondary text-[10px] pulse-anim">
+              <iconify-icon icon="solar:alt-arrow-down-linear" width="12"></iconify-icon>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- SECTION 6: Motion / Animation Demos                              -->
+  <!-- ================================================================ -->
+  <section class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="mb-10 reveal" style="--index: 0;">
+      <p class="text-teal text-xs font-semibold tracking-widest uppercase mb-2">Motion / Animation</p>
+      <h2 class="text-3xl font-bold tracking-tight leading-snug break-keep">애니메이션 및 인터랙션</h2>
+      <p class="mt-2 text-txt-secondary text-sm">스크롤 트리거, 호버 효과, 부유 애니메이션 시연</p>
+    </div>
+
+    <!-- Staggered fade-in cards -->
+    <div class="mb-10">
+      <p class="text-sm text-txt-secondary mb-4">시차 페이드인 (Staggered Fade-In) -- 스크롤하여 확인</p>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="glass rounded-xl p-5 text-center reveal" style="--index: 1;">
+          <div class="w-12 h-12 rounded-xl bg-teal/15 flex items-center justify-center mx-auto mb-3 float-anim" style="animation-delay: 0s;">
+            <iconify-icon icon="solar:book-2-bold-duotone" width="24" class="text-teal"></iconify-icon>
+          </div>
+          <p class="font-semibold text-sm">공부</p>
+          <p class="text-xs text-txt-secondary mt-1">학점을 올리자</p>
+        </div>
+        <div class="glass rounded-xl p-5 text-center reveal" style="--index: 2;">
+          <div class="w-12 h-12 rounded-xl bg-pink/15 flex items-center justify-center mx-auto mb-3 float-anim" style="animation-delay: 0.5s;">
+            <iconify-icon icon="solar:heart-bold-duotone" width="24" class="text-pink"></iconify-icon>
+          </div>
+          <p class="font-semibold text-sm">연애</p>
+          <p class="text-xs text-txt-secondary mt-1">관계를 키우자</p>
+        </div>
+        <div class="glass rounded-xl p-5 text-center reveal" style="--index: 3;">
+          <div class="w-12 h-12 rounded-xl bg-gold/15 flex items-center justify-center mx-auto mb-3 float-anim" style="animation-delay: 1s;">
+            <iconify-icon icon="solar:wallet-money-bold-duotone" width="24" class="text-gold"></iconify-icon>
+          </div>
+          <p class="font-semibold text-sm">아르바이트</p>
+          <p class="text-xs text-txt-secondary mt-1">돈을 모으자</p>
+        </div>
+        <div class="glass rounded-xl p-5 text-center reveal" style="--index: 4;">
+          <div class="w-12 h-12 rounded-xl bg-lavender/15 flex items-center justify-center mx-auto mb-3 float-anim" style="animation-delay: 1.5s;">
+            <iconify-icon icon="solar:music-notes-bold-duotone" width="24" class="text-lavender"></iconify-icon>
+          </div>
+          <p class="font-semibold text-sm">동아리</p>
+          <p class="text-xs text-txt-secondary mt-1">경험을 쌓자</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hover effect demo -->
+    <div class="mb-10">
+      <p class="text-sm text-txt-secondary mb-4">호버 효과 (Hover Effects) -- 마우스를 올려 확인</p>
+      <div class="flex flex-wrap gap-3">
+        <button class="choice-btn glass rounded-xl px-5 py-3 text-sm font-medium">
+          <span class="text-teal">기본 버튼</span>
+        </button>
+        <button class="choice-btn glass rounded-xl px-5 py-3 text-sm font-medium bg-teal/10 border-teal/20">
+          <span class="text-teal">강조 버튼</span>
+        </button>
+        <button class="glass rounded-xl px-5 py-3 text-sm font-medium bg-teal text-navy font-bold" style="transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);"
+          onmouseenter="this.style.transform='scale(1.05)'; this.style.opacity='0.9';"
+          onmouseleave="this.style.transform='scale(1)'; this.style.opacity='1';"
+          onmousedown="this.style.transform='scale(0.95)';"
+          onmouseup="this.style.transform='scale(1.05)';">
+          채워진 버튼
+        </button>
+        <button class="choice-btn glass rounded-xl px-5 py-3 text-sm font-medium border-coral/30 text-coral">
+          경고 버튼
+        </button>
+      </div>
+    </div>
+
+    <!-- Floating elements demo -->
+    <div>
+      <p class="text-sm text-txt-secondary mb-4">부유 애니메이션 (Floating Animation)</p>
+      <div class="relative h-40 glass rounded-xl overflow-hidden">
+        <div class="absolute top-6 left-[10%] float-anim" style="animation-delay: 0s;">
+          <div class="w-10 h-10 rounded-full bg-teal/20 flex items-center justify-center">
+            <iconify-icon icon="solar:star-bold-duotone" width="18" class="text-teal"></iconify-icon>
+          </div>
+        </div>
+        <div class="absolute top-10 left-[30%] float-anim" style="animation-delay: 0.7s;">
+          <div class="w-8 h-8 rounded-full bg-pink/20 flex items-center justify-center">
+            <iconify-icon icon="solar:heart-bold-duotone" width="14" class="text-pink"></iconify-icon>
+          </div>
+        </div>
+        <div class="absolute top-4 left-[50%] float-anim" style="animation-delay: 1.4s;">
+          <div class="w-12 h-12 rounded-full bg-gold/20 flex items-center justify-center">
+            <iconify-icon icon="solar:crown-bold-duotone" width="22" class="text-gold"></iconify-icon>
+          </div>
+        </div>
+        <div class="absolute top-8 left-[70%] float-anim" style="animation-delay: 0.3s;">
+          <div class="w-9 h-9 rounded-full bg-lavender/20 flex items-center justify-center">
+            <iconify-icon icon="solar:diploma-bold-duotone" width="16" class="text-lavender"></iconify-icon>
+          </div>
+        </div>
+        <div class="absolute top-12 left-[85%] float-anim" style="animation-delay: 2s;">
+          <div class="w-7 h-7 rounded-full bg-coral/20 flex items-center justify-center">
+            <iconify-icon icon="solar:fire-bold-duotone" width="12" class="text-coral"></iconify-icon>
+          </div>
+        </div>
+        <!-- Label -->
+        <div class="absolute bottom-3 left-0 right-0 text-center">
+          <span class="text-xs text-txt-secondary">transform과 opacity만 사용하여 60fps 성능 유지</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================ -->
+  <!-- Footer                                                           -->
+  <!-- ================================================================ -->
+  <footer class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center border-t border-white/5">
+    <p class="text-txt-secondary text-sm">한국 대학생 키우기 디자인 시스템</p>
+    <p class="text-txt-secondary text-xs mt-1">Pretendard / Tailwind CSS / Solar Icons</p>
+  </footer>
+
+  <!-- ================================================================ -->
+  <!-- JavaScript: Scroll Reveal with IntersectionObserver              -->
+  <!-- ================================================================ -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        {
+          threshold: 0.1,
+          rootMargin: '0px 0px -40px 0px',
+        }
+      );
+
+      document.querySelectorAll('.reveal').forEach((el) => {
+        observer.observe(el);
+      });
+    });
+  </script>
+
+</body>
+</html>
