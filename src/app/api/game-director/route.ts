@@ -34,7 +34,7 @@ function validateDirectorResponse(data: unknown): data is {
 }
 
 export async function POST(request: Request) {
-  const rateLimitResponse = checkRateLimit(request);
+  const rateLimitResponse = await checkRateLimit(request);
   if (rateLimitResponse) return rateLimitResponse;
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
