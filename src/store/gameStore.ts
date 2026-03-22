@@ -191,6 +191,14 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'kusm-save',
+      version: 1,
+      migrate(persisted: unknown, version: number) {
+        if (version === 0 || version === undefined) {
+          // v0 → v1: no structural changes, just reset to clean state
+          return persisted as GameStore;
+        }
+        return persisted as GameStore;
+      },
     },
   ),
 );

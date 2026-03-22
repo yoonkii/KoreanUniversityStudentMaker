@@ -1,6 +1,42 @@
 import { NextResponse } from 'next/server';
+import { checkRateLimit } from '@/lib/rateLimit';
+
+/** Validate that LLM output matches the expected game director scene shape. */
+function validateDirectorResponse(data: unknown): data is {
+  eventType: string;
+  title: string;
+  location: string;
+  dialogue: { characterId?: string | null; text: string }[];
+  choices: { id: string; text: string; statEffects: Record<string, number> }[];
+} {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+
+  if (typeof obj.eventType !== 'string') return false;
+  if (typeof obj.title !== 'string') return false;
+  if (typeof obj.location !== 'string') return false;
+
+  if (!Array.isArray(obj.dialogue) || obj.dialogue.length === 0) return false;
+  for (const line of obj.dialogue) {
+    if (typeof line !== 'object' || line === null) return false;
+    if (typeof (line as Record<string, unknown>).text !== 'string') return false;
+  }
+
+  if (!Array.isArray(obj.choices) || obj.choices.length === 0) return false;
+  for (const choice of obj.choices) {
+    if (typeof choice !== 'object' || choice === null) return false;
+    const c = choice as Record<string, unknown>;
+    if (typeof c.id !== 'string' || typeof c.text !== 'string') return false;
+    if (typeof c.statEffects !== 'object' || c.statEffects === null) return false;
+  }
+
+  return true;
+}
 
 export async function POST(request: Request) {
+  const rateLimitResponse = checkRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
   if (!apiKey) {
@@ -10,17 +46,24 @@ export async function POST(request: Request) {
     );
   }
 
+  let body: Record<string, unknown>;
   try {
-    const { playerStats, relationships, currentWeek, tension, recentEvents } = await request.json();
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  try {
+    const { playerStats, relationships, currentWeek, tension, recentEvents } = body;
 
     const systemPrompt = `당신은 한국 대학교 생활 시뮬레이션 게임의 Game Director AI입니다.
 
 현재 상태:
-- 주차: ${currentWeek}/16
-- 긴장도: ${tension}/100
-- 플레이어 스탯: ${JSON.stringify(playerStats)}
-- 캐릭터 관계: ${JSON.stringify(relationships)}
-- 최근 이벤트: ${recentEvents?.join(', ') || '없음'}
+- 주차: ${Number(currentWeek ?? 1)}/16
+- 긴장도: ${Number(tension ?? 50)}/100
+- 플레이어 스탯: ${JSON.stringify(playerStats ?? {})}
+- 캐릭터 관계: ${JSON.stringify(relationships ?? {})}
+- 최근 이벤트: ${Array.isArray(recentEvents) ? recentEvents.map(String).join(', ') : '없음'}
 
 긴장도에 따른 이벤트 생성:
 - 낮은 긴장도 (0-30): 일상적인 슬라이스 오브 라이프 이벤트
@@ -32,7 +75,7 @@ export async function POST(request: Request) {
 2. 캐릭터의 관계도를 고려하세요
 3. 이벤트는 의미 있는 선택을 포함해야 합니다
 
-반드시 아래 JSON 형식으로만 응답하세요:
+반드시 아래 JSON 형식으로만 응답하세요 (JSON만 출력, 다른 텍스트 없이):
 {
   "eventType": "academic|social|romance|crisis",
   "title": "이벤트 제목",
@@ -64,9 +107,9 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5-20250929',
-        max_tokens: 800,
+        max_tokens: 2048,
         system: systemPrompt,
-        messages: [{ role: 'user', content: `${currentWeek}주차 이벤트를 생성해주세요. 긴장도: ${tension}` }],
+        messages: [{ role: 'user', content: `${Number(currentWeek ?? 1)}주차 이벤트를 생성해주세요. 긴장도: ${Number(tension ?? 50)}` }],
       }),
     });
 
@@ -77,14 +120,25 @@ export async function POST(request: Request) {
     }
 
     const data = await response.json();
-    const text = data.content?.[0]?.text ?? '{}';
+    const text = data.content?.[0]?.text ?? '';
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    // Extract JSON from response
+    const jsonMatch = text.match(/\{[\s\S]*?\}(?=[^}]*$)/) ?? text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       return NextResponse.json({ error: 'Invalid AI response format' }, { status: 502 });
     }
 
-    const result = JSON.parse(jsonMatch[0]);
+    let result: unknown;
+    try {
+      result = JSON.parse(jsonMatch[0]);
+    } catch {
+      return NextResponse.json({ error: 'AI returned malformed JSON' }, { status: 502 });
+    }
+
+    if (!validateDirectorResponse(result)) {
+      return NextResponse.json({ error: 'AI response failed schema validation' }, { status: 502 });
+    }
+
     return NextResponse.json(result);
   } catch (error) {
     console.error('Game Director error:', error);
