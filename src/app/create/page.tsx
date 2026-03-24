@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/stores/game-store";
-import type { MajorType, StatKey } from "@/engine/types/stats";
+import { useGameStore as useLegacyStore } from "@/store/gameStore";
+import type { MajorType } from "@/engine/types/stats";
 import {
   MAJOR_LABELS,
   MAJOR_STAT_OVERRIDES,
@@ -33,8 +34,10 @@ export default function CreatePage() {
   const router = useRouter();
   const initializeGame = useGameStore((s) => s.initializeGame);
   const setGamePhase = useGameStore((s) => s.setGamePhase);
+  const legacyCreatePlayer = useLegacyStore((s) => s.createPlayer);
 
   const [name, setName] = useState("");
+  const [isComposing, setIsComposing] = useState(false);
   const [university, setUniversity] = useState(UNIVERSITIES[0]);
   const [major, setMajor] = useState<MajorType>("engineering");
   const [storyteller, setStoryteller] =
@@ -47,9 +50,12 @@ export default function CreatePage() {
   };
 
   const handleStart = () => {
-    if (!name.trim()) return;
+    if (!name.trim() || isComposing) return;
+    // Write to NEW store (Sprint 3-6 AI engine)
     initializeGame(name.trim(), university, major, storyteller, lang);
     setGamePhase("playing");
+    // Write to OLD store (Sprint 1-2 VN engine) so game page works
+    legacyCreatePlayer({ name: name.trim(), gender: "male", major });
     router.push("/game");
   };
 
@@ -72,6 +78,11 @@ export default function CreatePage() {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            onCompositionStart={() => setIsComposing(true)}
+            onCompositionEnd={(e) => {
+              setIsComposing(false);
+              setName((e.target as HTMLInputElement).value);
+            }}
             placeholder="이름을 입력하세요"
             className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:outline-none text-lg"
           />

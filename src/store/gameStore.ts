@@ -39,6 +39,7 @@ function clampAllStats(stats: PlayerStats): PlayerStats {
 
 interface GameStore {
   // --- State ---
+  _hasHydrated: boolean;
   phase: GamePhase;
   player: PlayerProfile | null;
   stats: PlayerStats;
@@ -52,6 +53,7 @@ interface GameStore {
   gameStarted: boolean;
 
   // --- Actions ---
+  setHasHydrated: (v: boolean) => void;
   setPhase: (phase: GamePhase) => void;
   createPlayer: (profile: PlayerProfile) => void;
   updateStats: (changes: Partial<PlayerStats>) => void;
@@ -70,6 +72,7 @@ export const useGameStore = create<GameStore>()(
   persist(
     (set, get) => ({
       // --- Initial state ---
+      _hasHydrated: false,
       phase: 'title',
       player: null,
       stats: { ...INITIAL_STATS },
@@ -83,6 +86,10 @@ export const useGameStore = create<GameStore>()(
       gameStarted: false,
 
       // --- Actions ---
+
+      setHasHydrated(v) {
+        set({ _hasHydrated: v });
+      },
 
       setPhase(phase) {
         set({ phase });
@@ -202,6 +209,9 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'kusm-save',
       version: 2,
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
       migrate(persisted: unknown, version: number) {
         const state = persisted as Record<string, unknown>;
         if (version < 2) {

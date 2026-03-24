@@ -74,6 +74,7 @@ async function fetchAIScene(
 export default function GameScreen() {
   const router = useRouter();
   const {
+    _hasHydrated,
     phase,
     setPhase,
     player,
@@ -92,12 +93,22 @@ export default function GameScreen() {
 
   const [isLoadingAI, setIsLoadingAI] = useState(false);
 
-  // Redirect if no player
+  // Wait for localStorage hydration before any redirects
   useEffect(() => {
+    if (!_hasHydrated) return;
     if (!player) {
       router.push('/');
     }
-  }, [player, router]);
+  }, [_hasHydrated, player, router]);
+
+  // Show spinner while hydrating
+  if (!_hasHydrated) {
+    return (
+      <div className="flex items-center justify-center h-[100dvh] bg-navy">
+        <div className="animate-spin w-12 h-12 border-4 border-teal border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   // Handle schedule completion -- simulate the week
   const handleScheduleComplete = useCallback(async (confirmedSchedule: WeekSchedule) => {
@@ -184,6 +195,7 @@ export default function GameScreen() {
 
       {phase === 'simulation' && currentScene && (
         <SceneRenderer
+          key={currentScene.id}
           scene={currentScene}
           onSceneEnd={handleSceneEnd}
         />

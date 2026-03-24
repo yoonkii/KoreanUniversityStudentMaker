@@ -64,6 +64,16 @@ export default function SceneRenderer({ scene, onSceneEnd }: SceneRendererProps)
     [onSceneEnd],
   );
 
+  // Deadlock fallback: if stuck on same line for 30s, auto-advance
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!showChoices) {
+        advanceDialogue();
+      }
+    }, 30_000);
+    return () => clearTimeout(timeout);
+  }, [currentLineIndex, showChoices, advanceDialogue]);
+
   // Keyboard navigation
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
