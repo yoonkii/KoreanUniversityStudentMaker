@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/store/gameStore';
+import { useGameStore as useNewStore } from '@/stores/game-store';
 import { simulateWeek } from '@/lib/gameEngine';
 import { calculateTension } from '@/lib/tensionFormula';
 import HUDBar from '@/components/game/HUDBar';
@@ -11,6 +12,8 @@ import SchedulePlanner from '@/components/game/SchedulePlanner';
 import SceneRenderer from '@/components/vn/SceneRenderer';
 import WeekSummary from '@/components/game/WeekSummary';
 import type { Choice, PlayerStats, Scene, WeekSchedule } from '@/store/types';
+import { initializeNPCs } from '@/engine/data/npc-initializer';
+import { CORE_NPC_SHEETS } from '@/engine/data/core-npcs';
 
 /**
  * Fetch an AI-generated scene from the game director API.
@@ -74,7 +77,6 @@ async function fetchAIScene(
 export default function GameScreen() {
   const router = useRouter();
   const {
-    _hasHydrated,
     phase,
     setPhase,
     player,
@@ -92,17 +94,25 @@ export default function GameScreen() {
   } = useGameStore();
 
   const [isLoadingAI, setIsLoadingAI] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
-  // Wait for localStorage hydration before any redirects
+  // Detect hydration: once component mounts on client, Zustand has loaded from localStorage
   useEffect(() => {
-    if (!_hasHydrated) return;
+    // Small delay to ensure Zustand persist has finished rehydrating
+    const timer = setTimeout(() => setHydrated(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Redirect if no player (only after hydration)
+  useEffect(() => {
+    if (!hydrated) return;
     if (!player) {
       router.push('/');
     }
-  }, [_hasHydrated, player, router]);
+  }, [hydrated, player, router]);
 
   // Show spinner while hydrating
-  if (!_hasHydrated) {
+  if (!hydrated) {
     return (
       <div className="flex items-center justify-center h-[100dvh] bg-navy">
         <div className="animate-spin w-12 h-12 border-4 border-teal border-t-transparent rounded-full" />
@@ -121,17 +131,110 @@ export default function GameScreen() {
       setSceneQueue(scenes);
       setPhase('simulation');
     } else {
-      // No hardcoded scenes -- try AI game director for week 3+
+      // No hardcoded scenes -- try 3-tier AI engine (Sprint 3-6) first, fall back to legacy
       setIsLoadingAI(true);
-      const tension = calculateTension(stats, relationships, currentWeek);
-      const aiScene = await fetchAIScene(stats, relationships, currentWeek, tension);
+
+      // Initialize NPCs in the new store if not already done
+      const newState = useNewStore.getState();
+      if (Object.keys(newState.npcs.sheets).length === 0) {
+        const { sheets, states } = initializeNPCs();
+        useNewStore.getState().registerNPCs(sheets, states);
+      }
+
+      // Try the 3-tier AI engine: story director → NPC brains → simulation
+      let aiScene: Scene | null = null;
+      try {
+        // Call story director for tension evaluation
+        const directorRes = await fetch('/api/ai/story-director', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            director: useNewStore.getState().story.director,
+            playerStats: stats,
+            day: currentWeek * 7,
+            npcSummaries: CORE_NPC_SHEETS.slice(0, 4).map(npc => ({
+              id: npc.id, name: npc.name,
+              emotion: 'anticipation (3/10)',
+              goal: npc.goals[0], playerRel: 30,
+            })),
+            recentDayLogs: [],
+            playerActivities: '수업, 공부, 동아리',
+          }),
+        });
+
+        if (directorRes.ok) {
+          const director = await directorRes.json();
+
+          // Pick an NPC to encounter based on director intervention
+          const targetNPC = director.interventions?.[0]?.targetNPC
+            ? CORE_NPC_SHEETS.find(n => n.id === director.interventions[0].targetNPC)
+            : CORE_NPC_SHEETS[Math.floor(Math.random() * CORE_NPC_SHEETS.length)];
+
+          if (targetNPC) {
+            // Call NPC brain with director bias
+            const npcRes = await fetch('/api/ai/npc-brain', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                sheet: targetNPC,
+                state: useNewStore.getState().npcs.states[targetNPC.id] ?? {
+                  npcId: targetNPC.id,
+                  emotion: { primary: 'anticipation', primaryIntensity: 3, secondary: null, secondaryIntensity: 0, mood: 2, stressLevel: 2 },
+                  relationshipToPlayer: { level: 30, attitude: '아직 잘 모르는 사이.', trust: 30 },
+                  npcRelationships: {}, memory: { shortTerm: [], longTerm: [], impressions: {} },
+                  currentGoal: targetNPC.goals[0], currentLocation: targetNPC.primaryLocationIds[0],
+                  recentDecisions: [], secretKnowledge: [],
+                },
+                playerName: player?.name ?? '학생',
+                playerStats: stats,
+                situation: `${currentWeek}주차. 캠퍼스에서 ${targetNPC.name}을(를) 만났다.`,
+                directorBias: director.interventions?.[0]?.description,
+                thinkingLevel: director.interventions?.[0]?.suggestedThinkingLevel ?? 'low',
+                forceChoice: director.choiceRequired,
+              }),
+            });
+
+            if (npcRes.ok) {
+              const npcData = await npcRes.json();
+              aiScene = {
+                id: `ai_3tier_w${currentWeek}_${Date.now()}`,
+                location: targetNPC.primaryLocationIds[0] ?? 'campus',
+                backgroundVariant: 'day',
+                characters: [{
+                  characterId: targetNPC.id.replace('npc_', ''),
+                  expression: npcData.emotion?.type === 'joy' ? 'happy' : 'neutral',
+                  position: 'center' as const,
+                }],
+                dialogue: [{
+                  characterId: targetNPC.id.replace('npc_', ''),
+                  text: npcData.dialogue ?? '...',
+                }],
+                choices: npcData.choice ? npcData.choice.options.map((opt: { label: string; consequences: string }, i: number) => ({
+                  id: `choice_${i}`,
+                  text: opt.label,
+                  statEffects: npcData.statModifiers ?? {},
+                  relationshipEffects: [{ characterId: targetNPC.id.replace('npc_', ''), change: npcData.relationshipDelta ?? 0 }],
+                })) : undefined,
+              };
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('3-tier AI engine failed, falling back to legacy:', e);
+      }
+
+      // Fall back to legacy AI director if 3-tier failed
+      if (!aiScene) {
+        const tension = calculateTension(stats, relationships, currentWeek);
+        aiScene = await fetchAIScene(stats, relationships, currentWeek, tension);
+      }
+
       setIsLoadingAI(false);
 
       if (aiScene) {
         setSceneQueue([aiScene]);
         setPhase('simulation');
       } else {
-        // AI unavailable -- skip directly to summary with stat deltas only
         updateStats(statDeltas);
         setPhase('summary');
       }

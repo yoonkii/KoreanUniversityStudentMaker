@@ -209,13 +209,9 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'kusm-save',
       version: 2,
-      onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true);
-      },
       migrate(persisted: unknown, version: number) {
         const state = persisted as Record<string, unknown>;
         if (version < 2) {
-          // v1 → v2: add currentSceneIndex to persisted state
           return { ...state, currentSceneIndex: 0 } as unknown as GameStore;
         }
         return persisted as GameStore;
@@ -223,3 +219,5 @@ export const useGameStore = create<GameStore>()(
     },
   ),
 );
+
+// Hydration is detected in the component via useEffect — see game/page.tsx
