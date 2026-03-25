@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { checkRelationshipMilestone } from '@/lib/drama-engine';
 import type {
   PlayerStats,
   PlayerProfile,
@@ -56,12 +57,20 @@ interface EventHistoryEntry {
   choiceMade?: string;
 }
 
+interface RelationshipMilestoneNotification {
+  characterId: string;
+  threshold: 30 | 60 | 90;
+  emoji: string;
+  message: string;
+}
+
 interface GameStore {
   // --- State ---
   _hasHydrated: boolean;
   phase: GamePhase;
   player: PlayerProfile | null;
   stats: PlayerStats;
+  prevStats: PlayerStats | null;
   currentWeek: number;
   currentSceneIndex: number;
   relationships: Record<string, CharacterRelationship>;
@@ -72,6 +81,8 @@ interface GameStore {
   gameStarted: boolean;
   eventHistory: EventHistoryEntry[];
   tierNotification: { characterId: string; newTier: RelationshipTier; label: string } | null;
+  relationshipMilestone: RelationshipMilestoneNotification | null;
+  lastDramaEventId: string | null;
   goalWarnings: string[];
 
   // --- Actions ---
@@ -84,6 +95,8 @@ interface GameStore {
   advanceWeek: () => void;
   addEventHistory: (entry: EventHistoryEntry) => void;
   clearTierNotification: () => void;
+  clearRelationshipMilestone: () => void;
+  setLastDramaEventId: (id: string | null) => void;
   getRecentEvents: () => EventHistoryEntry[];
   loadScene: (scene: Scene) => void;
   nextScene: () => void;
@@ -101,6 +114,7 @@ export const useGameStore = create<GameStore>()(
       phase: 'title',
       player: null,
       stats: { ...INITIAL_STATS },
+      prevStats: null,
       currentWeek: 1,
       currentSceneIndex: 0,
       relationships: {},
@@ -111,6 +125,8 @@ export const useGameStore = create<GameStore>()(
       gameStarted: false,
       eventHistory: [],
       tierNotification: null,
+      relationshipMilestone: null,
+      lastDramaEventId: null,
       goalWarnings: [],
 
       // --- Actions ---
@@ -169,7 +185,21 @@ export const useGameStore = create<GameStore>()(
           ? { characterId, newTier, label: TIER_LABELS[newTier] }
           : null;
 
-        set({ relationships: { ...relationships, [characterId]: updated }, ...(tierNotification ? { tierNotification } : {}) });
+        const milestoneCrossed = checkRelationshipMilestone(oldAffection, newAffection);
+        const relationshipMilestone = milestoneCrossed
+          ? {
+              characterId,
+              threshold: milestoneCrossed.threshold as 30 | 60 | 90,
+              emoji: milestoneCrossed.emoji,
+              message: milestoneCrossed.template,
+            }
+          : null;
+
+        set({
+          relationships: { ...relationships, [characterId]: updated },
+          ...(tierNotification ? { tierNotification } : {}),
+          ...(relationshipMilestone ? { relationshipMilestone } : {}),
+        });
       },
 
       setSchedule(schedule) {
@@ -178,6 +208,8 @@ export const useGameStore = create<GameStore>()(
 
       advanceWeek() {
         const { stats, currentWeek } = get();
+        // Save current stats as prevStats before advancing
+        const prevStats = { ...stats };
         // Generate goal warnings based on current stats
         const warnings: string[] = [];
         if (stats.gpa < 30) warnings.push('⚠️ 학점이 위험합니다! 장학금을 잃을 수 있어요.');
@@ -198,6 +230,7 @@ export const useGameStore = create<GameStore>()(
           phase: 'planning',
           goalWarnings: warnings,
           tierNotification: null,
+          prevStats,
         }));
       },
 
@@ -209,6 +242,14 @@ export const useGameStore = create<GameStore>()(
 
       clearTierNotification() {
         set({ tierNotification: null });
+      },
+
+      clearRelationshipMilestone() {
+        set({ relationshipMilestone: null });
+      },
+
+      setLastDramaEventId(id) {
+        set({ lastDramaEventId: id });
       },
 
       getRecentEvents() {
@@ -246,6 +287,7 @@ export const useGameStore = create<GameStore>()(
           phase: 'title',
           player: null,
           stats: { ...INITIAL_STATS },
+          prevStats: null,
           currentWeek: 1,
           currentSceneIndex: 0,
           relationships: {},
@@ -256,17 +298,22 @@ export const useGameStore = create<GameStore>()(
           gameStarted: false,
           eventHistory: [],
           tierNotification: null,
+          relationshipMilestone: null,
+          lastDramaEventId: null,
           goalWarnings: [],
         });
       },
     }),
     {
       name: 'kusm-save',
-      version: 2,
+      version: 3,
       migrate(persisted: unknown, version: number) {
         const state = persisted as Record<string, unknown>;
         if (version < 2) {
           return { ...state, currentSceneIndex: 0 } as unknown as GameStore;
+        }
+        if (version < 3) {
+          return { ...state, prevStats: null, relationshipMilestone: null, lastDramaEventId: null } as unknown as GameStore;
         }
         return persisted as GameStore;
       },

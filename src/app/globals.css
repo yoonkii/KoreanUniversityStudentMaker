@@ -86,3 +86,73 @@
 .break-keep {
   word-break: keep-all;
 }
+
+/* Game juice animations */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-down {
+  animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slideUpIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes scaleBounce {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.1); }
+  70% { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+
+.animate-bounce-in {
+  animation: scaleBounce 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pulseConfirm {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(78, 205, 196, 0.5); }
+  50% { box-shadow: 0 0 0 10px rgba(78, 205, 196, 0); }
+}
+
+.animate-pulse-confirm {
+  animation: pulseConfirm 1.4s ease-in-out infinite;
+}
+
+@keyframes weekSlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-week-in {
+  animation: weekSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes flashGreen {
+  0% { color: inherit; }
+  25% { color: #4ECDC4; }
+  75% { color: #4ECDC4; }
+  100% { color: inherit; }
+}
+
+.animate-flash-green {
+  animation: flashGreen 0.8s ease-in-out forwards;
+}
+
+@keyframes flashRed {
+  0% { color: inherit; }
+  25% { color: #FF6B6B; }
+  75% { color: #FF6B6B; }
+  100% { color: inherit; }
+}
+
+.animate-flash-red {
+  animation: flashRed 0.8s ease-in-out forwards;
+}

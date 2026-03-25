@@ -58,12 +58,13 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
   const setSchedule = useGameStore((state) => state.setSchedule);
   const [selectedDay, setSelectedDay] = useState<DayKey>('monday');
   const [slots, setSlots] = useState<Partial<Record<SlotKey, string>>>({});
+  const [lastFilledKey, setLastFilledKey] = useState<SlotKey | null>(null);
 
   const assignActivity = useCallback((day: DayKey, time: TimeSlot, activityId: string) => {
-    setSlots((prev) => ({
-      ...prev,
-      [makeKey(day, time)]: activityId,
-    }));
+    const key = makeKey(day, time);
+    setSlots((prev) => ({ ...prev, [key]: activityId }));
+    setLastFilledKey(key);
+    setTimeout(() => setLastFilledKey(null), 400);
   }, []);
 
   const clearSlot = useCallback((day: DayKey, time: TimeSlot) => {
@@ -153,7 +154,7 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
 
               {activity ? (
                 <div
-                  className="flex items-center gap-3 rounded-xl px-4 py-3"
+                  className={`flex items-center gap-3 rounded-xl px-4 py-3 ${lastFilledKey === key ? 'animate-bounce-in' : ''}`}
                   style={{ backgroundColor: `${colorHex}15`, borderLeft: `3px solid ${colorHex}` }}
                 >
                   <iconify-icon icon={activity.icon} width="22" height="22" />
@@ -209,7 +210,7 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
         <button
           onClick={handleConfirm}
           disabled={totalScheduled === 0}
-          className="w-full py-3 rounded-xl font-semibold text-base transition-all duration-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-teal/20 text-teal border border-teal/30 hover:bg-teal/30 active:scale-[0.98]"
+          className={`w-full py-3 rounded-xl font-semibold text-base transition-all duration-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-teal/20 text-teal border border-teal/30 hover:bg-teal/30 active:scale-[0.98] ${totalScheduled >= 21 ? 'animate-pulse-confirm' : ''}`}
         >
           스케줄 확정 ({totalScheduled}개 활동)
         </button>

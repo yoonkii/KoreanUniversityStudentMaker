@@ -1,6 +1,7 @@
 'use client';
 
 import { useGameStore } from '@/store/gameStore';
+import { getDramaLevel } from '@/lib/drama-engine';
 
 const SEMESTER_WEEKS = 16;
 
@@ -34,10 +35,18 @@ function getStressColor(stress: number): string {
   return 'text-green-400';
 }
 
+const DRAMA_LEVEL_COLORS: Record<'low' | 'medium' | 'high', string> = {
+  low: 'text-teal',
+  medium: 'text-gold',
+  high: 'text-coral animate-pulse',
+};
+
 export default function HUDBar() {
   const currentWeek = useGameStore((state) => state.currentWeek);
   const stats = useGameStore((state) => state.stats);
   const stress = stats?.stress ?? 0;
+
+  const drama = getDramaLevel(stress, stats?.health ?? 100, stats?.money ?? 999999, currentWeek);
 
   return (
     <>
@@ -55,29 +64,24 @@ export default function HUDBar() {
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           {/* Left: Calendar + semester info */}
           <div className="flex items-center gap-2 text-sm">
-            <iconify-icon
-              icon="solar:calendar-bold"
-              width="18"
-              height="18"
-              className="text-teal"
-            />
-            <span className="text-txt-primary font-medium">
+            <iconify-icon icon="solar:calendar-bold" width="18" height="18" className="text-teal" />
+            <span key={currentWeek} className="text-txt-primary font-medium animate-week-in">
               {getSemesterLabel(currentWeek)}
             </span>
           </div>
 
-          {/* Center: Stress indicator */}
+          {/* Center: Drama / tension meter */}
+          <div className={`flex items-center gap-1.5 text-sm ${DRAMA_LEVEL_COLORS[drama.level]}`}>
+            <span>{drama.emoji}</span>
+            <span className="text-xs font-medium hidden sm:inline">{drama.label}</span>
+          </div>
+
+          {/* Right: Stress indicator */}
           <div className="flex items-center gap-1.5 text-sm">
             <span className={getStressColor(stress)}>{getStressEmoji(stress)}</span>
             <span className={`font-mono text-xs ${getStressColor(stress)}`}>
               {Math.round(stress)}
             </span>
-          </div>
-
-          {/* Right: Day of week */}
-          <div className="flex items-center gap-2 text-sm text-txt-secondary">
-            <iconify-icon icon="solar:clock-circle-bold" width="16" height="16" />
-            <span>{getDayOfWeek(currentWeek)}</span>
           </div>
         </div>
       </div>

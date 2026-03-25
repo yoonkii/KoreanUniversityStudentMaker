@@ -6,6 +6,8 @@ import { useGameStore } from '@/store/gameStore';
 import { useGameStore as useNewStore } from '@/stores/game-store';
 import { simulateWeek } from '@/lib/gameEngine';
 import { calculateTension } from '@/lib/tensionFormula';
+import { checkDramaTriggers } from '@/lib/drama-engine';
+import type { DramaEvent } from '@/lib/drama-engine';
 import HUDBar from '@/components/game/HUDBar';
 import StatsSidebar from '@/components/game/StatsSidebar';
 import SchedulePlanner from '@/components/game/SchedulePlanner';
@@ -81,6 +83,7 @@ export default function GameScreen() {
     setPhase,
     player,
     stats,
+    prevStats,
     currentWeek,
     currentSceneIndex,
     setCurrentSceneIndex,
@@ -91,10 +94,13 @@ export default function GameScreen() {
     updateRelationship,
     relationships,
     advanceWeek,
+    lastDramaEventId,
+    setLastDramaEventId,
   } = useGameStore();
 
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [pendingDrama, setPendingDrama] = useState<DramaEvent | null>(null);
 
   // Detect hydration: once component mounts on client, Zustand has loaded from localStorage
   useEffect(() => {
@@ -271,14 +277,30 @@ export default function GameScreen() {
     }
   }, [currentSceneIndex, sceneQueue, currentWeek, setCurrentSceneIndex, updateStats, updateRelationship, setPhase]);
 
-  // Handle week advance
+  // Handle week advance — check for drama events first
   const handleWeekContinue = useCallback(() => {
+    const excludeIds = lastDramaEventId ? [lastDramaEventId] : [];
+    const drama = checkDramaTriggers(stats, prevStats, relationships, currentWeek, excludeIds);
+    if (drama) {
+      // Apply stat effects immediately, then show popup before advancing
+      if (drama.effect) updateStats(drama.effect);
+      setLastDramaEventId(drama.id);
+      setPendingDrama(drama);
+    } else {
+      advanceWeek();
+    }
+  }, [advanceWeek, stats, prevStats, relationships, currentWeek, lastDramaEventId, setLastDramaEventId, updateStats]);
+
+  const handleDramaConfirm = useCallback(() => {
+    setPendingDrama(null);
     advanceWeek();
   }, [advanceWeek]);
 
   const goalWarnings = useGameStore((state) => state.goalWarnings);
   const tierNotification = useGameStore((state) => state.tierNotification);
   const clearTierNotification = useGameStore((state) => state.clearTierNotification);
+  const relationshipMilestone = useGameStore((state) => state.relationshipMilestone);
+  const clearRelationshipMilestone = useGameStore((state) => state.clearRelationshipMilestone);
 
   if (!player) return null;
 
@@ -286,8 +308,39 @@ export default function GameScreen() {
 
   return (
     <div className="min-h-[100dvh] bg-navy relative">
+      {/* Drama event popup — shown between weeks */}
+      {pendingDrama && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="glass-strong rounded-2xl p-8 max-w-sm w-full mx-4 shadow-2xl border border-white/10 animate-slide-up text-center">
+            <div className="text-5xl mb-4">{pendingDrama.emoji}</div>
+            <p className="text-lg font-semibold text-txt-primary mb-2 break-keep">{pendingDrama.event}</p>
+            {pendingDrama.npcInvolved && (
+              <p className="text-sm text-txt-secondary mb-6">{pendingDrama.npcInvolved} 관련</p>
+            )}
+            {!pendingDrama.npcInvolved && <div className="mb-6" />}
+            <button onClick={handleDramaConfirm} className="w-full py-2.5 rounded-xl font-semibold text-sm bg-teal/20 text-teal border border-teal/30 hover:bg-teal/30 transition-all cursor-pointer">
+              계속하기
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Relationship milestone toast */}
+      {relationshipMilestone && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-slide-down">
+          <div className="glass-strong px-6 py-3 rounded-xl flex items-center gap-3 shadow-2xl border border-pink/30">
+            <span className="text-2xl">{relationshipMilestone.emoji}</span>
+            <div>
+              <div className="text-sm font-bold text-pink">{relationshipMilestone.characterId} {relationshipMilestone.message}</div>
+              <div className="text-xs text-txt-secondary">관계 {relationshipMilestone.threshold}점 달성</div>
+            </div>
+            <button onClick={clearRelationshipMilestone} className="text-txt-secondary hover:text-txt-primary ml-2">✕</button>
+          </div>
+        </div>
+      )}
+
       {/* Relationship tier notification toast */}
-      {tierNotification && (
+      {tierNotification && !relationshipMilestone && (
         <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-slide-down">
           <div className="glass-strong px-6 py-3 rounded-xl flex items-center gap-3 shadow-2xl border border-teal/30">
             <span className="text-2xl">💫</span>

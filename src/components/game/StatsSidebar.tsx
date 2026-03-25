@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import ProgressBar from '@/components/ui/ProgressBar';
 import GlassPanel from '@/components/ui/GlassPanel';
@@ -32,6 +33,17 @@ function StatRow({ icon, label, children }: StatRowProps) {
 
 export default function StatsSidebar() {
   const stats = useGameStore((state) => state.stats);
+  const prevMoneyRef = useRef<number>(stats.money);
+  const [moneyFlash, setMoneyFlash] = useState<'green' | 'red' | null>(null);
+
+  useEffect(() => {
+    if (stats.money !== prevMoneyRef.current) {
+      setMoneyFlash(stats.money > prevMoneyRef.current ? 'green' : 'red');
+      prevMoneyRef.current = stats.money;
+      const t = setTimeout(() => setMoneyFlash(null), 800);
+      return () => clearTimeout(t);
+    }
+  }, [stats.money]);
 
   return (
     <div className="fixed left-0 top-14 bottom-0 hidden lg:block w-64 z-20 p-4">
@@ -62,7 +74,9 @@ export default function StatsSidebar() {
 
         {/* Money - number only, no progress bar */}
         <StatRow icon="solar:wallet-bold" label="돈">
-          <span className="text-sm text-teal font-medium">{formatMoney(stats.money)}</span>
+          <span className={`text-sm font-medium ${moneyFlash === 'green' ? 'animate-flash-green text-teal' : moneyFlash === 'red' ? 'animate-flash-red text-coral' : 'text-teal'}`}>
+            {formatMoney(stats.money)}
+          </span>
         </StatRow>
 
         {/* Stress */}
