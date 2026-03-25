@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getCharacterName } from '@/data/characters';
+import { NPCPortrait } from '@/components/game/npc-portrait';
 
 interface DialogueBoxProps {
   characterId: string | null;
@@ -89,18 +90,10 @@ export default function DialogueBox({ characterId, text, onContinue }: DialogueB
         }
       }}
     >
-      {/* Speaker name */}
-      <div className="mb-3">
-        <span
-          className="inline-block px-3 py-1 rounded-full text-sm font-semibold"
-          style={
-            nameStyle ?? {
-              color: 'var(--color-txt-secondary)',
-            }
-          }
-        >
-          {speakerName}
-        </span>
+      {/* Speaker name + portrait */}
+      <div className="mb-3 flex items-center gap-2">
+        {characterId && <NPCPortrait npcId={`npc_${characterId}`} npcName={speakerName} size="sm" />}
+        <span className="inline-block px-3 py-1 rounded-full text-sm font-semibold" style={nameStyle ?? { color: 'var(--color-txt-secondary)' }}>{speakerName}</span>
       </div>
 
       {/* Dialogue text */}

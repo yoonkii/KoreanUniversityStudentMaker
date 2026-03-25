@@ -104,6 +104,11 @@ export const LEGACY_ID_MAP: Record<string, string> = {
   'work-out': 'exercise',
   'take-rest': 'rest',
   'meet-friends': 'social',
+  // data/activities.ts IDs
+  lecture: 'class',
+  parttime: 'work',
+  friends: 'social',
+  club: 'club',
 };
 
 export function getActivityVisual(id: string): ActivityVisual {

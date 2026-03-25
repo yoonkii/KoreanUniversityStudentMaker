@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/store/gameStore';
 import { useGameStore as useNewStore } from '@/stores/game-store';
@@ -11,9 +11,47 @@ import StatsSidebar from '@/components/game/StatsSidebar';
 import SchedulePlanner from '@/components/game/SchedulePlanner';
 import SceneRenderer from '@/components/vn/SceneRenderer';
 import WeekSummary from '@/components/game/WeekSummary';
-import type { Choice, PlayerStats, Scene, WeekSchedule } from '@/store/types';
+import ActionPhase from '@/components/game/ActionPhase';
+import SceneTransition from '@/components/game/SceneTransition';
+import { ArtLoadingScreen } from '@/components/game/art-loading-screen';
+import { DayResult } from '@/components/game/day-result';
+import { NarrativePanel } from '@/components/game/narrative-panel';
+import { ACTIVITIES } from '@/data/activities';
+import { getActivityVisual } from '@/lib/activityColors';
+import type { Choice, PlayerStats, Scene, WeekSchedule, DayKey } from '@/store/types';
+import type { PlayerStats as EnginePlayerStats } from '@/engine/types/stats';
 import { initializeNPCs } from '@/engine/data/npc-initializer';
 import { CORE_NPC_SHEETS } from '@/engine/data/core-npcs';
+
+type ActivityExecItem = { name: string; icon: string; statEffects: Partial<PlayerStats>; timeSlot: string };
+
+/** Convert store PlayerStats → engine PlayerStats for DayResult */
+function toEngineStats(s: PlayerStats): EnginePlayerStats {
+  return {
+    gpa: s.gpa,
+    energy: s.health,
+    social: s.social,
+    finances: Math.min(100, Math.round(s.money / 5000)),
+    career: s.charm,
+    mental: Math.max(0, 100 - s.stress),
+  };
+}
+
+/** Map scene location string to a canonical activity ID for SceneTransition */
+function locationToActivityId(location: string): string {
+  const l = location.toLowerCase();
+  if (l.includes('class') || l.includes('campus')) return 'class';
+  if (l.includes('library') || l.includes('study')) return 'study';
+  if (l.includes('gym') || l.includes('exercise')) return 'exercise';
+  if (l.includes('cafe') || l.includes('restaurant')) return 'social';
+  if (l.includes('date') || l.includes('park')) return 'date';
+  if (l.includes('club')) return 'club';
+  if (l.includes('work') || l.includes('part')) return 'work';
+  if (l.includes('dorm') || l.includes('home') || l.includes('rest')) return 'rest';
+  return 'social';
+}
+
+const DAY_ORDER: DayKey[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 /**
  * Fetch an AI-generated scene from the game director API.
@@ -93,12 +131,32 @@ export default function GameScreen() {
     advanceWeek,
   } = useGameStore();
 
+  // ── local UI state ──────────────────────────────────────────────────────────
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
-  // Detect hydration: once component mounts on client, Zustand has loaded from localStorage
+  /** Activities shown in ActionPhase; null = ActionPhase hidden */
+  const [actionActivities, setActionActivities] = useState<ActivityExecItem[] | null>(null);
+
+  /** Narrative intro text shown at the start of each simulation */
+  const [showNarrative, setShowNarrative] = useState(false);
+  const [narrativeText, setNarrativeText] = useState('');
+
+  /** Scene-to-scene transition */
+  const [showTransition, setShowTransition] = useState(false);
+  const [transitionNextIdx, setTransitionNextIdx] = useState(0);
+
+  /** Day/week result overlay */
+  const [showDayResult, setShowDayResult] = useState(false);
+  const [weekResultStats, setWeekResultStats] = useState<{ before: PlayerStats; after: PlayerStats } | null>(null);
+
+  // Resolves the promise that handleScheduleComplete awaits while ActionPhase plays
+  const actionDoneRef = useRef<(() => void) | null>(null);
+
+  // ── effects ─────────────────────────────────────────────────────────────────
+
+  // Detect hydration
   useEffect(() => {
-    // Small delay to ensure Zustand persist has finished rehydrating
     const timer = setTimeout(() => setHydrated(true), 100);
     return () => clearTimeout(timer);
   }, []);
@@ -111,6 +169,8 @@ export default function GameScreen() {
     }
   }, [hydrated, player, router]);
 
+  // ── early returns (all hooks above this line) ────────────────────────────────
+
   // Show spinner while hydrating
   if (!hydrated) {
     return (
@@ -120,18 +180,67 @@ export default function GameScreen() {
     );
   }
 
-  // Handle schedule completion -- simulate the week
+  // ── callbacks ────────────────────────────────────────────────────────────────
+
+  // Called by ActionPhase when it finishes (or is skipped)
+  const handleActionPhaseComplete = useCallback(() => {
+    actionDoneRef.current?.();
+    actionDoneRef.current = null;
+  }, []);
+
+  // Called by SceneTransition when the wipe animation finishes
+  const handleTransitionEnd = useCallback(() => {
+    setShowTransition(false);
+    setCurrentSceneIndex(transitionNextIdx);
+  }, [transitionNextIdx, setCurrentSceneIndex]);
+
+  // Called by DayResult continue button
+  const handleDayResultContinue = useCallback(() => {
+    setShowDayResult(false);
+    setWeekResultStats(null);
+    setPhase('summary');
+  }, [setPhase]);
+
+  // Handle schedule confirmation — shows ActionPhase first, then simulates week
   const handleScheduleComplete = useCallback(async (confirmedSchedule: WeekSchedule) => {
+    // Build activity list for ActionPhase
+    const activities: ActivityExecItem[] = [];
+    for (const day of DAY_ORDER) {
+      for (const slot of confirmedSchedule[day]) {
+        const act = ACTIVITIES[slot.activityId];
+        const vis = getActivityVisual(slot.activityId);
+        activities.push({
+          name: vis.name,
+          icon: vis.icon,
+          statEffects: act?.statEffects ?? {},
+          timeSlot: slot.timeSlot,
+        });
+      }
+    }
+
+    // Show ActionPhase and wait for the player to watch / skip it
+    if (activities.length > 0) {
+      setActionActivities(activities);
+      await new Promise<void>(resolve => { actionDoneRef.current = resolve; });
+      setActionActivities(null);
+    }
+
+    // Simulate the week (uses stats/currentWeek captured at call time — correct)
     const { statDeltas, scenes } = simulateWeek(confirmedSchedule, currentWeek, stats);
     setWeekStatDeltas(statDeltas);
     setCurrentSceneIndex(0);
 
+    // Build a narrative intro for the simulation phase
+    const topNames = activities.slice(0, 3).map(a => a.name).join(', ');
+    setNarrativeText(`${currentWeek}주차. ${topNames}${activities.length > 3 ? ' 외 활동' : ''}을 마쳤다. 이번 주는 어떤 일이 기다리고 있을까?`);
+
     if (scenes.length > 0) {
-      // Hardcoded scenes available (weeks 1-2)
+      // Hardcoded scenes available (weeks 1–2)
       setSceneQueue(scenes);
       setPhase('simulation');
+      setShowNarrative(true);
     } else {
-      // No hardcoded scenes -- try 3-tier AI engine (Sprint 3-6) first, fall back to legacy
+      // No hardcoded scenes — try 3-tier AI engine first, fall back to legacy
       setIsLoadingAI(true);
 
       // Initialize NPCs in the new store if not already done
@@ -141,10 +250,8 @@ export default function GameScreen() {
         useNewStore.getState().registerNPCs(sheets, states);
       }
 
-      // Try the 3-tier AI engine: story director → NPC brains → simulation
       let aiScene: Scene | null = null;
       try {
-        // Call story director for tension evaluation
         const directorRes = await fetch('/api/ai/story-director', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -158,20 +265,18 @@ export default function GameScreen() {
               goal: npc.goals[0], playerRel: 30,
             })),
             recentDayLogs: [],
-            playerActivities: '수업, 공부, 동아리',
+            playerActivities: topNames,
           }),
         });
 
         if (directorRes.ok) {
           const director = await directorRes.json();
 
-          // Pick an NPC to encounter based on director intervention
           const targetNPC = director.interventions?.[0]?.targetNPC
             ? CORE_NPC_SHEETS.find(n => n.id === director.interventions[0].targetNPC)
             : CORE_NPC_SHEETS[Math.floor(Math.random() * CORE_NPC_SHEETS.length)];
 
           if (targetNPC) {
-            // Call NPC brain with director bias
             const npcRes = await fetch('/api/ai/npc-brain', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -234,14 +339,15 @@ export default function GameScreen() {
       if (aiScene) {
         setSceneQueue([aiScene]);
         setPhase('simulation');
+        setShowNarrative(true);
       } else {
         updateStats(statDeltas);
         setPhase('summary');
       }
     }
-  }, [currentWeek, stats, relationships, setWeekStatDeltas, setSceneQueue, setCurrentSceneIndex, setPhase, updateStats]);
+  }, [currentWeek, stats, relationships, setWeekStatDeltas, setSceneQueue, setCurrentSceneIndex, setPhase, updateStats, player]);
 
-  // Handle scene end -- move to next scene or summary
+  // Handle scene end — transition to next scene or show day result
   const handleSceneEnd = useCallback((choice?: Choice) => {
     // Apply choice effects
     if (choice) {
@@ -253,14 +359,26 @@ export default function GameScreen() {
 
     const nextIndex = currentSceneIndex + 1;
     if (nextIndex < sceneQueue.length) {
-      setCurrentSceneIndex(nextIndex);
+      // Show wipe transition before next scene
+      setTransitionNextIdx(nextIndex);
+      setShowTransition(true);
     } else {
-      // All scenes done -- apply weekly stat deltas and show summary
+      // All scenes done — compute before/after stats for DayResult
+      const currentStats = useGameStore.getState().stats;
       const weekDeltas = useGameStore.getState().weekStatDeltas;
+      const afterStats: PlayerStats = {
+        gpa: Math.max(0, Math.min(100, currentStats.gpa + (weekDeltas.gpa ?? 0))),
+        money: Math.max(0, currentStats.money + (weekDeltas.money ?? 0)),
+        health: Math.max(0, Math.min(100, currentStats.health + (weekDeltas.health ?? 0))),
+        social: Math.max(0, Math.min(100, currentStats.social + (weekDeltas.social ?? 0))),
+        stress: Math.max(0, Math.min(100, currentStats.stress + (weekDeltas.stress ?? 0))),
+        charm: Math.max(0, Math.min(100, currentStats.charm + (weekDeltas.charm ?? 0))),
+      };
       updateStats(weekDeltas);
-      setPhase('summary');
+      setWeekResultStats({ before: currentStats, after: afterStats });
+      setShowDayResult(true);
     }
-  }, [currentSceneIndex, sceneQueue.length, setCurrentSceneIndex, updateStats, updateRelationship, setPhase]);
+  }, [currentSceneIndex, sceneQueue.length, updateStats, updateRelationship]);
 
   // Handle week advance
   const handleWeekContinue = useCallback(() => {
@@ -270,40 +388,60 @@ export default function GameScreen() {
   if (!player) return null;
 
   const currentScene = sceneQueue[currentSceneIndex];
+  const nextSceneForTransition = sceneQueue[transitionNextIdx];
 
   return (
     <div className="min-h-[100dvh] bg-navy relative">
-      {/* HUD -- always visible except during scenes */}
-      {phase !== 'simulation' && <HUDBar />}
+      {/* HUD — always visible except during simulation / overlays */}
+      {phase !== 'simulation' && !actionActivities && <HUDBar />}
 
-      {/* Stats sidebar -- visible during planning and summary */}
-      {(phase === 'planning' || phase === 'summary') && <StatsSidebar />}
+      {/* Stats sidebar — visible during planning and summary */}
+      {(phase === 'planning' || phase === 'summary') && !actionActivities && <StatsSidebar />}
 
-      {/* Main content */}
-      {phase === 'planning' && (
+      {/* Planning phase */}
+      {phase === 'planning' && !actionActivities && (
         <div className="lg:ml-72 pt-16">
           <SchedulePlanner onComplete={handleScheduleComplete} />
         </div>
       )}
 
-      {/* AI loading indicator */}
-      {isLoadingAI && (
-        <div className="flex items-center justify-center h-[100dvh]">
-          <div className="text-center">
-            <div className="animate-spin w-12 h-12 border-4 border-teal border-t-transparent rounded-full mx-auto mb-4" />
-            <p className="text-txt-secondary text-lg">AI Game Director is creating your story...</p>
+      {/* ActionPhase: full-screen activity playback between planning and simulation */}
+      {actionActivities && (
+        <ActionPhase activities={actionActivities} currentStats={stats} onComplete={handleActionPhaseComplete} />
+      )}
+
+      {/* ArtLoadingScreen: shown while AI is generating the scene */}
+      {isLoadingAI && <ArtLoadingScreen onComplete={() => {}} />}
+
+      {/* NarrativePanel: story intro before the first VN scene each week */}
+      {phase === 'simulation' && showNarrative && (
+        <div className="fixed inset-0 z-40 bg-navy flex items-end justify-center pb-16 px-4">
+          <div className="w-full max-w-2xl">
+            <NarrativePanel narrative={narrativeText} onContinue={() => setShowNarrative(false)} lang="ko" />
           </div>
         </div>
       )}
 
-      {phase === 'simulation' && currentScene && (
-        <SceneRenderer
-          key={currentScene.id}
-          scene={currentScene}
-          onSceneEnd={handleSceneEnd}
-        />
+      {/* VN Scene — hidden while narrative or transition is showing */}
+      {phase === 'simulation' && currentScene && !showNarrative && !showTransition && (
+        <SceneRenderer key={currentScene.id} scene={currentScene} onSceneEnd={handleSceneEnd} />
       )}
 
+      {/* SceneTransition: wipe between consecutive VN scenes */}
+      {showTransition && nextSceneForTransition && (
+        <SceneTransition activityId={locationToActivityId(nextSceneForTransition.location)} dayLabel={`${currentWeek}주차`} timeLabel="" current={transitionNextIdx} total={sceneQueue.length} onTransitionEnd={handleTransitionEnd} />
+      )}
+
+      {/* DayResult: stat summary after all scenes finish */}
+      {showDayResult && weekResultStats && (
+        <div className="fixed inset-0 z-50 bg-navy/95 p-4 overflow-y-auto flex items-center justify-center">
+          <div className="w-full max-w-md">
+            <DayResult beforeStats={toEngineStats(weekResultStats.before)} afterStats={toEngineStats(weekResultStats.after)} narrative={`${currentWeek}주차가 끝났습니다.`} onContinue={handleDayResultContinue} lang="ko" />
+          </div>
+        </div>
+      )}
+
+      {/* Weekly summary */}
       {phase === 'summary' && (
         <div className="lg:ml-72 pt-16">
           <WeekSummary onContinue={handleWeekContinue} />

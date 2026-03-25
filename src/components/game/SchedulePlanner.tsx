@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { ACTIVITIES, ACTIVITY_LIST } from '@/data/activities';
+import { getActivityVisual } from '@/lib/activityColors';
 import GlassPanel from '@/components/ui/GlassPanel';
 import type { DayKey, TimeSlot, WeekSchedule, ActivitySlot } from '@/store/types';
 
@@ -36,16 +37,6 @@ const TIME_LABELS: Record<TimeSlot, string> = {
   morning: '오전',
   afternoon: '오후',
   evening: '저녁',
-};
-
-/** Map activity color names to hex values for inline styles */
-const ACTIVITY_COLOR_HEX: Record<string, string> = {
-  teal: '#4ECDC4',
-  gold: '#FFD166',
-  pink: '#F5A0B5',
-  coral: '#FF6B6B',
-  lavender: '#A78BFA',
-  'txt-secondary': '#8B95A8',
 };
 
 type SlotKey = `${DayKey}-${TimeSlot}`;
@@ -133,7 +124,7 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
           const key = makeKey(selectedDay, time);
           const activityId = slots[key];
           const activity = activityId ? ACTIVITIES[activityId] : null;
-          const colorHex = activity ? ACTIVITY_COLOR_HEX[activity.color] ?? '#8B95A8' : undefined;
+          const colorHex = activity ? getActivityVisual(activity.id).color : undefined;
 
           return (
             <GlassPanel key={time} variant="standard" className="p-4">
@@ -177,7 +168,7 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
         <p className="text-sm text-txt-secondary mb-2">활동 목록</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
           {ACTIVITY_LIST.map((activity) => {
-            const colorHex = ACTIVITY_COLOR_HEX[activity.color] ?? '#8B95A8';
+            const colorHex = getActivityVisual(activity.id).color;
             // Find first empty slot for selected day to assign into
             const emptyTime = TIME_SLOTS.find((t) => !slots[makeKey(selectedDay, t)]);
 
