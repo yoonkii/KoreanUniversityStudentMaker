@@ -101,10 +101,7 @@ export default function Home() {
           <div className="flex flex-col gap-3 w-72 mt-6">
             <button
               onClick={handleNewGame}
-              className="w-full py-4 bg-white/15 backdrop-blur-md text-white rounded-2xl font-bold text-lg
-                         border border-white/20 hover:bg-white/25 hover:border-white/40
-                         shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)]
-                         transition-all duration-300 active:scale-[0.97]"
+              className="w-full py-4 bg-white/15 backdrop-blur-md text-white rounded-2xl font-bold text-lg border border-white/20 hover:bg-white/25 hover:border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)] transition-all duration-300 active:scale-[0.97]"
             >
               새 게임
             </button>
@@ -112,9 +109,7 @@ export default function Home() {
             {canContinue && (
               <button
                 onClick={handleContinue}
-                className="w-full py-4 bg-white/5 backdrop-blur-md text-white/80 rounded-2xl font-bold text-lg
-                           border border-white/10 hover:bg-white/15 hover:text-white hover:border-white/25
-                           transition-all duration-300 active:scale-[0.97]"
+                className="w-full py-4 bg-white/5 backdrop-blur-md text-white/80 rounded-2xl font-bold text-lg border border-white/10 hover:bg-white/15 hover:text-white hover:border-white/25 transition-all duration-300 active:scale-[0.97]"
               >
                 이어하기
               </button>

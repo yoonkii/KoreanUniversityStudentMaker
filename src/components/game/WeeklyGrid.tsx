@@ -323,9 +323,7 @@ export default function WeeklyGrid({ lockedCells, stats, onConfirm }: WeeklyGrid
           {/* Confirm button */}
           <button
             onClick={handleConfirm}
-            className="w-full py-3 bg-teal text-white rounded-xl font-bold text-lg
-                       hover:bg-teal/90 transition-all active:scale-[0.97]
-                       shadow-[0_4px_20px_rgba(20,184,166,0.3)]"
+            className="w-full py-3 bg-teal text-white rounded-xl font-bold text-lg hover:bg-teal/90 transition-all active:scale-[0.97] shadow-[0_4px_20px_rgba(20,184,166,0.3)]"
           >
             스케줄 확정 ({filledCount}개 활동)
           </button>
