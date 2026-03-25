@@ -24,6 +24,7 @@ async function fetchAIScene(
   relationships: Record<string, unknown>,
   currentWeek: number,
   tension: number,
+  recentEvents: string[],
 ): Promise<Scene | null> {
   try {
     const response = await fetch('/api/game-director', {
@@ -34,7 +35,8 @@ async function fetchAIScene(
         relationships,
         currentWeek,
         tension,
-        recentEvents: [],
+        recentEvents,
+        npcPersonalities: CORE_NPC_SHEETS.slice(0, 4).map(npc => ({ name: npc.name, role: npc.role, speechPattern: npc.speechPattern, goals: npc.goals })),
       }),
     });
 
@@ -141,23 +143,28 @@ export default function GameScreen() {
         useNewStore.getState().registerNPCs(sheets, states);
       }
 
+      // Pull real event history from the new store (last 3 day log entries)
+      const newStoreState = useNewStore.getState();
+      const recentDayLogs = newStoreState.story.dayLog.slice(-3).map((log: { summary: string }) => log.summary);
+
       // Try the 3-tier AI engine: story director → NPC brains → simulation
       let aiScene: Scene | null = null;
       try {
+
         // Call story director for tension evaluation
         const directorRes = await fetch('/api/ai/story-director', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            director: useNewStore.getState().story.director,
+            director: newStoreState.story.director,
             playerStats: stats,
             day: currentWeek * 7,
             npcSummaries: CORE_NPC_SHEETS.slice(0, 4).map(npc => ({
               id: npc.id, name: npc.name,
               emotion: 'anticipation (3/10)',
-              goal: npc.goals[0], playerRel: 30,
+              goal: npc.goals[0], playerRel: relationships[npc.id.replace('npc_', '')]?.affection ?? 30,
             })),
-            recentDayLogs: [],
+            recentDayLogs,
             playerActivities: '수업, 공부, 동아리',
           }),
         });
@@ -171,23 +178,37 @@ export default function GameScreen() {
             : CORE_NPC_SHEETS[Math.floor(Math.random() * CORE_NPC_SHEETS.length)];
 
           if (targetNPC) {
+            // Build a rich situation string with semester phase + player danger context
+            const semesterPhase = currentWeek <= 2 ? '오리엔테이션' : currentWeek <= 6 ? '적응기' : currentWeek <= 8 ? '중간고사 시즌' : currentWeek <= 12 ? '후반기' : '기말고사 시즌';
+            const dangerFlags: string[] = [];
+            if (stats.health < 25) dangerFlags.push('체력이 바닥');
+            if (stats.stress > 75) dangerFlags.push('스트레스가 한계');
+            if (stats.money < 50000) dangerFlags.push('돈이 거의 없음');
+            if (stats.social < 25) dangerFlags.push('인간관계가 소원');
+            const relAffection = relationships[targetNPC.id.replace('npc_', '')]?.affection ?? 30;
+            const relDesc = relAffection >= 70 ? '친밀한 사이' : relAffection >= 40 ? '아는 사이' : '아직 잘 모르는 사이';
+            const situationParts = [`${currentWeek}주차 (${semesterPhase}).`, `캠퍼스에서 ${targetNPC.name}을(를) 만났다.`, `관계: ${relDesc} (${relAffection}/100).`];
+            if (dangerFlags.length > 0) situationParts.push(`플레이어 상태: ${dangerFlags.join(', ')} — 이 긴장감이 대화에 배어나야 한다.`);
+            if (recentDayLogs.length > 0) situationParts.push(`최근 있었던 일: ${recentDayLogs[recentDayLogs.length - 1]}`);
+            const richSituation = situationParts.join(' ');
+
             // Call NPC brain with director bias
             const npcRes = await fetch('/api/ai/npc-brain', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 sheet: targetNPC,
-                state: useNewStore.getState().npcs.states[targetNPC.id] ?? {
+                state: newStoreState.npcs.states[targetNPC.id] ?? {
                   npcId: targetNPC.id,
                   emotion: { primary: 'anticipation', primaryIntensity: 3, secondary: null, secondaryIntensity: 0, mood: 2, stressLevel: 2 },
-                  relationshipToPlayer: { level: 30, attitude: '아직 잘 모르는 사이.', trust: 30 },
+                  relationshipToPlayer: { level: relAffection, attitude: relDesc, trust: relAffection },
                   npcRelationships: {}, memory: { shortTerm: [], longTerm: [], impressions: {} },
                   currentGoal: targetNPC.goals[0], currentLocation: targetNPC.primaryLocationIds[0],
                   recentDecisions: [], secretKnowledge: [],
                 },
                 playerName: player?.name ?? '학생',
                 playerStats: stats,
-                situation: `${currentWeek}주차. 캠퍼스에서 ${targetNPC.name}을(를) 만났다.`,
+                situation: richSituation,
                 directorBias: director.interventions?.[0]?.description,
                 thinkingLevel: director.interventions?.[0]?.suggestedThinkingLevel ?? 'low',
                 forceChoice: director.choiceRequired,
@@ -226,7 +247,7 @@ export default function GameScreen() {
       // Fall back to legacy AI director if 3-tier failed
       if (!aiScene) {
         const tension = calculateTension(stats, relationships, currentWeek);
-        aiScene = await fetchAIScene(stats, relationships, currentWeek, tension);
+        aiScene = await fetchAIScene(stats, relationships, currentWeek, tension, recentDayLogs);
       }
 
       setIsLoadingAI(false);
@@ -262,10 +283,14 @@ export default function GameScreen() {
     }
   }, [currentSceneIndex, sceneQueue.length, setCurrentSceneIndex, updateStats, updateRelationship, setPhase]);
 
-  // Handle week advance
+  // Handle week advance — after week 16 navigate to ending screen
   const handleWeekContinue = useCallback(() => {
-    advanceWeek();
-  }, [advanceWeek]);
+    if (currentWeek >= 16) {
+      router.push('/game/ending');
+    } else {
+      advanceWeek();
+    }
+  }, [advanceWeek, currentWeek, router]);
 
   if (!player) return null;
 

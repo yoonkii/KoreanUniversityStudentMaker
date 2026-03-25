@@ -103,10 +103,12 @@ export function buildNPCSituationPrompt(
   situation: string,
   forceChoice: boolean
 ): string {
-  let prompt = `상황: ${situation}\n\n${sheet.name}으로서 반응하세요. 무엇을 말하거나 하나요?`;
+  let prompt = `상황: ${situation}\n\n${sheet.name}으로서 반응하세요.`;
+
+  prompt += `\n\n[연출 지침]\n- 평범한 일상 묘사 대신, 감정적으로 울림 있는 순간을 만드세요.\n- ${sheet.name}의 말투(${sheet.speechPattern.split(',')[0]})와 성격에 충실하되, 지금 상황의 긴장감이나 감정이 대사에 배어나게 하세요.\n- 한 줄짜리 단순 인사로 끝내지 마세요 — ${sheet.name}의 현재 목표와 감정이 어떻게든 드러나야 합니다.\n- 드라마틱한 장면을 만드세요: 갈등, 기대, 의외의 고백, 긴장 중 하나를 담으세요.`;
 
   if (forceChoice) {
-    prompt += `\n\n중요: 이 상황에서 반드시 플레이어에게 선택지를 제시해야 합니다. 2-3개의 의미 있는 선택지를 만들어주세요.`;
+    prompt += `\n\n중요: 이 상황에서 반드시 ${playerName}에게 선택지를 제시해야 합니다. 2-3개의 의미 있는 선택지를 만들되, 각 선택이 서로 다른 결과를 낳도록 하세요.`;
   }
 
   return prompt;
