@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { ACTIVITIES, ACTIVITY_LIST } from '@/data/activities';
 import GlassPanel from '@/components/ui/GlassPanel';
-import type { DayKey, TimeSlot, WeekSchedule, ActivitySlot } from '@/store/types';
+import type { DayKey, TimeSlot, WeekSchedule, ActivitySlot, ActivityDef, PlayerStats } from '@/store/types';
 
 interface SchedulePlannerProps {
   onComplete: (schedule: WeekSchedule) => void;
@@ -48,6 +48,24 @@ const ACTIVITY_COLOR_HEX: Record<string, string> = {
   'txt-secondary': '#8B95A8',
 };
 
+const STAT_LABELS: Record<keyof PlayerStats, string> = { gpa: '학점', health: '체력', social: '인맥', money: '돈', stress: '스트레스', charm: '매력' };
+
+function getToastMessage(activity: ActivityDef): string {
+  const parts: string[] = [];
+  for (const [key, val] of Object.entries(activity.statEffects)) {
+    if (!val) continue;
+    const label = STAT_LABELS[key as keyof PlayerStats];
+    if (key === 'stress') {
+      parts.push(val < 0 ? `${label} ${val}` : `${label} +${val}`);
+    } else if (key === 'money') {
+      parts.push(val > 0 ? `+${(val as number).toLocaleString('ko-KR')}원` : `${(val as number).toLocaleString('ko-KR')}원`);
+    } else {
+      parts.push(val > 0 ? `${label} +${val}` : `${label} ${val}`);
+    }
+  }
+  return `${activity.name} 추가! ${parts.slice(0, 2).join(', ')} 예상`;
+}
+
 type SlotKey = `${DayKey}-${TimeSlot}`;
 
 function makeKey(day: DayKey, time: TimeSlot): SlotKey {
@@ -58,12 +76,20 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
   const setSchedule = useGameStore((state) => state.setSchedule);
   const [selectedDay, setSelectedDay] = useState<DayKey>('monday');
   const [slots, setSlots] = useState<Partial<Record<SlotKey, string>>>({});
+  const [toast, setToast] = useState<{ message: string; colorHex: string } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
 
   const assignActivity = useCallback((day: DayKey, time: TimeSlot, activityId: string) => {
-    setSlots((prev) => ({
-      ...prev,
-      [makeKey(day, time)]: activityId,
-    }));
+    setSlots((prev) => ({ ...prev, [makeKey(day, time)]: activityId }));
+    const activity = ACTIVITIES[activityId];
+    if (activity) {
+      const colorHex = ACTIVITY_COLOR_HEX[activity.color] ?? '#8B95A8';
+      setToast({ message: getToastMessage(activity), colorHex });
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 2500);
+    }
   }, []);
 
   const clearSlot = useCallback((day: DayKey, time: TimeSlot) => {
@@ -214,6 +240,15 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
           스케줄 확정 ({totalScheduled}개 활동)
         </button>
       </div>
+
+      {/* Activity placement toast */}
+      {toast && (
+        <div key={toast.message} className="fixed bottom-8 left-1/2 z-50 animate-slide-up pointer-events-none" style={{ transform: 'translateX(-50%)' }}>
+          <div className="px-5 py-3 rounded-xl text-sm font-semibold shadow-2xl whitespace-nowrap" style={{ backgroundColor: toast.colorHex, color: '#0F1A2E' }}>
+            {toast.message}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

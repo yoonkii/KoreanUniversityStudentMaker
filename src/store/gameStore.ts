@@ -7,6 +7,7 @@ import type {
   Scene,
   CharacterRelationship,
   GamePhase,
+  ActivitySlot,
 } from './types';
 
 const INITIAL_STATS: PlayerStats = {
@@ -73,6 +74,7 @@ interface GameStore {
   eventHistory: EventHistoryEntry[];
   tierNotification: { characterId: string; newTier: RelationshipTier; label: string } | null;
   goalWarnings: string[];
+  scheduleHistory: string[][];
 
   // --- Actions ---
   setHasHydrated: (v: boolean) => void;
@@ -112,6 +114,7 @@ export const useGameStore = create<GameStore>()(
       eventHistory: [],
       tierNotification: null,
       goalWarnings: [],
+      scheduleHistory: [],
 
       // --- Actions ---
 
@@ -136,6 +139,7 @@ export const useGameStore = create<GameStore>()(
           weekStatDeltas: {},
           gameStarted: true,
           phase: 'planning',
+          scheduleHistory: [],
         });
       },
 
@@ -177,7 +181,11 @@ export const useGameStore = create<GameStore>()(
       },
 
       advanceWeek() {
-        const { stats, currentWeek } = get();
+        const { stats, currentWeek, schedule } = get();
+        // Capture this week's activity IDs for streak tracking
+        const activityIds: string[] = schedule
+          ? (Object.values(schedule) as ActivitySlot[][]).flat().map((s) => s.activityId)
+          : [];
         // Generate goal warnings based on current stats
         const warnings: string[] = [];
         if (stats.gpa < 30) warnings.push('⚠️ 학점이 위험합니다! 장학금을 잃을 수 있어요.');
@@ -198,6 +206,7 @@ export const useGameStore = create<GameStore>()(
           phase: 'planning',
           goalWarnings: warnings,
           tierNotification: null,
+          scheduleHistory: [...state.scheduleHistory.slice(-3), activityIds],
         }));
       },
 
@@ -257,16 +266,20 @@ export const useGameStore = create<GameStore>()(
           eventHistory: [],
           tierNotification: null,
           goalWarnings: [],
+          scheduleHistory: [],
         });
       },
     }),
     {
       name: 'kusm-save',
-      version: 2,
+      version: 3,
       migrate(persisted: unknown, version: number) {
         const state = persisted as Record<string, unknown>;
         if (version < 2) {
-          return { ...state, currentSceneIndex: 0 } as unknown as GameStore;
+          return { ...state, currentSceneIndex: 0, scheduleHistory: [] } as unknown as GameStore;
+        }
+        if (version < 3) {
+          return { ...state, scheduleHistory: [] } as unknown as GameStore;
         }
         return persisted as GameStore;
       },
