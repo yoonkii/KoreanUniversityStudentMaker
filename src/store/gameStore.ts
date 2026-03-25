@@ -37,6 +37,25 @@ function clampAllStats(stats: PlayerStats): PlayerStats {
   };
 }
 
+/** Relationship tiers with thresholds */
+type RelationshipTier = 'stranger' | 'acquaintance' | 'friend' | 'close_friend' | 'soulmate';
+function getRelationshipTier(affection: number): RelationshipTier {
+  if (affection >= 90) return 'soulmate';
+  if (affection >= 70) return 'close_friend';
+  if (affection >= 50) return 'friend';
+  if (affection >= 25) return 'acquaintance';
+  return 'stranger';
+}
+const TIER_LABELS: Record<RelationshipTier, string> = { stranger: '모르는 사이', acquaintance: '아는 사이', friend: '친구', close_friend: '절친', soulmate: '소울메이트' };
+
+/** Event history entry for AI context */
+interface EventHistoryEntry {
+  week: number;
+  summary: string;
+  npcInvolved?: string;
+  choiceMade?: string;
+}
+
 interface GameStore {
   // --- State ---
   _hasHydrated: boolean;
@@ -51,6 +70,9 @@ interface GameStore {
   sceneQueue: Scene[];
   weekStatDeltas: Partial<PlayerStats>;
   gameStarted: boolean;
+  eventHistory: EventHistoryEntry[];
+  tierNotification: { characterId: string; newTier: RelationshipTier; label: string } | null;
+  goalWarnings: string[];
 
   // --- Actions ---
   setHasHydrated: (v: boolean) => void;
@@ -60,6 +82,9 @@ interface GameStore {
   updateRelationship: (characterId: string, change: number) => void;
   setSchedule: (schedule: WeekSchedule) => void;
   advanceWeek: () => void;
+  addEventHistory: (entry: EventHistoryEntry) => void;
+  clearTierNotification: () => void;
+  getRecentEvents: () => EventHistoryEntry[];
   loadScene: (scene: Scene) => void;
   nextScene: () => void;
   setSceneQueue: (scenes: Scene[]) => void;
@@ -84,6 +109,9 @@ export const useGameStore = create<GameStore>()(
       sceneQueue: [],
       weekStatDeltas: {},
       gameStarted: false,
+      eventHistory: [],
+      tierNotification: null,
+      goalWarnings: [],
 
       // --- Actions ---
 
@@ -128,24 +156,20 @@ export const useGameStore = create<GameStore>()(
       updateRelationship(characterId, change) {
         const { relationships, currentWeek } = get();
         const existing = relationships[characterId];
+        const oldAffection = existing?.affection ?? 50;
+        const newAffection = Math.max(0, Math.min(100, oldAffection + change));
+        const oldTier = getRelationshipTier(oldAffection);
+        const newTier = getRelationshipTier(newAffection);
 
         const updated: CharacterRelationship = existing
-          ? {
-              ...existing,
-              affection: Math.max(0, Math.min(100, existing.affection + change)),
-              encounters: existing.encounters + 1,
-              lastInteraction: currentWeek,
-            }
-          : {
-              characterId,
-              affection: Math.max(0, Math.min(100, 50 + change)),
-              encounters: 1,
-              lastInteraction: currentWeek,
-            };
+          ? { ...existing, affection: newAffection, encounters: existing.encounters + 1, lastInteraction: currentWeek }
+          : { characterId, affection: newAffection, encounters: 1, lastInteraction: currentWeek };
 
-        set({
-          relationships: { ...relationships, [characterId]: updated },
-        });
+        const tierNotification = oldTier !== newTier
+          ? { characterId, newTier, label: TIER_LABELS[newTier] }
+          : null;
+
+        set({ relationships: { ...relationships, [characterId]: updated }, ...(tierNotification ? { tierNotification } : {}) });
       },
 
       setSchedule(schedule) {
@@ -153,6 +177,17 @@ export const useGameStore = create<GameStore>()(
       },
 
       advanceWeek() {
+        const { stats, currentWeek } = get();
+        // Generate goal warnings based on current stats
+        const warnings: string[] = [];
+        if (stats.gpa < 30) warnings.push('⚠️ 학점이 위험합니다! 장학금을 잃을 수 있어요.');
+        if (stats.stress > 80) warnings.push('🔴 스트레스가 극심합니다. 번아웃 직전!');
+        if (stats.health < 25) warnings.push('💔 체력이 바닥입니다. 쓰러질 수 있어요.');
+        if (stats.money < 50000) warnings.push('💸 잔고가 부족합니다. 알바를 늘려야 해요.');
+        if (stats.social < 20 && currentWeek > 4) warnings.push('😔 외톨이가 되어가고 있어요...');
+        if (currentWeek >= 7 && currentWeek <= 8) warnings.push('📝 중간고사 기간입니다! 학점에 주의하세요.');
+        if (currentWeek >= 15) warnings.push('📝 기말고사가 코앞입니다!');
+
         set((state) => ({
           currentWeek: state.currentWeek + 1,
           currentSceneIndex: 0,
@@ -161,7 +196,23 @@ export const useGameStore = create<GameStore>()(
           sceneQueue: [],
           weekStatDeltas: {},
           phase: 'planning',
+          goalWarnings: warnings,
+          tierNotification: null,
         }));
+      },
+
+      addEventHistory(entry: EventHistoryEntry) {
+        set((state) => ({
+          eventHistory: [...state.eventHistory.slice(-19), entry],
+        }));
+      },
+
+      clearTierNotification() {
+        set({ tierNotification: null });
+      },
+
+      getRecentEvents() {
+        return get().eventHistory.slice(-10);
       },
 
       loadScene(scene) {
@@ -203,6 +254,9 @@ export const useGameStore = create<GameStore>()(
           sceneQueue: [],
           weekStatDeltas: {},
           gameStarted: false,
+          eventHistory: [],
+          tierNotification: null,
+          goalWarnings: [],
         });
       },
     }),

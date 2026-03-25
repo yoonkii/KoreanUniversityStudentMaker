@@ -157,8 +157,8 @@ export default function GameScreen() {
               emotion: 'anticipation (3/10)',
               goal: npc.goals[0], playerRel: 30,
             })),
-            recentDayLogs: [],
-            playerActivities: '수업, 공부, 동아리',
+            recentDayLogs: useGameStore.getState().eventHistory.slice(-10).map(e => `${e.week}주차: ${e.summary}${e.choiceMade ? ` (선택: ${e.choiceMade})` : ''}`),
+            playerActivities: Object.values(confirmedSchedule).flat().map((s: { activityId: string }) => s.activityId).join(', '),
           }),
         });
 
@@ -243,12 +243,21 @@ export default function GameScreen() {
 
   // Handle scene end -- move to next scene or summary
   const handleSceneEnd = useCallback((choice?: Choice) => {
+    const scene = sceneQueue[currentSceneIndex];
+
     // Apply choice effects
     if (choice) {
       updateStats(choice.statEffects);
       choice.relationshipEffects?.forEach(({ characterId, change }) => {
         updateRelationship(characterId, change);
       });
+    }
+
+    // Record event in history for AI memory
+    if (scene) {
+      const summary = scene.dialogue?.[0]?.text?.slice(0, 80) ?? scene.location;
+      const npcInvolved = scene.characters?.[0]?.characterId;
+      useGameStore.getState().addEventHistory({ week: currentWeek, summary, npcInvolved, choiceMade: choice?.text });
     }
 
     const nextIndex = currentSceneIndex + 1;
@@ -260,12 +269,16 @@ export default function GameScreen() {
       updateStats(weekDeltas);
       setPhase('summary');
     }
-  }, [currentSceneIndex, sceneQueue.length, setCurrentSceneIndex, updateStats, updateRelationship, setPhase]);
+  }, [currentSceneIndex, sceneQueue, currentWeek, setCurrentSceneIndex, updateStats, updateRelationship, setPhase]);
 
   // Handle week advance
   const handleWeekContinue = useCallback(() => {
     advanceWeek();
   }, [advanceWeek]);
+
+  const goalWarnings = useGameStore((state) => state.goalWarnings);
+  const tierNotification = useGameStore((state) => state.tierNotification);
+  const clearTierNotification = useGameStore((state) => state.clearTierNotification);
 
   if (!player) return null;
 
@@ -273,6 +286,20 @@ export default function GameScreen() {
 
   return (
     <div className="min-h-[100dvh] bg-navy relative">
+      {/* Relationship tier notification toast */}
+      {tierNotification && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-slide-down">
+          <div className="glass-strong px-6 py-3 rounded-xl flex items-center gap-3 shadow-2xl border border-teal/30">
+            <span className="text-2xl">💫</span>
+            <div>
+              <div className="text-sm font-bold text-teal">{tierNotification.label} 달성!</div>
+              <div className="text-xs text-txt-secondary">{tierNotification.characterId}와(과)의 관계가 깊어졌습니다</div>
+            </div>
+            <button onClick={clearTierNotification} className="text-txt-secondary hover:text-txt-primary ml-2">✕</button>
+          </div>
+        </div>
+      )}
+
       {/* HUD -- always visible except during scenes */}
       {phase !== 'simulation' && <HUDBar />}
 
@@ -282,6 +309,14 @@ export default function GameScreen() {
       {/* Main content */}
       {phase === 'planning' && (
         <div className="lg:ml-72 pt-16">
+          {/* Goal warnings */}
+          {goalWarnings.length > 0 && (
+            <div className="px-4 md:px-8 mb-4 flex flex-col gap-2">
+              {goalWarnings.map((w, i) => (
+                <div key={i} className="glass px-4 py-2.5 rounded-xl text-sm text-amber-300 border border-amber-500/20">{w}</div>
+              ))}
+            </div>
+          )}
           <SchedulePlanner onComplete={handleScheduleComplete} />
         </div>
       )}

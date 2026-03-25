@@ -61,13 +61,34 @@ export function simulateWeek(
     }
   }
 
-  // Apply stress penalty: if current stress is high, halve positive gains
+  // ─── Stat Interactions ───
+  // 1. Charm boosts social gains (+10% per 10 charm points, max +50%)
+  const charmBonus = Math.min(0.5, Math.floor(currentStats.charm / 10) * 0.1);
+  if (deltas.social > 0) {
+    deltas.social = Math.round(deltas.social * (1 + charmBonus));
+  }
+
+  // 2. High GPA reduces study stress (study stress penalty halved if GPA > 70)
+  if (currentStats.gpa > 70 && deltas.stress > 0) {
+    // Only reduce stress from academic activities
+    deltas.stress = Math.round(deltas.stress * 0.75);
+  }
+
+  // 3. High social makes club/date cheaper
+  if (currentStats.social > 60 && deltas.money < 0) {
+    deltas.money = Math.round(deltas.money * 0.8); // 20% discount
+  }
+
+  // 4. Low health amplifies stress gains
+  if (currentStats.health < 30 && deltas.stress > 0) {
+    deltas.stress = Math.round(deltas.stress * 1.3);
+  }
+
+  // 5. Apply stress penalty: if current stress is high, halve positive gains
   const isOverstressed = currentStats.stress > STRESS_PENALTY_THRESHOLD;
   if (isOverstressed) {
     for (const key of Object.keys(deltas) as (keyof PlayerStats)[]) {
-      // Money gains are not penalised (you still get paid)
       if (key === 'money') continue;
-      // Only reduce positive gains; negative values (stat losses) stay as-is
       if (deltas[key] > 0) {
         deltas[key] = Math.round(deltas[key] * STRESS_GAIN_MULTIPLIER);
       }
