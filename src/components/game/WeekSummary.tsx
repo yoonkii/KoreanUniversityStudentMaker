@@ -49,6 +49,20 @@ function formatStatDisplay(key: keyof PlayerStats, value: number): string {
   return `${value} / 100`;
 }
 
+function getWeekComment(deltas: Partial<PlayerStats>): string {
+  const stress = deltas.stress ?? 0;
+  const gpa = deltas.gpa ?? 0;
+  const social = deltas.social ?? 0;
+  const health = deltas.health ?? 0;
+  if (stress > 20) return '힘든 한 주였어요... 다음 주는 좀 쉬어가요 😥';
+  if (gpa > 15 && social > 10) return '학점도 인맥도 챙긴 갓생러! ✨';
+  if (gpa > 15) return '공부 열심히 한 보람이 있네요! 📚';
+  if (social > 15) return '이번 주 인싸 활동 대성공! 🎉';
+  if (health > 15) return '건강한 한 주! 체력 관리 잘했어요 💪';
+  if (stress < -10) return '여유로운 한 주, 리프레시 완료! 🌿';
+  return '무난한 한 주가 지나갔어요 📅';
+}
+
 export default function WeekSummary({ onContinue }: WeekSummaryProps) {
   const currentWeek = useGameStore((state) => state.currentWeek);
   const stats = useGameStore((state) => state.stats);
@@ -56,20 +70,21 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/40">
-      <GlassPanel variant="strong" className="w-full max-w-lg p-6">
+      <GlassPanel variant="strong" className="w-full max-w-lg p-6 animate-modal-enter">
         {/* Header */}
         <div className="text-center mb-6">
           <p className="text-sm text-txt-secondary mb-1">주간 결산</p>
           <h2 className="text-2xl font-bold text-txt-primary">{currentWeek}주차 완료</h2>
+          <p className="text-sm text-teal/80 mt-1.5">{getWeekComment(weekStatDeltas)}</p>
         </div>
 
         {/* Stat changes */}
         <div className="flex flex-col gap-4 mb-6">
-          {STAT_CONFIG.map(({ key, label, icon, color, isMoney, isGpa }) => {
+          {STAT_CONFIG.map(({ key, label, icon, color, isMoney, isGpa }, index) => {
             const delta = weekStatDeltas[key];
 
             return (
-              <div key={key} className="flex flex-col gap-1">
+              <div key={key} className="flex flex-col gap-1 animate-stat-reveal" style={{ animationDelay: `${index * 80 + 200}ms` }}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <iconify-icon icon={icon} width="16" height="16" />
