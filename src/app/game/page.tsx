@@ -11,6 +11,9 @@ import StatsSidebar from '@/components/game/StatsSidebar';
 import SchedulePlanner from '@/components/game/SchedulePlanner';
 import SceneRenderer from '@/components/vn/SceneRenderer';
 import WeekSummary from '@/components/game/WeekSummary';
+import OnboardingOverlay from '@/components/game/OnboardingOverlay';
+import SugangsincheongEvent from '@/components/game/SugangsincheongEvent';
+import KakaoMessages from '@/components/game/KakaoMessages';
 import type { Choice, PlayerStats, Scene, WeekSchedule } from '@/store/types';
 import { initializeNPCs } from '@/engine/data/npc-initializer';
 import { CORE_NPC_SHEETS } from '@/engine/data/core-npcs';
@@ -95,6 +98,10 @@ export default function GameScreen() {
 
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [onboardingDone, setOnboardingDone] = useState(false);
+  const [sugangsincheongDone, setSugangsincheongDone] = useState(false);
+  const [kakaoMessages, setKakaoMessages] = useState<{senderId:string;senderName:string;text:string;timestamp:string;isRead:boolean}[]>([]);
+  const [showKakao, setShowKakao] = useState(false);
 
   // Detect hydration: once component mounts on client, Zustand has loaded from localStorage
   useEffect(() => {
@@ -271,10 +278,46 @@ export default function GameScreen() {
     }
   }, [currentSceneIndex, sceneQueue, currentWeek, setCurrentSceneIndex, updateStats, updateRelationship, setPhase]);
 
-  // Handle week advance
-  const handleWeekContinue = useCallback(() => {
+  // Handle KakaoTalk dismiss → then advance week
+  const handleKakaoDismiss = useCallback(() => {
+    setShowKakao(false);
+    setKakaoMessages([]);
     advanceWeek();
   }, [advanceWeek]);
+
+  // Handle week advance — show KakaoTalk messages from NPCs first if any
+  const handleWeekContinue = useCallback(() => {
+    const NPC_NAMES: Record<string, string> = {
+      soyeon: '박소연', jaemin: '이재민', minji: '최민지',
+      hyunwoo: '김현우', 'prof-kim': '김 교수',
+    };
+    const NPC_MSGS: Record<string, string[]> = {
+      soyeon: ['이번 주도 고생 많았어요! 다음에 같이 밥 먹어요 😊', '시험 준비는 잘 되고 있어요?'],
+      jaemin: ['야 오늘 넘 힘들었다ㅠ 내일 밥은 같이 먹자!', '요즘 어때? 연락 좀 하자~'],
+      minji: ['이번 주 수업 노트 공유해줄 수 있어요?', '같이 스터디 해요!'],
+      hyunwoo: ['주말에 같이 농구 한 판 어때?', '오늘 동아리 회의 있는 거 알지?'],
+      'prof-kim': ['이번 과제 결과 확인해보세요', '다음 수업 질문 있으면 준비해오세요'],
+    };
+    const msgs = Object.entries(relationships)
+      .filter(([, rel]) => rel.affection > 25 && rel.encounters > 0)
+      .slice(0, 3)
+      .map(([charId, rel]) => {
+        const msgArr = NPC_MSGS[charId] ?? ['안녕하세요!'];
+        return {
+          senderId: charId,
+          senderName: NPC_NAMES[charId] ?? charId,
+          text: msgArr[rel.encounters % msgArr.length],
+          timestamp: '방금',
+          isRead: false,
+        };
+      });
+    if (msgs.length > 0) {
+      setKakaoMessages(msgs);
+      setShowKakao(true);
+    } else {
+      advanceWeek();
+    }
+  }, [advanceWeek, relationships]);
 
   const goalWarnings = useGameStore((state) => state.goalWarnings);
   const tierNotification = useGameStore((state) => state.tierNotification);
@@ -282,6 +325,8 @@ export default function GameScreen() {
 
   if (!player) return null;
 
+  const showOnboarding = currentWeek === 1 && !onboardingDone;
+  const showSugangsincheong = currentWeek === 1 && onboardingDone && !sugangsincheongDone;
   const currentScene = sceneQueue[currentSceneIndex];
 
   return (
@@ -300,6 +345,21 @@ export default function GameScreen() {
         </div>
       )}
 
+      {/* Onboarding tutorial (week 1 only, before planning) */}
+      {phase === 'planning' && showOnboarding && (
+        <OnboardingOverlay onComplete={() => setOnboardingDone(true)} />
+      )}
+
+      {/* 수강신청 mini-game (week 1 only, after onboarding) */}
+      {phase === 'planning' && showSugangsincheong && (
+        <SugangsincheongEvent onComplete={() => setSugangsincheongDone(true)} />
+      )}
+
+      {/* KakaoTalk messages from NPCs after weekly summary */}
+      {showKakao && kakaoMessages.length > 0 && (
+        <KakaoMessages messages={kakaoMessages} onDismiss={handleKakaoDismiss} />
+      )}
+
       {/* HUD -- always visible except during scenes */}
       {phase !== 'simulation' && <HUDBar />}
 
@@ -307,7 +367,7 @@ export default function GameScreen() {
       {(phase === 'planning' || phase === 'summary') && <StatsSidebar />}
 
       {/* Main content */}
-      {phase === 'planning' && (
+      {phase === 'planning' && !showOnboarding && !showSugangsincheong && (
         <div className="lg:ml-72 pt-16">
           {/* Goal warnings */}
           {goalWarnings.length > 0 && (
