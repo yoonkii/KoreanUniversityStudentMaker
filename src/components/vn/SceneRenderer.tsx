@@ -68,7 +68,7 @@ export default function SceneRenderer({ scene, onSceneEnd, activityId, timeLabel
     setCharacterStates(initialStates);
     setCurrentLineIndex(0);
     setShowChoices(false);
-  }, [scene, characters]);
+  }, [scene]); // characters is derived from scene; key={scene.id} handles identity
 
   // Update character expression when a dialogue line specifies one
   useEffect(() => {

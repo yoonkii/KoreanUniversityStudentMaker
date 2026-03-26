@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/store/gameStore';
 import { useGameStore as useNewStore } from '@/stores/game-store';
@@ -98,6 +98,10 @@ export default function GameScreen() {
 
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Cleanup abort controller on unmount
+  useEffect(() => { return () => { abortRef.current?.abort(); }; }, []);
   const [onboardingDone, setOnboardingDone] = useState(false);
   const [sugangsincheongDone, setSugangsincheongDone] = useState(false);
   const [kakaoMessages, setKakaoMessages] = useState<{senderId:string;senderName:string;text:string;timestamp:string;isRead:boolean}[]>([]);
@@ -129,6 +133,8 @@ export default function GameScreen() {
 
   // Handle schedule completion -- simulate the week
   const handleScheduleComplete = useCallback(async (confirmedSchedule: WeekSchedule) => {
+    if (isLoadingAI) return; // prevent double-submit
+
     const { statDeltas, scenes } = simulateWeek(confirmedSchedule, currentWeek, stats);
     setWeekStatDeltas(statDeltas);
     setCurrentSceneIndex(0);
@@ -139,6 +145,9 @@ export default function GameScreen() {
       setPhase('simulation');
     } else {
       // No hardcoded scenes -- try 3-tier AI engine (Sprint 3-6) first, fall back to legacy
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
       setIsLoadingAI(true);
 
       // Initialize NPCs in the new store if not already done
@@ -155,6 +164,7 @@ export default function GameScreen() {
         const directorRes = await fetch('/api/ai/story-director', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
           body: JSON.stringify({
             director: useNewStore.getState().story.director,
             playerStats: stats,
@@ -182,6 +192,7 @@ export default function GameScreen() {
             const npcRes = await fetch('/api/ai/npc-brain', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
+              signal: controller.signal,
               body: JSON.stringify({
                 sheet: targetNPC,
                 state: useNewStore.getState().npcs.states[targetNPC.id] ?? {
@@ -237,6 +248,7 @@ export default function GameScreen() {
       }
 
       setIsLoadingAI(false);
+      if (controller.signal.aborted) return; // user navigated away or double-submitted
 
       if (aiScene) {
         setSceneQueue([aiScene]);

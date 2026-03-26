@@ -122,16 +122,30 @@ export async function POST(request: Request) {
     const data = await response.json();
     const text = data.content?.[0]?.text ?? '';
 
-    // Extract JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*?\}(?=[^}]*$)/) ?? text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
+    // Extract JSON using brace-counting parser (handles nested objects correctly)
+    function extractJSON(raw: string): string | null {
+      const start = raw.indexOf('{');
+      if (start === -1) return null;
+      let depth = 0;
+      for (let i = start; i < raw.length; i++) {
+        if (raw[i] === '{') depth++;
+        else if (raw[i] === '}') depth--;
+        if (depth === 0) return raw.slice(start, i + 1);
+      }
+      return null;
+    }
+
+    const jsonStr = extractJSON(text);
+    if (!jsonStr) {
+      console.error('Game Director: no valid JSON in response:', text.slice(0, 200));
       return NextResponse.json({ error: 'Invalid AI response format' }, { status: 502 });
     }
 
     let result: unknown;
     try {
-      result = JSON.parse(jsonMatch[0]);
-    } catch {
+      result = JSON.parse(jsonStr);
+    } catch (parseErr) {
+      console.error('Game Director: JSON parse failed:', parseErr, jsonStr.slice(0, 200));
       return NextResponse.json({ error: 'AI returned malformed JSON' }, { status: 502 });
     }
 
