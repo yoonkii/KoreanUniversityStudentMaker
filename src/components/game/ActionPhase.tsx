@@ -54,6 +54,30 @@ const NPC_PORTRAITS: Record<string, string> = {
   hyunwoo: '/assets/characters/hyunwoo/neutral.png',
 };
 
+// Week-specific NPC encounter overrides (take priority over generic lines)
+function getWeekSpecificLine(activityKeyword: string, npcId: string, week: number): string | null {
+  // Exam weeks — everyone talks about exams
+  if ((week >= 6 && week <= 8) || (week >= 13 && week <= 15)) {
+    const examLines: Record<string, Record<string, string>> = {
+      jaemin: { '공부': '재민: "야 이 범위 다 외워야 해? 죽겠다..."', '수업': '재민이가 교수님한테 시험 범위 질문하고 있다.', '휴식': '재민: "시험 기간에 쉬어도 돼? ...나도 쉬고 싶다."' },
+      minji: { '공부': '민지가 형광펜으로 빼곡히 밑줄 긋고 있다. 무섭다.', '수업': '민지: "이 부분 시험에 나온다. 집중해."' },
+      soyeon: { '공부': '소연 선배: "작년 시험 유형 알려줄까? 비슷하게 나와."' },
+    };
+    return examLines[npcId]?.[activityKeyword] ?? null;
+  }
+  // Festival week — everyone is excited
+  if (week === 9) {
+    const festLines: Record<string, string> = {
+      jaemin: '재민: "축제다! 오늘 뭐 볼 거야? 공연 라인업 봤어?"',
+      hyunwoo: '현우: "우리 밴드 공연 보러 와! 최선을 다할게!"',
+      minji: '민지가 의외로 축제를 즐기고 있다. "...나쁘지 않네."',
+      soyeon: '소연 선배: "축제는 대학 생활의 꽃이야! 즐겨~"',
+    };
+    return festLines[npcId] ?? null;
+  }
+  return null;
+}
+
 // Contextual NPC encounter lines — triggered by activity + NPC presence
 const NPC_ENCOUNTER_LINES: Record<string, Record<string, string[]>> = {
   '수업': {
@@ -333,7 +357,7 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
           }
         }
 
-        // Fallback to hardcoded NPC encounter lines
+        // Fallback to hardcoded NPC encounter lines (with week-specific overrides)
         if (!mainAct.targetNpcId || !getNpcContextualLine(mainAct.targetNpcId ?? '', currentWeek, mainAct.name)) {
           for (const [keyword, npcLines] of Object.entries(NPC_ENCOUNTER_LINES)) {
             if (mainAct.name.includes(keyword)) {
@@ -341,8 +365,14 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
               const eligible = npcIds.filter(() => Math.random() < 0.3);
               if (eligible.length > 0) {
                 const npcId = eligible[0];
-                const lines = npcLines[npcId];
-                setNpcEncounter(lines[Math.floor(Math.random() * lines.length)]);
+                // Try week-specific line first
+                const weekLine = getWeekSpecificLine(keyword, npcId, currentWeek);
+                if (weekLine) {
+                  setNpcEncounter(weekLine);
+                } else {
+                  const lines = npcLines[npcId];
+                  setNpcEncounter(lines[Math.floor(Math.random() * lines.length)]);
+                }
               }
               break;
             }
