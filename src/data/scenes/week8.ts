@@ -36,6 +36,7 @@ export const WEEK_8_SCENES: Scene[] = [
         text: '좋아, 같이 하자! 분업하면 빠르겠다.',
         statEffects: { knowledge: 5, stress: 5, social: 2 },
         relationshipEffects: [{ characterId: 'minji', change: 8 }],
+        consequenceText: '새벽 3시, 민지와 마지막 챕터를 끝냈다. 해냈다.',
       },
       {
         id: 'midterm_study_alone',
@@ -48,6 +49,7 @@ export const WEEK_8_SCENES: Scene[] = [
         text: '솔직히... 이미 반쯤 포기했어. 카페나 갈래?',
         statEffects: { stress: -10, health: 5, knowledge: -3 },
         relationshipEffects: [{ characterId: 'minji', change: 2 }],
+        consequenceText: '민지가 잠시 망설이더니 노트를 덮고 따라나섰다.',
       },
     ],
   },
@@ -86,6 +88,7 @@ export const WEEK_8_SCENES: Scene[] = [
         text: '치킨 가자!! 오늘은 아무 생각 안 할 거야!',
         statEffects: { stress: -15, money: -20000, social: 3 },
         relationshipEffects: [{ characterId: 'jaemin', change: 5 }],
+        consequenceText: '치킨 뼈가 쌓여갈수록 시험 걱정도 녹아내렸다.',
       },
       {
         id: 'midterm_reflect',

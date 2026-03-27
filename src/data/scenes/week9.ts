@@ -40,6 +40,7 @@ export const WEEK_9_SCENES: Scene[] = [
           { characterId: 'hyunwoo', change: 8 },
           { characterId: 'jaemin', change: 2 },
         ],
+        consequenceText: '현우 선배가 "역시 우리 후배!" 하며 어깨를 감쌌다.',
       },
       {
         id: 'festival_concert',
@@ -104,6 +105,7 @@ export const WEEK_9_SCENES: Scene[] = [
         text: '나도 그래. 힘든 건 같이 얘기하면 좀 나아지더라.',
         statEffects: { social: 3, charm: 2, stress: 2 },
         relationshipEffects: [{ characterId: 'minji', change: 10 }],
+        consequenceText: '민지가 처음으로 진심 어린 미소를 보여줬다.',
       },
       {
         id: 'festival_minji_compete',
@@ -175,6 +177,7 @@ export const WEEK_9_SCENES: Scene[] = [
           { characterId: 'soyeon', change: 5 },
           { characterId: 'jaemin', change: 5 },
         ],
+        consequenceText: '불꽃 아래 나란히 서서, 아무 말 없이도 충분했다.',
       },
     ],
   },

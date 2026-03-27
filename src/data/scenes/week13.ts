@@ -49,6 +49,7 @@ export const WEEK_13_SCENES: Scene[] = [
           { characterId: 'hyunwoo', change: 5 },
           { characterId: 'minji', change: -1 },
         ],
+        consequenceText: '족보를 펼치는 순간, 민지의 눈빛이 살짝 차가워졌다.',
       },
       {
         id: 'finals_study_group',
@@ -67,6 +68,7 @@ export const WEEK_13_SCENES: Scene[] = [
           { characterId: 'hyunwoo', change: -2 },
           { characterId: 'minji', change: 2 },
         ],
+        consequenceText: '조용한 독서실에서 홀로 버티는 밤이 길어졌다.',
       },
     ],
   },

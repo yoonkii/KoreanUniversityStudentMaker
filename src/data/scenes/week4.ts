@@ -36,6 +36,7 @@ export const WEEK_4_SCENES: Scene[] = [
         text: '당연히 가야지! 엠티 빠지면 서운하잖아.',
         statEffects: { money: -30000, social: 3 },
         relationshipEffects: [{ characterId: 'hyunwoo', change: 5 }],
+        consequenceText: '현우 선배가 환하게 웃으며 엄지를 치켜세웠다.',
       },
       {
         id: 'mt_reluctant',
@@ -48,6 +49,7 @@ export const WEEK_4_SCENES: Scene[] = [
         text: '이번엔 패스할게. 시험 준비도 해야 하고...',
         statEffects: { knowledge: 3, stress: -5 },
         relationshipEffects: [{ characterId: 'hyunwoo', change: -5 }],
+        consequenceText: '단톡방에 올라온 사진들을 보며 괜히 허전했다.',
       },
     ],
   },
@@ -165,6 +167,7 @@ export const WEEK_4_SCENES: Scene[] = [
         text: '고마워요 선배. 진짜 의지할게요!',
         statEffects: { social: 3, stress: -8, knowledge: -1 },
         relationshipEffects: [{ characterId: 'soyeon', change: 8 }],
+        consequenceText: '소연 선배가 조용히 웃으며 커피잔을 부딪쳤다.',
       },
       {
         id: 'mt_soyeon_cool',
