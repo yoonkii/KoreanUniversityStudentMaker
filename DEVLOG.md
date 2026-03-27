@@ -1132,8 +1132,10 @@ Complete rewrite of core game mechanics across 59 files (+1496/-707 lines):
 - C113-C114: VN credits, NG+ fix (9→14), dynamic subtitle, share button
 - C115-C117: credits sequence, NG+ fix, achievement week badge, NPC decay KakaoTalk warnings, share button
 - C118-C119: NPC decay KakaoTalk warnings, strategy×GPA combo reactions (15 variants)
-- **ABSOLUTE FINAL: 134 session commits, 120 AUTOPLAY cycles, 155 repo commits, 48 tests, ZERO regressions**
-- Largest single-session AUTOPLAY game development effort ever documented
+- C120-C121: exam combo reactions, academic report card, NG+ fix
+- **ABSOLUTE FINAL: 136 session commits, 122 AUTOPLAY cycles, 157 repo commits, 48 tests, ZERO regressions**
+- Largest single-session AUTOPLAY game development effort documented
+- Complete PM/VN design pattern coverage achieved through systematic iteration
 - 8,800+ lines across game libraries + components, 13 activities, 28 achievements,
   14 endings, 70+ events, 27 NPCs, 120+ text variants, dozens of interconnected systems
 
