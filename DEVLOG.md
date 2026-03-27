@@ -1086,8 +1086,9 @@ Complete rewrite of core game mechanics across 59 files (+1496/-707 lines):
 - **50 AUTOPLAY improvement cycles**
 - **48 tests passing**, build clean throughout entire session
 - Zero regressions across 70 sequential commits
-- 58 AUTOPLAY cycles implementing PM/VN design patterns
-- NPC jealousy, exam countdown, consequence text, collection gallery
-- Heartfelt stat-gated finale scene, campus rumors, relationship trends
+- 64 AUTOPLAY cycles implementing PM/VN design patterns
+- Systems: NPC jealousy, exam countdown, consequence text, collection gallery, calendar view
+- Features: send animations, NPC portraits in action, relationship trends, memory monologues
+- Content: heartfelt stat-gated finale, post-exam reactions, campus rumors, semester awards
 
 ---
