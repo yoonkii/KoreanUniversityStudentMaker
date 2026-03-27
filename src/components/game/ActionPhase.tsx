@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import type { PlayerStats, CharacterRelationship } from '@/store/types';
 import { generateEncounters, generateGossip, type CampusEncounter } from '@/lib/campusSimulation';
+import { findNpcsAtLocation } from '@/lib/livingCampus';
 import { getNpcContextualLine } from '@/lib/weeklyDialogueCache';
 import { getInnerMonologue } from '@/lib/innerMonologue';
 import { getActivityFlavorText } from '@/lib/activityFlavor';
@@ -379,11 +380,34 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
           }
         }
       }
-      // Campus background NPC encounters (living campus)
+      // Living campus — find NPCs who are at the same location right now
       if (mainAct) {
-        const campusEnc = generateEncounters(mainAct.name, currentWeek + dayIdx, runningStats, relationships);
-        if (campusEnc.length > 0) {
-          setCampusEncounter(campusEnc[0]);
+        // Map activity name to location type
+        const actLoc = mainAct.name.includes('수업') ? 'classroom'
+          : mainAct.name.includes('공부') || mainAct.name.includes('도서관') ? 'library'
+          : mainAct.name.includes('알바') ? 'cafe'
+          : mainAct.name.includes('동아리') ? 'club_room'
+          : mainAct.name.includes('운동') ? 'gym'
+          : mainAct.name.includes('휴식') ? 'dorm'
+          : mainAct.name.includes('친구') || mainAct.name.includes('데이트') ? 'cafeteria'
+          : 'campus';
+        const timeSlot = (mainAct.timeSlot === 'morning' ? 'morning' : mainAct.timeSlot === 'evening' ? 'evening' : 'afternoon') as 'morning' | 'afternoon' | 'evening';
+        const nearbyNpcs = findNpcsAtLocation(actLoc, timeSlot, currentWeek);
+        // Filter out targeted NPC (already shown) and pick one
+        const otherNpcs = nearbyNpcs.filter(n => n.npcId !== mainAct.targetNpcId);
+        if (otherNpcs.length > 0) {
+          const npc = otherNpcs[0];
+          setCampusEncounter({
+            npcName: npc.npcName,
+            npcRole: npc.activity,
+            location: actLoc as 'classroom' | 'library' | 'cafeteria' | 'cafe' | 'gym' | 'club_room' | 'dorm' | 'campus_path',
+            dialogue: npc.dialogue,
+            mood: 'neutral',
+          });
+        } else {
+          // Fallback to old system
+          const campusEnc = generateEncounters(mainAct.name, currentWeek + dayIdx, runningStats, relationships);
+          if (campusEnc.length > 0) setCampusEncounter(campusEnc[0]);
         }
       }
 

@@ -5,6 +5,7 @@ import { getRelationshipTier } from '@/store/gameStore';
 import { getWeekCondition, getWeatherForWeek } from '@/lib/gameEngine';
 import { getCachedDialogue } from '@/lib/weeklyDialogueCache';
 import { generateRumors } from '@/lib/rumorSystem';
+import { getNpcLocationSummary } from '@/lib/livingCampus';
 import Image from 'next/image';
 import GlassPanel from '@/components/ui/GlassPanel';
 
@@ -240,6 +241,16 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
               </div>
             );
           })}
+        </div>
+
+        {/* NPC whereabouts — what is everyone doing today? */}
+        <div className="mb-3">
+          <p className="text-[10px] text-txt-secondary/40 mb-1.5">📍 지금 캠퍼스에서는</p>
+          <div className="flex flex-col gap-1">
+            {getNpcLocationSummary(nextWeek, 'afternoon').map((line, i) => (
+              <p key={i} className="text-[10px] text-txt-secondary/50 pl-2 border-l border-white/5">{line}</p>
+            ))}
+          </div>
         </div>
 
         {/* NPC Mood Board — who's feeling what this week */}
