@@ -105,6 +105,19 @@ export const WEEK_15_SCENES: Scene[] = [
           { characterId: 'soyeon', change: 2 },
         ],
       },
+      {
+        id: 'finals_heartfelt',
+        text: '"이번 학기... 너희 덕분에 버틸 수 있었어. 진심으로 고마워."',
+        statEffects: { social: 10, charm: 5, stress: -15 },
+        relationshipEffects: [
+          { characterId: 'jaemin', change: 10 },
+          { characterId: 'soyeon', change: 10 },
+          { characterId: 'minji', change: 5 },
+          { characterId: 'hyunwoo', change: 5 },
+        ],
+        requiredStat: { stat: 'social', min: 50 },
+        consequenceText: '모두가 잠시 말을 잃었다. 재민이가 먼저 미소 짓고, 소연 선배가 눈가를 훔쳤다. 이 순간을 영원히 기억할 것 같다.',
+      },
     ],
   },
 ];
