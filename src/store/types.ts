@@ -26,6 +26,7 @@ export interface CharacterRelationship {
   affection: number;    // 0-100
   encounters: number;
   lastInteraction?: number;
+  memories?: string[];  // Tags like "studied_together", "mt_campfire", "shared_meal"
 }
 
 export interface ActivitySlot {

@@ -165,9 +165,20 @@ export default function GameScreen() {
     useGameStore.getState().setWeeklyEvent(weeklyEvent);
     setCurrentSceneIndex(0);
 
-    // Apply NPC affection bumps from social activities
+    // Apply NPC affection bumps from social activities + add memories
+    const ACTIVITY_MEMORIES: Record<string, string> = {
+      friends: 'hangout', date: 'date', club: 'club_together', study: 'studied_together',
+    };
     for (const [npcId, affBump] of Object.entries(npcInteractions)) {
       updateRelationship(npcId, affBump);
+      // Find what activity triggered this interaction
+      for (const day of Object.values(confirmedSchedule)) {
+        for (const slot of day) {
+          if (slot.targetNpcId === npcId && ACTIVITY_MEMORIES[slot.activityId]) {
+            useGameStore.getState().addNpcMemory(npcId, `${ACTIVITY_MEMORIES[slot.activityId]}_w${currentWeek}`);
+          }
+        }
+      }
     }
 
     // Build day-grouped activity list for ActionPhase (all 3 activities per day, 7 days)
@@ -291,8 +302,21 @@ export default function GameScreen() {
       hyunwoo: '김현우', 'prof-kim': '김 교수',
     };
 
-    // Stat-reactive NPC messages — NPCs notice your condition
+    // Stat-reactive NPC messages — NPCs notice your condition AND remember past
+    const allRelationships = useGameStore.getState().relationships;
     function getReactiveMsg(charId: string, playerStats: typeof stats): string {
+      const rel = allRelationships[charId];
+      const memories = rel?.memories ?? [];
+
+      // Memory-based messages (30% chance — references past shared experiences)
+      if (memories.length > 0 && Math.random() < 0.3) {
+        const lastMemory = memories[memories.length - 1];
+        if (lastMemory.startsWith('hangout')) return charId === 'jaemin' ? '저번에 같이 논 거 재밌었어ㅋㅋ 또 놀자!' : '지난번에 같이 시간 보낸 거 좋았어 😊';
+        if (lastMemory.startsWith('date')) return '지난번 데이트 진짜 즐거웠어... 또 가자! 💕';
+        if (lastMemory.startsWith('studied')) return '같이 공부했던 거 도움 많이 됐어. 고마워!';
+        if (lastMemory.startsWith('club')) return '지난 합주 때 진짜 좋았어! 다음에도 같이 하자 🎵';
+      }
+
       // Soyeon (caring senior) — reacts to health and stress
       if (charId === 'soyeon') {
         if (playerStats.stress > 75) return '요즘 너무 무리하는 것 같아... 괜찮아? 밥이라도 같이 먹자 😢';

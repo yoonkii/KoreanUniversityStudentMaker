@@ -102,6 +102,7 @@ interface GameStore {
   setWeekCombos: (combos: ActiveCombo[]) => void;
   setWeeklyEvent: (event: WeeklyEvent | null) => void;
   setExamResults: (results: Partial<ExamResults>) => void;
+  addNpcMemory: (characterId: string, memory: string) => void;
   resetGame: () => void;
 }
 
@@ -325,6 +326,20 @@ export const useGameStore = create<GameStore>()(
         set((state) => ({
           examResults: { ...state.examResults, ...results },
         }));
+      },
+
+      addNpcMemory(characterId, memory) {
+        const { relationships } = get();
+        const rel = relationships[characterId];
+        if (!rel) return;
+        const existing = rel.memories ?? [];
+        if (existing.includes(memory)) return; // No duplicates
+        set({
+          relationships: {
+            ...relationships,
+            [characterId]: { ...rel, memories: [...existing.slice(-9), memory] }, // Max 10 memories
+          },
+        });
       },
 
       resetGame() {
