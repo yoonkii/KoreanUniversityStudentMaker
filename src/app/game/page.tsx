@@ -486,7 +486,7 @@ export default function GameScreen() {
             <div key={ach.id} className="glass-strong px-5 py-3 rounded-xl flex items-center gap-3 shadow-2xl border border-gold/30 animate-bounce-once">
               <span className="text-2xl">{ach.emoji}</span>
               <div>
-                <div className="text-xs font-bold text-gold">업적 달성!</div>
+                <div className="text-xs font-bold text-gold">업적 달성! <span className="text-gold/50 font-normal">{currentWeek}주차</span></div>
                 <div className="text-sm text-txt-primary">{ach.title}</div>
               </div>
             </div>
