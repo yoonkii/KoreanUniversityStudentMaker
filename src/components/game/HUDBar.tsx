@@ -78,10 +78,12 @@ export default function HUDBar() {
             })()}
           </div>
 
-          {/* Center: Stress indicator */}
-          <div className="flex items-center gap-1.5 text-sm">
+          {/* Center: Character mood (PM-style persistent mood display) */}
+          <div className="flex items-center gap-1.5 text-sm" title={`스트레스 ${Math.round(stress)} | 체력 ${health}`}>
             <span className={getStressColor(stress)}>{getStressEmoji(stress)}</span>
-            <span className={`font-mono text-xs ${getStressColor(stress)}`}>{Math.round(stress)}</span>
+            <span className={`text-[10px] ${getStressColor(stress)}`}>
+              {stress >= 80 ? '한계...' : stress >= 60 ? '힘들다' : stress >= 40 ? '보통' : health >= 60 ? '좋아!' : '괜찮아'}
+            </span>
           </div>
 
           {/* Right: Quick-glance mini stats (mobile only — sidebar hidden on mobile) */}
