@@ -1096,5 +1096,10 @@ Complete rewrite of core game mechanics across 59 files (+1496/-707 lines):
 - Total: 90 commits, 79 AUTOPLAY cycles, zero regressions, 48 tests passing throughout
 - Latest: gift system, ending gallery, streak tracking, trajectory hints, NPC reciprocal gifts
 - New systems: qualitative stat labels, week ratings, consequence text, music moods, exam countdown
+- Latest (C76-C82): NPC gifts in KakaoTalk, ending trajectory hints, reciprocal NPC gifts,
+  ending collection gallery, secret achievements (28 total), trajectory-aware Soyeon,
+  activity result messages (40 outcomes), dynamic exam reactions
+- Final stats: 94 commits, 83 AUTOPLAY cycles, 28 achievements, 14 endings, 65+ events,
+  27 NPCs, 12 mid-activity choices, 80+ flavor/result texts, zero regressions
 
 ---
