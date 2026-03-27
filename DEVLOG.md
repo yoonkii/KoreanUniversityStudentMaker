@@ -1104,5 +1104,8 @@ Complete rewrite of core game mechanics across 59 files (+1496/-707 lines):
   27 NPCs, 12 mid-activity choices, 120+ flavor/result/memory texts, zero regressions
 - PM/VN systems: gift giving, trajectory hints, reciprocal NPC gifts, memory callbacks,
   ending collection gallery, streak system, jealousy, secret achievements, music moods
+- C86-C91: context-aware backgrounds, dynamic NPC expressions, content stats on title,
+  diary relationship timeline, 100+ commits milestone, memory callbacks in VN scenes
+- Total: 102 session commits, 91 AUTOPLAY cycles, 125 repo commits, 48 tests, zero regressions
 
 ---
