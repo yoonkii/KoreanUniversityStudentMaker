@@ -341,9 +341,15 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
         <button
           onClick={() => {
             clearNewAchievements();
-            // Save diary entry
+            // Save diary entry with relationship context
             const diary = getDiaryEntry(currentWeek, weekStatDeltas, stats);
-            useGameStore.getState().addDiaryEntry(currentWeek, diary);
+            const rels = useGameStore.getState().relationships;
+            const NPC_KO: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연', hyunwoo: '현우' };
+            const topNpc = Object.entries(rels)
+              .filter(([, r]) => r.lastInteraction === currentWeek)
+              .sort(([, a], [, b]) => b.affection - a.affection)[0];
+            const relNote = topNpc ? ` [${NPC_KO[topNpc[0]] ?? topNpc[0]}과(와) 시간을 보냄]` : '';
+            useGameStore.getState().addDiaryEntry(currentWeek, diary + relNote);
             onContinue();
           }}
           className={`w-full py-3 rounded-xl font-semibold text-base transition-all duration-300 cursor-pointer active:scale-[0.98] ${
