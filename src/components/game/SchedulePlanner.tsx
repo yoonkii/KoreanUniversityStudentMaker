@@ -301,6 +301,36 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
     setSlots(newSlots);
   }, [stats, activityRequiresNpc, getAvailableNpcs]);
 
+  // Undo last placement
+  const [slotHistory, setSlotHistory] = useState<Partial<Record<SlotKey, SlotData>>[]>([]);
+  const handleUndo = useCallback(() => {
+    if (slotHistory.length > 0) {
+      const prev = slotHistory[slotHistory.length - 1];
+      setSlots(prev);
+      setSlotHistory(h => h.slice(0, -1));
+    }
+  }, [slotHistory]);
+
+  // Fill remaining empty slots with rest
+  const fillRemainingWithRest = useCallback(() => {
+    const newSlots = { ...slots };
+    for (const day of DAY_KEYS) {
+      for (const time of TIME_SLOTS) {
+        const key = makeKey(day, time);
+        if (!newSlots[key]) {
+          newSlots[key] = { activityId: 'rest' };
+        }
+      }
+    }
+    setSlots(newSlots);
+  }, [slots]);
+
+  // Wrap the original slot-setting to track history
+  const setSlotsWithHistory = useCallback((newSlots: Partial<Record<SlotKey, SlotData>>) => {
+    setSlotHistory(h => [...h.slice(-10), slots]); // Keep last 10 states
+    setSlots(newSlots);
+  }, [slots]);
+
   // Template presets — one-tap schedules for common playstyles
   const applyTemplate = useCallback((template: string) => {
     const TEMPLATES: Record<string, string[]> = {
@@ -347,12 +377,15 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
           })()}
           <span className="text-xs text-txt-secondary">{totalScheduled}/21</span>
           {totalScheduled > 0 && (
-            <button
-              onClick={() => setSlots({})}
-              className="text-[10px] text-txt-secondary/50 hover:text-coral transition-colors cursor-pointer"
-            >
-              초기화
-            </button>
+            <div className="flex gap-2">
+              {slotHistory.length > 0 && (
+                <button onClick={handleUndo} className="text-[10px] text-txt-secondary/50 hover:text-teal transition-colors cursor-pointer" title="실행 취소">↩</button>
+              )}
+              {totalScheduled < 21 && (
+                <button onClick={fillRemainingWithRest} className="text-[10px] text-txt-secondary/50 hover:text-lavender transition-colors cursor-pointer" title="나머지 휴식">💤</button>
+              )}
+              <button onClick={() => setSlots({})} className="text-[10px] text-txt-secondary/50 hover:text-coral transition-colors cursor-pointer">초기화</button>
+            </div>
           )}
         </div>
       </div>
