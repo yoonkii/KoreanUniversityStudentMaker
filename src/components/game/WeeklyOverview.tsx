@@ -1,6 +1,7 @@
 'use client';
 
 import { useGameStore } from '@/store/gameStore';
+import { getRelationshipTier } from '@/store/gameStore';
 import { getWeekCondition, getWeatherForWeek } from '@/lib/gameEngine';
 import Image from 'next/image';
 import GlassPanel from '@/components/ui/GlassPanel';
@@ -156,6 +157,54 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
             </div>
           ))}
         </div>
+
+        {/* NPC Mood Board — who's feeling what this week */}
+        {(() => {
+          const NPC_INFO: Record<string, { name: string; portrait: string; role: string }> = {
+            jaemin: { name: '재민', portrait: '/assets/characters/jaemin/happy.png', role: '룸메' },
+            minji: { name: '민지', portrait: '/assets/characters/minji/neutral.png', role: '라이벌' },
+            soyeon: { name: '소연', portrait: '/assets/characters/soyeon/neutral.png', role: '선배' },
+            hyunwoo: { name: '현우', portrait: '/assets/characters/hyunwoo/neutral.png', role: '동아리' },
+          };
+          const relationships = useGameStore.getState().relationships;
+          const activeNpcs = Object.entries(NPC_INFO)
+            .map(([id, info]) => {
+              const rel = relationships[id];
+              if (!rel || rel.encounters === 0) return null;
+              const tier = getRelationshipTier(rel.affection);
+              const TIER_EMOJI: Record<string, string> = { stranger: '👤', acquaintance: '🤝', friend: '😊', close_friend: '💛', soulmate: '💕' };
+              const weeksSince = rel.lastInteraction ? currentWeek - rel.lastInteraction : 99;
+              const decaying = weeksSince >= 3;
+              return { id, ...info, affection: rel.affection, tierEmoji: TIER_EMOJI[tier] ?? '👤', decaying };
+            })
+            .filter(Boolean);
+
+          if (activeNpcs.length === 0) return null;
+          return (
+            <div className="mb-4">
+              <p className="text-xs text-txt-secondary font-medium mb-2">👥 인간관계</p>
+              <div className="grid grid-cols-2 gap-2">
+                {activeNpcs.map((npc) => npc && (
+                  <div key={npc.id} className={`flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white/5 ${npc.decaying ? 'border border-coral/20' : ''}`}>
+                    <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-white/10">
+                      <Image src={npc.portrait} alt={npc.name} width={28} height={28} className="object-cover object-top" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[11px] font-medium text-txt-primary">{npc.name}</span>
+                        <span className="text-[10px]">{npc.tierEmoji}</span>
+                      </div>
+                      <div className="w-full h-1 bg-white/10 rounded-full mt-0.5">
+                        <div className="h-full bg-pink rounded-full transition-all" style={{ width: `${npc.affection}%` }} />
+                      </div>
+                    </div>
+                    {npc.decaying && <span className="text-[10px] text-coral" title="오래 안 만남">📉</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Upcoming events */}
         <div className="flex flex-wrap gap-2 mb-5">
