@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
+import { getCachedAiCampus } from '@/lib/livingCampus';
 
 interface WeekTitleCardProps {
   week: number;
@@ -66,12 +67,14 @@ export default function WeekTitleCard({ week, onDone }: WeekTitleCardProps) {
   const info = WEEK_TITLES[week] ?? { title: `${week}주차` };
   const subtitle = getContextualSubtitle(week, stats);
   const lastDiary = week > 1 ? diaryEntries.find(d => d.week === week - 1) : null;
+  const aiCampus = getCachedAiCampus();
+  const aiAtmosphere = aiCampus?.week === week ? aiCampus.atmosphere : null;
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setVisible(false);
       setTimeout(onDone, 300);
-    }, 1200); // Slightly longer for reading
+    }, 2000); // 2 seconds — enough time to read title + atmosphere
     return () => clearTimeout(timer);
   }, [onDone]);
 
@@ -87,8 +90,15 @@ export default function WeekTitleCard({ week, onDone }: WeekTitleCardProps) {
         <p className="text-lg text-txt-secondary/70 animate-fade-in-up max-w-md px-4" style={{ animationDelay: '0.2s' }}>
           {subtitle}
         </p>
+        {/* AI-generated campus atmosphere */}
+        {aiAtmosphere && (
+          <p className="text-[11px] text-txt-secondary/50 mt-3 animate-fade-in-up max-w-sm px-6 leading-relaxed" style={{ animationDelay: '0.25s' }}>
+            {aiAtmosphere}
+          </p>
+        )}
+
         {/* Last week memory flash */}
-        {lastDiary && (
+        {lastDiary && !aiAtmosphere && (
           <p className="text-[10px] text-txt-secondary/30 mt-2 animate-fade-in-up italic max-w-sm px-6" style={{ animationDelay: '0.3s' }}>
             지난 주: {lastDiary.text.slice(0, 50)}{lastDiary.text.length > 50 ? '...' : ''}
           </p>
