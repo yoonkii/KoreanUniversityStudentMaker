@@ -968,7 +968,30 @@ export default function EndingPage() {
             animStep >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
         >
-          <h3 className="text-sm font-bold text-white/40 mb-3">📋 플레이 기록</h3>
+          <h3 className="text-sm font-bold text-white/40 mb-2">📋 플레이 기록</h3>
+          {/* Completionist progress bar */}
+          {(() => {
+            const achievements2 = useGameStore.getState().unlockedAchievements.length;
+            const npcsMet2 = Object.values(relationships).filter(r => r.encounters > 0).length;
+            const completionScore = Math.round(
+              (achievements2 / 28) * 25 + // achievements: 25%
+              (npcsMet2 / 5) * 25 + // NPCs met: 25%
+              (eventHistory.length / 20) * 25 + // events: 25%
+              (Object.values(relationships).filter(r => r.affection >= 50).length / 4) * 25 // friendships: 25%
+            );
+            const clampedScore = Math.min(100, completionScore);
+            return (
+              <div className="mb-3">
+                <div className="flex justify-between text-[9px] text-white/30 mb-1">
+                  <span>콘텐츠 경험도</span>
+                  <span>{clampedScore}%</span>
+                </div>
+                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${clampedScore >= 80 ? 'bg-gold' : clampedScore >= 50 ? 'bg-teal' : 'bg-white/30'}`} style={{ width: `${clampedScore}%` }} />
+                </div>
+              </div>
+            );
+          })()}
           <div className="grid grid-cols-3 gap-3">
             {(() => {
               const allRels = relationships;
