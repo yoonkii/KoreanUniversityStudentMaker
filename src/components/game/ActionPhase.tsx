@@ -661,7 +661,9 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
                   </div>
                 ) : null;
               })()}
-              <p className="text-sm text-pink/90 leading-relaxed flex-1">{npcEncounter}</p>
+              <div className="flex-1">
+                <p className="text-sm text-pink/90 leading-relaxed">{npcEncounter}</p>
+              </div>
             </div>
           )}
 
@@ -672,11 +674,14 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
             </div>
           )}
 
-          {/* Campus background NPC encounter */}
+          {/* Campus background NPC encounter — shows what they're DOING */}
           {campusEncounter && !npcEncounter && (
-            <div className="mt-2 px-4 py-2 glass rounded-xl text-xs text-txt-secondary/70 border border-white/5 animate-fade-in">
-              <span className="text-txt-secondary/40 mr-1">[{campusEncounter.npcRole}]</span>
-              {campusEncounter.dialogue}
+            <div className="mt-2 px-4 py-2.5 glass rounded-xl border border-white/5 animate-fade-in">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-medium text-txt-primary/60">{campusEncounter.npcName}</span>
+                <span className="text-[9px] text-txt-secondary/30">· {campusEncounter.npcRole}</span>
+              </div>
+              <p className="text-xs text-txt-secondary/70 italic">&ldquo;{campusEncounter.dialogue}&rdquo;</p>
             </div>
           )}
 
