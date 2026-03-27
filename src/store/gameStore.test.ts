@@ -84,4 +84,84 @@ describe('gameStore', () => {
       expect(useGameStore.getState().relationships['test-low'].affection).toBe(0); // clamped
     });
   });
+
+  describe('createPlayer', () => {
+    it('should set initial stats correctly', () => {
+      const { createPlayer } = useGameStore.getState();
+      createPlayer({ name: '테스트', gender: 'male', major: 'engineering' });
+
+      const { stats, player, phase } = useGameStore.getState();
+      expect(player?.name).toBe('테스트');
+      expect(stats.gpa).toBe(50);
+      expect(stats.money).toBe(500000);
+      expect(stats.health).toBe(70);
+      expect(phase).toBe('planning');
+    });
+
+    it('should apply dream bonus for scholar dream', () => {
+      const { createPlayer } = useGameStore.getState();
+      createPlayer({ name: '학자', gender: 'male', major: 'engineering', dream: 'scholar' });
+
+      const { stats } = useGameStore.getState();
+      expect(stats.gpa).toBe(60); // 50 + 10 (scholar bonus)
+    });
+
+    it('should apply dream bonus for social dream', () => {
+      const { createPlayer } = useGameStore.getState();
+      createPlayer({ name: '인싸', gender: 'female', major: 'business', dream: 'social' });
+
+      const { stats } = useGameStore.getState();
+      expect(stats.social).toBe(50); // 40 + 10
+      expect(stats.charm).toBe(45); // 40 + 5
+    });
+
+    it('should apply dream bonus for freedom dream (reduces stress)', () => {
+      const { createPlayer } = useGameStore.getState();
+      createPlayer({ name: '자유', gender: 'male', major: 'humanities', dream: 'freedom' });
+
+      const { stats } = useGameStore.getState();
+      expect(stats.stress).toBe(10); // 20 - 10
+      expect(stats.charm).toBe(45); // 40 + 5
+    });
+  });
+
+  describe('advanceWeek', () => {
+    it('should increment week and reset schedule', () => {
+      const store = useGameStore.getState();
+      store.createPlayer({ name: '테스트', gender: 'male', major: 'engineering' });
+
+      expect(useGameStore.getState().currentWeek).toBe(1);
+      useGameStore.getState().advanceWeek();
+      expect(useGameStore.getState().currentWeek).toBe(2);
+      expect(useGameStore.getState().schedule).toBeNull();
+      expect(useGameStore.getState().phase).toBe('planning');
+    });
+
+    it('should generate goal warnings for critical stats', () => {
+      const store = useGameStore.getState();
+      store.createPlayer({ name: '위기', gender: 'male', major: 'engineering' });
+      store.updateStats({ gpa: -40, stress: 70 }); // gpa=10, stress=90
+
+      store.advanceWeek();
+      const { goalWarnings } = useGameStore.getState();
+      expect(goalWarnings.length).toBeGreaterThan(0);
+      expect(goalWarnings.some(w => w.includes('학점'))).toBe(true);
+      expect(goalWarnings.some(w => w.includes('스트레스'))).toBe(true);
+    });
+  });
+
+  describe('eventHistory', () => {
+    it('should add and limit event history to 20 entries', () => {
+      const store = useGameStore.getState();
+      store.createPlayer({ name: '테스트', gender: 'male', major: 'engineering' });
+
+      for (let i = 0; i < 25; i++) {
+        store.addEventHistory({ week: i, summary: `Event ${i}` });
+      }
+
+      const { eventHistory } = useGameStore.getState();
+      expect(eventHistory.length).toBe(20); // capped at 20
+      expect(eventHistory[0].summary).toBe('Event 5'); // oldest kept
+    });
+  });
 });

@@ -97,6 +97,14 @@ Story Director  →  NPC Brains  →  Game Systems
 
 **All 6 sprints complete. Full game is playable.**
 
+**AUTOPLAY improvement cycles running.** Current composite quality score: **8.6/10** (see `AUTOPLAY.md` for scorecard, `DEVLOG.md` for per-cycle details). 11 cycles completed:
+- Bug fixes: P0 hydration, hooks ordering, SSR particle mismatch (Cycles 1,3,6)
+- Semester ending: 9 archetypes, report card, achievement grid (Cycles 2,10)
+- Exam/festival mechanics: 중간고사 GPA ×2, 축제 social ×1.5, HUD badges (Cycle 3)
+- Scripted events: MT, 축제, 중간고사, 기말고사/종강, night study — 7 of 16 weeks (Cycles 4-8,11)
+- NPC reactivity: stat-aware KakaoTalk messages (Cycle 9)
+- Achievement system: 14 achievements with unlock tracking (Cycle 10)
+
 ---
 
 ## How to Play
@@ -120,6 +128,8 @@ Run tests: `npm test`
 | File | Why |
 |------|-----|
 | `AGENTS.md` | **Read before writing any code** — Next.js 16 breaking changes |
+| `AUTOPLAY.md` | Karpathy-inspired auto-recursive improvement system + scorecard |
+| `DEVLOG.md` | Per-cycle experiment log with before/after scores |
 | `OVERVIEW.md` | Full technical deep-dive |
 | `GAME_ANALYSIS.md` | Architectural analysis + known gaps |
 | `src/engine/turn/day-runner.ts` | Master 9-phase daily loop |

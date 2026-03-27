@@ -1,0 +1,162 @@
+'use client';
+
+import { useGameStore } from '@/store/gameStore';
+import { getWeekCondition, getWeatherForWeek } from '@/lib/gameEngine';
+import Image from 'next/image';
+import GlassPanel from '@/components/ui/GlassPanel';
+
+interface WeeklyOverviewProps {
+  onContinue: () => void;
+}
+
+function getMoodEmoji(stress: number, health: number): { emoji: string; label: string } {
+  const wellbeing = health - stress;
+  if (wellbeing > 40) return { emoji: '😊', label: '컨디션 좋음' };
+  if (wellbeing > 10) return { emoji: '🙂', label: '보통' };
+  if (wellbeing > -20) return { emoji: '😐', label: '피곤함' };
+  if (wellbeing > -40) return { emoji: '😓', label: '힘듦' };
+  return { emoji: '😰', label: '위험' };
+}
+
+interface EventEntry { week: number; summary: string; npcInvolved?: string; choiceMade?: string }
+
+/** Soyeon (caring senior) as our "Cube butler" — personalized weekly advice with memory */
+function getSoyeonAdvice(week: number, stress: number, gpa: number, social: number, health: number, events?: EventEntry[]): { text: string; expression: string } {
+  // Sometimes reference a past event (memory callback)
+  if (events && events.length > 0 && week > 5 && Math.random() < 0.3) {
+    const recentEvent = events[events.length - 1];
+    if (recentEvent.npcInvolved === 'soyeon') {
+      return { text: `저번에 같이 보낸 시간 즐거웠어. 또 놀자~`, expression: 'happy' };
+    }
+    if (recentEvent.summary.includes('MT')) {
+      return { text: 'MT 재밌었지? 그때 사진 아직도 보고 웃어.', expression: 'teasing' };
+    }
+    if (recentEvent.summary.includes('축제')) {
+      return { text: '축제 때 기억나? 벌써 그리운데... 다음엔 더 재밌게 놀자!', expression: 'happy' };
+    }
+    if (recentEvent.summary.includes('위기')) {
+      return { text: '저번에 힘들었지? 지금은 좀 괜찮아? 걱정했어...', expression: 'worried' };
+    }
+  }
+  if (stress > 80) return { text: '야, 너 요즘 얼굴이 많이 안 좋아 보여. 오늘은 좀 쉬어. 학점보다 건강이 먼저야.', expression: 'worried' };
+  if (health < 25) return { text: '밥은 제대로 먹고 다니는 거지? 체력이 떨어지면 아무것도 못 해. 선배 말 들어.', expression: 'worried' };
+  if (gpa < 25) return { text: '학점이 좀 걱정돼... 다음 주는 도서관에서 좀 보자. 내가 노트 빌려줄게.', expression: 'sad' };
+  if (social < 20 && week > 4) return { text: '요즘 혼자 다니는 거 같던데... 밥이라도 같이 먹자. 혼밥은 선배가 허락 안 해.', expression: 'teasing' };
+  if (week >= 14) return { text: '기말 화이팅! 여기까지 온 거 대단해. 끝까지 힘내자, 종강이 코앞이야!', expression: 'happy' };
+  if (week >= 7 && week <= 8) return { text: '중간고사 기간이네. 긴장되지? 괜찮아, 준비한 만큼 나와. 선배가 응원할게.', expression: 'neutral' };
+  if (week === 9) return { text: '축제다! 이번 축제는 같이 돌아다니자. 대학 축제는 1학년 때가 제일 재밌어!', expression: 'happy' };
+  if (week === 4) return { text: 'MT 가기로 했지? 선배들이랑 친해질 좋은 기회야. 즐겁게 보내!', expression: 'teasing' };
+  if (gpa >= 75 && stress <= 30) return { text: '와, 요즘 진짜 잘하고 있다! 이 페이스 유지하면 장학금도 노려볼 만해.', expression: 'happy' };
+  if (week <= 3) return { text: '새 학기 잘 적응하고 있지? 모르는 거 있으면 언제든 물어봐. 선배가 다 알려줄게~', expression: 'happy' };
+  return { text: '이번 주도 잘 해보자! 뭐 고민 있으면 언제든 카톡해.', expression: 'neutral' };
+}
+
+export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
+  const currentWeek = useGameStore((state) => state.currentWeek);
+  const stats = useGameStore((state) => state.stats);
+  const eventHistory = useGameStore((state) => state.eventHistory);
+
+  const nextWeek = currentWeek + 1;
+  const mood = getMoodEmoji(stats.stress, stats.health);
+  const condition = getWeekCondition(nextWeek);
+  const weather = getWeatherForWeek(nextWeek);
+  const soyeon = getSoyeonAdvice(nextWeek, stats.stress, stats.gpa, stats.social, stats.health, eventHistory);
+
+  // Simple stat trend from recent events (last 3 entries)
+  const recentEvents = eventHistory.slice(-3);
+
+  // Find two most notable stats
+  const statEntries: { label: string; value: number; icon: string; status: 'good' | 'warning' | 'danger' }[] = [
+    { label: '학점', value: stats.gpa, icon: '📖', status: stats.gpa >= 60 ? 'good' : stats.gpa >= 40 ? 'warning' : 'danger' },
+    { label: '체력', value: stats.health, icon: '💚', status: stats.health >= 50 ? 'good' : stats.health >= 30 ? 'warning' : 'danger' },
+    { label: '스트레스', value: stats.stress, icon: '🔥', status: stats.stress <= 40 ? 'good' : stats.stress <= 65 ? 'warning' : 'danger' },
+    { label: '인맥', value: stats.social, icon: '👥', status: stats.social >= 40 ? 'good' : stats.social >= 20 ? 'warning' : 'danger' },
+    { label: '돈', value: stats.money, icon: '💰', status: stats.money >= 300000 ? 'good' : stats.money >= 100000 ? 'warning' : 'danger' },
+    { label: '매력', value: stats.charm, icon: '✨', status: stats.charm >= 40 ? 'good' : 'warning' },
+  ];
+
+  // Sort by urgency: danger first, then warning
+  const sortedStats = [...statEntries].sort((a, b) => {
+    const order = { danger: 0, warning: 1, good: 2 };
+    return order[a.status] - order[b.status];
+  });
+  const topStats = sortedStats.slice(0, 3);
+
+  const statusColor = { good: 'text-teal', warning: 'text-gold', danger: 'text-coral' };
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/40 cursor-pointer" onClick={onContinue}>
+      <GlassPanel variant="strong" className="w-full max-w-lg p-6 animate-modal-enter">
+        {/* Header */}
+        <div className="text-center mb-5">
+          <span className="text-4xl mb-2 block">{mood.emoji}</span>
+          <h2 className="text-xl font-bold text-txt-primary">{nextWeek}주차 준비</h2>
+          <p className="text-sm text-txt-secondary mt-1">{mood.label}</p>
+        </div>
+
+        {/* Soyeon companion message (PM2 Cube butler pattern) */}
+        <div className="flex gap-3 px-3 py-3 mb-4 bg-white/5 rounded-xl border-l-2 border-pink/40">
+          <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-pink/10">
+            <Image
+              src={`/assets/characters/soyeon/${soyeon.expression}.png`}
+              alt="소연 선배"
+              width={40}
+              height={40}
+              className="w-full h-full object-cover object-top"
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="text-[10px] text-pink/70 font-medium">박소연 선배</span>
+            <p className="text-sm text-txt-primary/80 leading-relaxed mt-0.5">{soyeon.text}</p>
+          </div>
+        </div>
+
+        {/* Stat overview */}
+        <div className="flex flex-col gap-2 mb-4">
+          <p className="text-xs text-txt-secondary font-medium">현재 상태</p>
+          {topStats.map((stat) => (
+            <div key={stat.label} className="flex items-center justify-between px-3 py-2 bg-white/5 rounded-lg">
+              <span className="text-sm text-txt-secondary">{stat.icon} {stat.label}</span>
+              <span className={`text-sm font-medium ${statusColor[stat.status]}`}>
+                {stat.label === '돈' ? `₩${stat.value.toLocaleString('ko-KR')}` : `${stat.value}/100`}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Upcoming events */}
+        <div className="flex flex-wrap gap-2 mb-5">
+          {condition.type !== 'normal' && (
+            <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${condition.type === 'festival' ? 'bg-gold/15 text-gold' : 'bg-coral/15 text-coral'}`}>
+              {condition.emoji} {condition.label}
+            </span>
+          )}
+          {weather.type !== 'normal' && (
+            <span className="px-2.5 py-1 rounded-lg text-xs bg-white/10 text-txt-secondary">
+              {weather.emoji} {weather.label}
+            </span>
+          )}
+          {recentEvents.length > 0 && (
+            <span className="px-2.5 py-1 rounded-lg text-xs bg-white/5 text-txt-secondary/60">
+              📖 추억 {eventHistory.length}개
+            </span>
+          )}
+        </div>
+
+        {/* Continue button */}
+        <button
+          onClick={onContinue}
+          className="w-full py-3 rounded-xl font-semibold text-base transition-all duration-300 cursor-pointer bg-teal/20 text-teal border border-teal/30 hover:bg-teal/30 active:scale-[0.98]"
+        >
+          다음 주 스케줄 짜기
+        </button>
+        <button
+          onClick={onContinue}
+          className="w-full py-1.5 text-[10px] text-txt-secondary/30 hover:text-txt-secondary/60 transition-colors cursor-pointer"
+        >
+          아무 곳이나 탭하여 건너뛰기
+        </button>
+      </GlassPanel>
+    </div>
+  );
+}

@@ -32,6 +32,28 @@ const TIME_LABELS: Record<string, string> = {
   evening: '🌙 저녁',
 };
 
+// NPC cameos — brief appearances during activities
+const NPC_CAMEOS: Record<string, { npc: string; lines: string[] }> = {
+  '수업': { npc: '김 교수', lines: ['집중하세요!', '이 부분 시험에 나옵니다.', '질문 있는 사람?'] },
+  '도서관': { npc: '한민지', lines: ['...조용히 해.', '여기 자리 있어.', '같이 공부할래?'] },
+  '아르바이트': { npc: '이사장님', lines: ['오늘도 고생이야~', '손님 많으니 힘내!', '용돈 좀 보태줄게.'] },
+  '동아리': { npc: '정현우', lines: ['오, 왔어? 오늘 합주하자!', '신입 실력이 느는데?', '다음 공연 준비해야지.'] },
+  '데이트': { npc: '', lines: ['두근두근...', '오늘 날씨 좋다!', '어디 갈까?'] },
+  '운동': { npc: '', lines: ['땀이 시원하다!', '한 세트 더!', '체력이 올라가는 느낌.'] },
+  '휴식': { npc: '이재민', lines: ['야 넷플 뭐 봐?', '피자 시킬까?', 'zzz...'] },
+  '친구': { npc: '이재민', lines: ['밥 먹으러 가자!', '요즘 뭐 해?', '오늘 재밌었다!'] },
+};
+
+function getNPCCameo(activityName: string): { npc: string; line: string } | null {
+  for (const [keyword, data] of Object.entries(NPC_CAMEOS)) {
+    if (activityName.includes(keyword)) {
+      const line = data.lines[Math.floor(Math.random() * data.lines.length)];
+      return { npc: data.npc, line };
+    }
+  }
+  return null;
+}
+
 // 17% random event chance per activity
 const RANDOM_EVENTS = [
   { text: '교수님이 갑자기 퀴즈를 냈다!', effects: { gpa: 3, stress: 5 } },
@@ -44,15 +66,29 @@ const RANDOM_EVENTS = [
   { text: '수업 중에 졸다가 들켰다... 😴', effects: { gpa: -2, stress: 5 } },
 ];
 
+// Map activity names to background images
+function getActivityBackground(name: string): string {
+  const n = name.toLowerCase();
+  if (n.includes('수업') || n.includes('lecture')) return '/assets/backgrounds/classroom/daytime.png';
+  if (n.includes('공부') || n.includes('study') || n.includes('도서관')) return '/assets/backgrounds/library/quiet.png';
+  if (n.includes('알바') || n.includes('카페')) return '/assets/backgrounds/cafe/counter.png';
+  if (n.includes('동아리') || n.includes('club')) return '/assets/backgrounds/club-room/normal.png';
+  if (n.includes('데이트') || n.includes('date')) return '/assets/backgrounds/campus/sunset.png';
+  if (n.includes('운동') || n.includes('exercise')) return '/assets/backgrounds/campus/day.png';
+  if (n.includes('휴식') || n.includes('rest')) return '/assets/backgrounds/dorm/clean.png';
+  if (n.includes('친구') || n.includes('friend')) return '/assets/backgrounds/cafe/seating.png';
+  return '/assets/backgrounds/campus/day.png';
+}
+
 export default function ActionPhase({ activities, currentStats, onComplete, speed = 1 }: ActionPhaseProps) {
   const [currentIndex, setCurrentIndex] = useState(-1); // -1 = not started
   const [animatingStats, setAnimatingStats] = useState<Partial<PlayerStats>>({});
   const [randomEvent, setRandomEvent] = useState<string | null>(null);
-  const [gameSpeed, setGameSpeed] = useState(speed);
+  const [gameSpeed, setGameSpeed] = useState(2); // default to 2x for snappy pacing
   const [isSkipping, setIsSkipping] = useState(false);
   const tickRef = useRef<NodeJS.Timeout | null>(null);
 
-  const baseDelay = gameSpeed === 2 ? 600 : 1200;
+  const baseDelay = gameSpeed === 2 ? 400 : 800; // faster: 400ms at ×2, 800ms at ×1
 
   const processActivity = useCallback((index: number) => {
     if (index >= activities.length) {
@@ -114,10 +150,18 @@ export default function ActionPhase({ activities, currentStats, onComplete, spee
     ? activities[currentIndex]
     : null;
 
+  const bgSrc = currentActivity ? getActivityBackground(currentActivity.name) : '/assets/backgrounds/campus/day.png';
+
   return (
-    <div className="flex flex-col items-center justify-center h-[100dvh] bg-navy px-4 relative">
+    <div className="flex flex-col items-center justify-center h-[100dvh] bg-navy px-4 relative overflow-hidden">
+      {/* Background image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center transition-all duration-700 opacity-30"
+        style={{ backgroundImage: `url(${bgSrc})` }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/70 to-navy/40" />
       {/* Speed controls */}
-      <div className="absolute top-4 right-4 flex gap-2 z-30">
+      <div className="absolute top-4 right-4 flex gap-2 z-30 relative">
         <button
           onClick={() => setGameSpeed(gameSpeed === 1 ? 2 : 1)}
           className="px-3 py-1.5 text-sm glass rounded-lg text-txt-secondary hover:text-txt-primary transition-colors"
@@ -134,7 +178,7 @@ export default function ActionPhase({ activities, currentStats, onComplete, spee
 
       {/* Activity display */}
       {currentActivity && (
-        <div className="text-center animate-fade-in">
+        <div className="text-center animate-fade-in relative z-10">
           {/* Time slot */}
           <div className="text-txt-secondary text-sm mb-2">
             {TIME_LABELS[currentActivity.timeSlot] ?? currentActivity.timeSlot}
@@ -144,9 +188,20 @@ export default function ActionPhase({ activities, currentStats, onComplete, spee
           <div className="text-6xl mb-4 animate-bounce-slow">
             {currentActivity.icon}
           </div>
-          <h2 className="text-2xl font-bold text-txt-primary mb-6">
+          <h2 className="text-2xl font-bold text-txt-primary mb-2">
             {currentActivity.name}
           </h2>
+
+          {/* NPC cameo */}
+          {(() => {
+            const cameo = getNPCCameo(currentActivity.name);
+            if (!cameo) return <div className="mb-4" />;
+            return (
+              <p className="text-sm text-txt-secondary/60 italic mb-4">
+                {cameo.npc ? `${cameo.npc}: ` : ''}&ldquo;{cameo.line}&rdquo;
+              </p>
+            );
+          })()}
 
           {/* Stat changes ticking in */}
           <div className="flex flex-wrap justify-center gap-3 mb-6">
@@ -191,7 +246,7 @@ export default function ActionPhase({ activities, currentStats, onComplete, spee
 
       {/* Starting state */}
       {currentIndex === -1 && (
-        <div className="text-center">
+        <div className="text-center relative z-10">
           <div className="text-4xl mb-4 animate-pulse">📋</div>
           <p className="text-txt-secondary">일과 시작 중...</p>
         </div>

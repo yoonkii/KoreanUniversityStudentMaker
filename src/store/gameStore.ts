@@ -8,6 +8,7 @@ import type {
   CharacterRelationship,
   GamePhase,
 } from './types';
+import type { ActiveCombo, WeeklyEvent } from '@/lib/gameEngine';
 
 const INITIAL_STATS: PlayerStats = {
   gpa: 50,
@@ -69,10 +70,14 @@ interface GameStore {
   currentScene: Scene | null;
   sceneQueue: Scene[];
   weekStatDeltas: Partial<PlayerStats>;
+  weekCombos: ActiveCombo[];
+  weeklyEvent: WeeklyEvent | null;
   gameStarted: boolean;
   eventHistory: EventHistoryEntry[];
   tierNotification: { characterId: string; newTier: RelationshipTier; label: string } | null;
   goalWarnings: string[];
+  unlockedAchievements: string[];
+  newAchievements: { id: string; title: string; emoji: string }[];
 
   // --- Actions ---
   setHasHydrated: (v: boolean) => void;
@@ -85,11 +90,15 @@ interface GameStore {
   addEventHistory: (entry: EventHistoryEntry) => void;
   clearTierNotification: () => void;
   getRecentEvents: () => EventHistoryEntry[];
+  addUnlockedAchievement: (id: string, title: string, emoji: string) => void;
+  clearNewAchievements: () => void;
   loadScene: (scene: Scene) => void;
   nextScene: () => void;
   setSceneQueue: (scenes: Scene[]) => void;
   setCurrentSceneIndex: (index: number) => void;
   setWeekStatDeltas: (deltas: Partial<PlayerStats>) => void;
+  setWeekCombos: (combos: ActiveCombo[]) => void;
+  setWeeklyEvent: (event: WeeklyEvent | null) => void;
   resetGame: () => void;
 }
 
@@ -108,10 +117,14 @@ export const useGameStore = create<GameStore>()(
       currentScene: null,
       sceneQueue: [],
       weekStatDeltas: {},
+          weekCombos: [],
+      weeklyEvent: null,
       gameStarted: false,
       eventHistory: [],
       tierNotification: null,
       goalWarnings: [],
+      unlockedAchievements: [],
+      newAchievements: [],
 
       // --- Actions ---
 
@@ -124,9 +137,31 @@ export const useGameStore = create<GameStore>()(
       },
 
       createPlayer(profile) {
+        // Dream affects starting stats
+        const dreamBonus: Record<string, Partial<PlayerStats>> = {
+          scholar: { gpa: 10 },
+          social: { social: 10, charm: 5 },
+          balance: { health: 5, gpa: 3, social: 3 },
+          freedom: { stress: -10, charm: 5 },
+        };
+        const bonus = profile.dream ? dreamBonus[profile.dream] ?? {} : {};
+        const startStats = { ...INITIAL_STATS };
+        for (const [key, val] of Object.entries(bonus)) {
+          if (val !== undefined) startStats[key as keyof PlayerStats] += val;
+        }
+        // New Game+ bonus: +3 to all stats per completion (max +15)
+        if (typeof window !== 'undefined') {
+          const ngPlus = Math.min(5, parseInt(localStorage.getItem('kusm-completions') ?? '0', 10));
+          if (ngPlus > 0) {
+            startStats.gpa += ngPlus * 3;
+            startStats.health += ngPlus * 3;
+            startStats.social += ngPlus * 3;
+            startStats.charm += ngPlus * 3;
+          }
+        }
         set({
           player: profile,
-          stats: { ...INITIAL_STATS },
+          stats: startStats,
           currentWeek: 1,
           currentSceneIndex: 0,
           relationships: {},
@@ -134,6 +169,8 @@ export const useGameStore = create<GameStore>()(
           currentScene: null,
           sceneQueue: [],
           weekStatDeltas: {},
+          weekCombos: [],
+          weeklyEvent: null,
           gameStarted: true,
           phase: 'planning',
         });
@@ -195,6 +232,8 @@ export const useGameStore = create<GameStore>()(
           currentScene: null,
           sceneQueue: [],
           weekStatDeltas: {},
+          weekCombos: [],
+          weeklyEvent: null,
           phase: 'planning',
           goalWarnings: warnings,
           tierNotification: null,
@@ -213,6 +252,19 @@ export const useGameStore = create<GameStore>()(
 
       getRecentEvents() {
         return get().eventHistory.slice(-10);
+      },
+
+      addUnlockedAchievement(id: string, title: string, emoji: string) {
+        const { unlockedAchievements } = get();
+        if (unlockedAchievements.includes(id)) return;
+        set({
+          unlockedAchievements: [...unlockedAchievements, id],
+          newAchievements: [...get().newAchievements, { id, title, emoji }],
+        });
+      },
+
+      clearNewAchievements() {
+        set({ newAchievements: [] });
       },
 
       loadScene(scene) {
@@ -241,6 +293,14 @@ export const useGameStore = create<GameStore>()(
         set({ weekStatDeltas: deltas });
       },
 
+      setWeekCombos(combos) {
+        set({ weekCombos: combos });
+      },
+
+      setWeeklyEvent(event) {
+        set({ weeklyEvent: event });
+      },
+
       resetGame() {
         set({
           phase: 'title',
@@ -253,10 +313,14 @@ export const useGameStore = create<GameStore>()(
           currentScene: null,
           sceneQueue: [],
           weekStatDeltas: {},
+          weekCombos: [],
+          weeklyEvent: null,
           gameStarted: false,
           eventHistory: [],
           tierNotification: null,
           goalWarnings: [],
+          unlockedAchievements: [],
+          newAchievements: [],
         });
       },
     }),
@@ -270,8 +334,9 @@ export const useGameStore = create<GameStore>()(
         }
         return persisted as GameStore;
       },
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     },
   ),
 );
-
-// Hydration is detected in the component via useEffect — see game/page.tsx

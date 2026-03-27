@@ -1,6 +1,7 @@
 'use client';
 
 import { useGameStore } from '@/store/gameStore';
+import { getWeatherForWeek } from '@/lib/gameEngine';
 
 const SEMESTER_WEEKS = 16;
 
@@ -10,6 +11,15 @@ function getSemesterLabel(week: number): string {
   const semester = (semesterIndex % 2) + 1;
   const weekInSemester = ((week - 1) % SEMESTER_WEEKS) + 1;
   return `${year}학년 ${semester}학기 ${weekInSemester}주차`;
+}
+
+function getWeekEvent(week: number): { label: string; color: string } | null {
+  const w = ((week - 1) % SEMESTER_WEEKS) + 1;
+  if (w === 7 || w === 8) return { label: '중간고사', color: 'text-coral' };
+  if (w === 14 || w === 15) return { label: '기말고사', color: 'text-red-400' };
+  if (w === 9) return { label: '축제', color: 'text-pink' };
+  if (w === 4) return { label: 'MT 시즌', color: 'text-lavender' };
+  return null;
 }
 
 function getStressEmoji(stress: number): string {
@@ -49,6 +59,20 @@ export default function HUDBar() {
           <div className="flex items-center gap-2 text-sm">
             <iconify-icon icon="solar:calendar-bold" width="18" height="18" className="text-teal" />
             <span className="text-txt-primary font-medium">{getSemesterLabel(currentWeek)}</span>
+            {getWeekEvent(currentWeek) && (
+              <span className={`text-xs font-bold px-1.5 py-0.5 rounded-md bg-white/10 ${getWeekEvent(currentWeek)!.color}`}>
+                {getWeekEvent(currentWeek)!.label}
+              </span>
+            )}
+            {(() => {
+              const weather = getWeatherForWeek(currentWeek);
+              if (weather.type === 'normal') return null;
+              return (
+                <span className="text-xs px-1.5 py-0.5 rounded-md bg-white/5 text-txt-secondary" title={weather.hint}>
+                  {weather.emoji}
+                </span>
+              );
+            })()}
           </div>
 
           {/* Center: Stress indicator */}
@@ -75,9 +99,27 @@ export default function HUDBar() {
           </div>
         </div>
 
-        {/* Semester progress bar (thin line at bottom of HUD) */}
-        <div className="w-full h-0.5 bg-white/5">
-          <div className="h-full bg-teal/40 transition-all duration-700 ease-out" style={{ width: `${semesterProgress}%` }} />
+        {/* Semester progress bar with milestone markers */}
+        <div className="w-full h-1.5 bg-white/5 relative">
+          <div className="h-full bg-teal/40 transition-all duration-700 ease-out rounded-r-full" style={{ width: `${semesterProgress}%` }} />
+          {/* Milestone markers */}
+          {[
+            { week: 4, label: 'MT' },
+            { week: 8, label: '중간' },
+            { week: 9, label: '축제' },
+            { week: 15, label: '기말' },
+          ].map(({ week, label }) => (
+            <div
+              key={week}
+              className="absolute top-0 h-full flex items-center"
+              style={{ left: `${(week / SEMESTER_WEEKS) * 100}%` }}
+            >
+              <div className={`w-px h-full ${weekInSemester >= week ? 'bg-teal/60' : 'bg-white/15'}`} />
+              <span className={`absolute -bottom-3.5 -translate-x-1/2 text-[7px] ${weekInSemester >= week ? 'text-teal/50' : 'text-white/15'}`}>
+                {label}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     </>

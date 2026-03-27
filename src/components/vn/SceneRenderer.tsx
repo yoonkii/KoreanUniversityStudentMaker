@@ -3,7 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Scene, Choice, SceneCharacter } from '@/store/types';
 import { ACTIVITY_COLORS, type ActivityColorKey } from '@/data/activity-colors';
+import { useAIDialogue } from '@/hooks/useAIDialogue';
 import BackgroundLayer from './BackgroundLayer';
+import StatChangePopup from './StatChangePopup';
 import CharacterPortrait from './CharacterPortrait';
 import DialogueBox from './DialogueBox';
 import ChoiceList from './ChoiceList';
@@ -36,13 +38,16 @@ interface SceneRendererProps {
   activityId?: ActivityColorKey;
   /** Optional override for the time label shown in the banner (e.g. "월요일 오전") */
   timeLabel?: string;
+  /** Enable AI dialogue enhancement (default: true) */
+  enableAIDialogue?: boolean;
 }
 
-export default function SceneRenderer({ scene, onSceneEnd, activityId, timeLabel }: SceneRendererProps) {
+export default function SceneRenderer({ scene, onSceneEnd, activityId, timeLabel, enableAIDialogue = true }: SceneRendererProps) {
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [characterStates, setCharacterStates] = useState<Map<string, string>>(new Map());
   const [showChoices, setShowChoices] = useState(false);
   const [bannerVisible, setBannerVisible] = useState(true);
+  const [pendingChoice, setPendingChoice] = useState<Choice | null>(null);
 
   const resolvedActivity = activityId ?? locationToActivity(scene.location);
   const resolvedTime = timeLabel ?? variantToTimeLabel(scene.backgroundVariant);
@@ -55,7 +60,9 @@ export default function SceneRenderer({ scene, onSceneEnd, activityId, timeLabel
     return () => clearTimeout(t);
   }, [scene.id]);
 
-  const { dialogue, choices, characters, location, backgroundVariant } = scene;
+  const { dialogue: aiDialogue, isLoading: isAILoading } = useAIDialogue(scene, enableAIDialogue);
+  const { choices, characters, location, backgroundVariant } = scene;
+  const dialogue = aiDialogue;
   const currentLine = dialogue[currentLineIndex];
   const isLastLine = currentLineIndex >= dialogue.length - 1;
 
@@ -97,7 +104,13 @@ export default function SceneRenderer({ scene, onSceneEnd, activityId, timeLabel
 
   const handleChoose = useCallback(
     (choice: Choice) => {
-      onSceneEnd(choice);
+      // Show stat popup before ending scene
+      if (choice.statEffects && Object.values(choice.statEffects).some(v => v !== 0)) {
+        setPendingChoice(choice);
+        setShowChoices(false);
+      } else {
+        onSceneEnd(choice);
+      }
     },
     [onSceneEnd],
   );
@@ -165,7 +178,9 @@ export default function SceneRenderer({ scene, onSceneEnd, activityId, timeLabel
 
       {/* Z-20: Dialogue box or choice list */}
       <div className="absolute bottom-0 left-0 right-0 z-20 px-4 pb-4">
-        {showChoices && choices && choices.length > 0 ? (
+        {isAILoading && !currentLine ? (
+          <div className="glass-dialogue rounded-2xl px-6 py-4 text-white/50 text-sm animate-pulse">...</div>
+        ) : showChoices && choices && choices.length > 0 ? (
           <ChoiceList choices={choices} onChoose={handleChoose} />
         ) : currentLine ? (
           <DialogueBox
@@ -175,6 +190,18 @@ export default function SceneRenderer({ scene, onSceneEnd, activityId, timeLabel
           />
         ) : null}
       </div>
+
+      {/* Stat change popup after choice */}
+      {pendingChoice && (
+        <StatChangePopup
+          statEffects={pendingChoice.statEffects}
+          onDone={() => {
+            const choice = pendingChoice;
+            setPendingChoice(null);
+            onSceneEnd(choice);
+          }}
+        />
+      )}
     </div>
   );
 }

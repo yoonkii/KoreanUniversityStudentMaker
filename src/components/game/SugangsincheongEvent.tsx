@@ -16,14 +16,14 @@ interface SugangsincheongEventProps {
 }
 
 const COURSE_POOL: CourseSlot[] = [
-  { id: 'c1', name: '전공기초 I', professor: '김서영 교수', seats: 45, maxSeats: 50, popular: false },
-  { id: 'c2', name: '심리학 개론', professor: '박지영 교수', seats: 3, maxSeats: 40, popular: true },
-  { id: 'c3', name: '경제학원론', professor: '이성호 교수', seats: 28, maxSeats: 50, popular: false },
-  { id: 'c4', name: '영어회화 A', professor: 'Sarah Johnson', seats: 1, maxSeats: 25, popular: true },
-  { id: 'c5', name: '데이터분석 입문', professor: '정민수 교수', seats: 12, maxSeats: 30, popular: true },
-  { id: 'c6', name: '창업과 혁신', professor: '최동현 교수', seats: 35, maxSeats: 40, popular: false },
-  { id: 'c7', name: '한국사', professor: '김영수 교수', seats: 22, maxSeats: 50, popular: false },
-  { id: 'c8', name: '프로그래밍 기초', professor: '이재훈 교수', seats: 5, maxSeats: 30, popular: true },
+  { id: 'c1', name: '전공기초 I', professor: '김서영 교수', seats: 48, maxSeats: 50, popular: false },
+  { id: 'c2', name: '심리학 개론', professor: '박지영 교수', seats: 15, maxSeats: 40, popular: true },
+  { id: 'c3', name: '경제학원론', professor: '이성호 교수', seats: 40, maxSeats: 50, popular: false },
+  { id: 'c4', name: '영어회화 A', professor: 'Sarah Johnson', seats: 8, maxSeats: 25, popular: true },
+  { id: 'c5', name: '데이터분석 입문', professor: '정민수 교수', seats: 20, maxSeats: 30, popular: true },
+  { id: 'c6', name: '창업과 혁신', professor: '최동현 교수', seats: 38, maxSeats: 40, popular: false },
+  { id: 'c7', name: '한국사', professor: '김영수 교수', seats: 35, maxSeats: 50, popular: false },
+  { id: 'c8', name: '프로그래밍 기초', professor: '이재훈 교수', seats: 12, maxSeats: 30, popular: true },
 ];
 
 export default function SugangsincheongEvent({ onComplete }: SugangsincheongEventProps) {
@@ -73,10 +73,10 @@ export default function SugangsincheongEvent({ onComplete }: SugangsincheongEven
     const interval = setInterval(() => {
       setCourses(prev => prev.map(c => {
         if (selected.includes(c.id)) return c; // Don't drain courses you selected
-        const drain = c.popular ? Math.ceil(Math.random() * 3) : (Math.random() < 0.3 ? 1 : 0);
+        const drain = c.popular ? Math.ceil(Math.random() * 2) : (Math.random() < 0.2 ? 1 : 0);
         return { ...c, seats: Math.max(0, c.seats - drain) };
       }));
-    }, 1500);
+    }, 2000);
     return () => clearInterval(interval);
   }, [phase, selected]);
 

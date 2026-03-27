@@ -12,10 +12,13 @@ export interface PlayerStats {
   charm: number;    // 0-100
 }
 
+export type DreamType = 'scholar' | 'social' | 'balance' | 'freedom';
+
 export interface PlayerProfile {
   name: string;
   gender: Gender;
   major: string;
+  dream?: DreamType;
 }
 
 export interface CharacterRelationship {

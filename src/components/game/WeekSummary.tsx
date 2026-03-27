@@ -63,10 +63,45 @@ function getWeekComment(deltas: Partial<PlayerStats>): string {
   return '무난한 한 주가 지나갔어요 📅';
 }
 
+/** Character diary — personal reflection on the week */
+function getDiaryEntry(week: number, deltas: Partial<PlayerStats>, stats: PlayerStats): string {
+  const stress = deltas.stress ?? 0;
+  const gpa = deltas.gpa ?? 0;
+  const social = deltas.social ?? 0;
+
+  // Week-specific entries
+  if (week === 1) return '첫 주가 끝났다. 모든 게 새롭고 어색하지만, 나름 잘 해낸 것 같다. 내일부터 진짜 시작이다.';
+  if (week === 4) return 'MT 갔다 왔다. 선배들이랑 밤새 얘기한 게 기억에 남는다. 이래서 대학을 오는 거구나.';
+  if (week === 8) return '중간고사 끝! 결과는 모르겠지만, 최선은 다했다. 오늘만큼은 푹 자자.';
+  if (week === 9) return '축제 진짜 재밌었다. 캠퍼스가 이렇게 활기찬 건 처음이야.';
+  if (week === 15) return '기말고사 끝... 해방이다. 1학기가 이렇게 빨리 지나갈 줄 몰랐다.';
+
+  // Stat-reactive entries
+  if (stress > 15 && stats.stress > 70) return '너무 무리했나. 머리가 멍하고 몸이 무겁다. 내일은 좀 쉬어야겠다.';
+  if (gpa > 12) return '열심히 공부한 보람이 느껴진다. 이 페이스 유지하면 좋은 결과가 있을 거야.';
+  if (social > 12) return '이번 주는 사람들이랑 많이 어울렸다. 혼자일 때보다 에너지가 생기는 느낌.';
+  if (stress < -8) return '여유로운 한 주였다. 가끔은 이렇게 쉬어가는 것도 중요하다는 걸 배웠다.';
+  if (stats.money < 50000) return '통장 잔고가 너무 줄었다... 다음 주엔 알바를 더 넣어야 할 것 같다.';
+  if (stats.social < 20 && week > 5) return '요즘 혼자 있는 시간이 많다. 외롭진 않은데... 약간 허전하다.';
+
+  // Generic but personal
+  const generic = [
+    '평범한 한 주. 근데 이런 평범함이 나중에 그리워질 것 같다.',
+    '오늘 하늘이 예뻤다. 캠퍼스를 걸으면서 잠깐 생각에 잠겼다.',
+    '시간이 진짜 빨리 간다. 벌써 이만큼 왔다니.',
+    '내일은 오늘보다 조금 더 잘하자. 그게 내 목표다.',
+  ];
+  return generic[week % generic.length];
+}
+
 export default function WeekSummary({ onContinue }: WeekSummaryProps) {
   const currentWeek = useGameStore((state) => state.currentWeek);
   const stats = useGameStore((state) => state.stats);
   const weekStatDeltas = useGameStore((state) => state.weekStatDeltas);
+  const weekCombos = useGameStore((state) => state.weekCombos);
+  const weeklyEvent = useGameStore((state) => state.weeklyEvent);
+  const newAchievements = useGameStore((state) => state.newAchievements);
+  const clearNewAchievements = useGameStore((state) => state.clearNewAchievements);
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/40">
@@ -124,12 +159,79 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
           })}
         </div>
 
+        {/* Random weekly event */}
+        {weeklyEvent && (
+          <div className="flex items-center gap-3 px-4 py-3 mb-4 rounded-xl bg-lavender/10 border border-lavender/20 animate-stat-reveal" style={{ animationDelay: '650ms' }}>
+            <span className="text-xl">🎲</span>
+            <div className="flex-1">
+              <div className="text-sm font-bold text-lavender">{weeklyEvent.name}</div>
+              <div className="text-xs text-txt-secondary">{weeklyEvent.description}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Activity combos */}
+        {weekCombos.length > 0 && (
+          <div className="flex flex-col gap-1.5 mb-4 animate-stat-reveal" style={{ animationDelay: '700ms' }}>
+            <p className="text-xs text-txt-secondary font-medium mb-0.5">활동 콤보</p>
+            {weekCombos.map((combo) => (
+              <div
+                key={combo.name}
+                className={`flex items-center justify-between px-3 py-2 rounded-lg border ${
+                  combo.name === '벼락치기' || combo.name === '알바 중독'
+                    ? 'bg-coral/10 border-coral/20'
+                    : 'bg-teal/10 border-teal/20'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">{combo.name === '벼락치기' || combo.name === '알바 중독' ? '⚠️' : '✨'}</span>
+                  <span className="text-xs text-txt-secondary">{combo.description}</span>
+                </div>
+                <span className={`text-xs font-medium ${
+                  combo.name === '벼락치기' || combo.name === '알바 중독' ? 'text-coral' : 'text-teal'
+                }`}>
+                  {combo.effect}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Achievement unlocks */}
+        {newAchievements.length > 0 && (
+          <div className="flex flex-col gap-2 mb-4 animate-stat-reveal" style={{ animationDelay: '800ms' }}>
+            {newAchievements.map((ach) => (
+              <div key={ach.id} className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-gold/10 border border-gold/20">
+                <span className="text-2xl">{ach.emoji}</span>
+                <div>
+                  <div className="text-sm font-bold text-gold">업적 달성!</div>
+                  <div className="text-xs text-txt-secondary">{ach.title}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Character diary entry */}
+        <div className="mb-4 animate-stat-reveal" style={{ animationDelay: '900ms' }}>
+          <div className="bg-white/[0.03] rounded-xl px-4 py-3 border border-white/5">
+            <p className="text-[10px] text-txt-secondary/40 mb-1.5">📔 일기</p>
+            <p className="text-sm text-txt-primary/60 leading-relaxed italic">
+              {getDiaryEntry(currentWeek, weekStatDeltas, stats)}
+            </p>
+          </div>
+        </div>
+
         {/* Continue button */}
         <button
-          onClick={onContinue}
-          className="w-full py-3 rounded-xl font-semibold text-base transition-all duration-300 cursor-pointer bg-teal/20 text-teal border border-teal/30 hover:bg-teal/30 active:scale-[0.98]"
+          onClick={() => { clearNewAchievements(); onContinue(); }}
+          className={`w-full py-3 rounded-xl font-semibold text-base transition-all duration-300 cursor-pointer active:scale-[0.98] ${
+            currentWeek >= 16
+              ? 'bg-gold/20 text-gold border border-gold/30 hover:bg-gold/30'
+              : 'bg-teal/20 text-teal border border-teal/30 hover:bg-teal/30'
+          }`}
         >
-          다음 주 시작
+          {currentWeek >= 16 ? '🎓 학기 결산 보기' : '다음 주 시작'}
         </button>
       </GlassPanel>
     </div>

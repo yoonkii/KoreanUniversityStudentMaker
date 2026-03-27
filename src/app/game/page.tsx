@@ -3,79 +3,33 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGameStore } from '@/store/gameStore';
-import { useGameStore as useNewStore } from '@/stores/game-store';
+// Note: new store (stores/game-store) available for future Sprint 3-6 engine integration
 import { simulateWeek } from '@/lib/gameEngine';
-import { calculateTension } from '@/lib/tensionFormula';
+import { ACTIVITIES } from '@/data/activities';
+// calculateTension available if needed for legacy AI path
 import HUDBar from '@/components/game/HUDBar';
 import StatsSidebar from '@/components/game/StatsSidebar';
 import SchedulePlanner from '@/components/game/SchedulePlanner';
+import ActionPhase from '@/components/game/ActionPhase';
 import SceneRenderer from '@/components/vn/SceneRenderer';
 import WeekSummary from '@/components/game/WeekSummary';
-import OnboardingOverlay from '@/components/game/OnboardingOverlay';
+import PrologueSequence from '@/components/game/PrologueSequence';
 import SugangsincheongEvent from '@/components/game/SugangsincheongEvent';
+import FestivalEvent from '@/components/game/FestivalEvent';
+import ExamEvent from '@/components/game/ExamEvent';
+import MTEvent from '@/components/game/MTEvent';
 import KakaoMessages from '@/components/game/KakaoMessages';
+import WeeklyOverview from '@/components/game/WeeklyOverview';
+import WeekTitleCard from '@/components/game/WeekTitleCard';
+import ScheduleViewer from '@/components/game/ScheduleViewer';
+import RelationshipPanel from '@/components/game/RelationshipPanel';
+import PauseMenu from '@/components/game/PauseMenu';
+import CrisisEvent, { detectCrisis } from '@/components/game/CrisisEvent';
 import type { Choice, PlayerStats, Scene, WeekSchedule } from '@/store/types';
-import { initializeNPCs } from '@/engine/data/npc-initializer';
-import { CORE_NPC_SHEETS } from '@/engine/data/core-npcs';
-
-/**
- * Fetch an AI-generated scene from the game director API.
- * Returns a Scene on success, or null if the API is unavailable / fails.
- */
-async function fetchAIScene(
-  playerStats: PlayerStats,
-  relationships: Record<string, unknown>,
-  currentWeek: number,
-  tension: number,
-): Promise<Scene | null> {
-  try {
-    const response = await fetch('/api/game-director', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        playerStats,
-        relationships,
-        currentWeek,
-        tension,
-        recentEvents: [],
-      }),
-    });
-
-    if (!response.ok) return null;
-
-    const data = await response.json();
-
-    // Construct a Scene from the API response
-    const scene: Scene = {
-      id: `ai_week${currentWeek}_${Date.now()}`,
-      location: data.location ?? 'campus',
-      backgroundVariant: data.backgroundVariant ?? 'day',
-      characters: Array.isArray(data.characters) ? data.characters : [],
-      dialogue: Array.isArray(data.dialogue)
-        ? data.dialogue.map((line: { characterId?: string | null; text: string; expression?: string }) => ({
-            characterId: line.characterId ?? null,
-            text: line.text,
-            expression: line.expression,
-          }))
-        : [],
-      choices: Array.isArray(data.choices)
-        ? data.choices.map((choice: { id: string; text: string; statEffects: Record<string, number>; relationshipEffects?: { characterId: string; change: number }[] }) => ({
-            id: choice.id,
-            text: choice.text,
-            statEffects: choice.statEffects ?? {},
-            relationshipEffects: choice.relationshipEffects,
-          }))
-        : undefined,
-    };
-
-    // Validate the scene has at least some dialogue
-    if (scene.dialogue.length === 0) return null;
-
-    return scene;
-  } catch {
-    return null;
-  }
-}
+// NPC engine imports available for future AI integration
+// import { initializeNPCs } from '@/engine/data/npc-initializer';
+// import { CORE_NPC_SHEETS } from '@/engine/data/core-npcs';
+import { checkAchievements } from '@/lib/achievements';
 
 export default function GameScreen() {
   const router = useRouter();
@@ -87,6 +41,7 @@ export default function GameScreen() {
     currentWeek,
     currentSceneIndex,
     setCurrentSceneIndex,
+    schedule: currentSchedule,
     sceneQueue,
     setSceneQueue,
     setWeekStatDeltas,
@@ -97,22 +52,36 @@ export default function GameScreen() {
   } = useGameStore();
 
   const [isLoadingAI, setIsLoadingAI] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+  const hydrated = useGameStore((s) => s._hasHydrated);
   const abortRef = useRef<AbortController | null>(null);
 
   // Cleanup abort controller on unmount
   useEffect(() => { return () => { abortRef.current?.abort(); }; }, []);
-  const [onboardingDone, setOnboardingDone] = useState(false);
+
+  // ESC key toggles pause menu
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setShowPauseMenu((prev) => !prev);
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+  const [prologueDone, setPrologueDone] = useState(false);
   const [sugangsincheongDone, setSugangsincheongDone] = useState(false);
+  const [mtDone, setMTDone] = useState(false);
+  const [festivalDone, setFestivalDone] = useState(false);
+  const [examDone, setExamDone] = useState(false);
+  const [crisisDismissed, setCrisisDismissed] = useState(false);
+  const [showWeeklyOverview, setShowWeeklyOverview] = useState(false);
+  const [showWeekTitle, setShowWeekTitle] = useState(true); // show on first load
+  const [showScheduleViewer, setShowScheduleViewer] = useState(false);
+  const [showRelationships, setShowRelationships] = useState(false);
+  const [showSaveIndicator, setShowSaveIndicator] = useState(false);
+  const [showPauseMenu, setShowPauseMenu] = useState(false);
+  const [showActionPhase, setShowActionPhase] = useState(false);
+  const [actionActivities, setActionActivities] = useState<{name:string;icon:string;statEffects:Partial<PlayerStats>;timeSlot:string}[]>([]);
   const [kakaoMessages, setKakaoMessages] = useState<{senderId:string;senderName:string;text:string;timestamp:string;isRead:boolean}[]>([]);
   const [showKakao, setShowKakao] = useState(false);
-
-  // Detect hydration: once component mounts on client, Zustand has loaded from localStorage
-  useEffect(() => {
-    // Small delay to ensure Zustand persist has finished rehydrating
-    const timer = setTimeout(() => setHydrated(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Redirect if no player (only after hydration)
   useEffect(() => {
@@ -122,143 +91,124 @@ export default function GameScreen() {
     }
   }, [hydrated, player, router]);
 
-  // Show spinner while hydrating
-  if (!hydrated) {
-    return (
-      <div className="flex items-center justify-center h-[100dvh] bg-navy">
-        <div className="animate-spin w-12 h-12 border-4 border-teal border-t-transparent rounded-full" />
-      </div>
-    );
-  }
+  // After action phase completes, proceed to scenes or summary
+  const pendingScenesRef = useRef<Scene[]>([]);
+  const pendingScheduleRef = useRef<WeekSchedule | null>(null);
+
+  const handleActionComplete = useCallback(async () => {
+    setShowActionPhase(false);
+    const hardcodedScenes = pendingScenesRef.current;
+    const confirmedSchedule = pendingScheduleRef.current;
+
+    // Try AI contextual scene first (references actual schedule), fall back to hardcoded
+    if (confirmedSchedule) {
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      setIsLoadingAI(true);
+
+      let aiScene: Scene | null = null;
+      try {
+        const ctxRes = await fetch('/api/ai/contextual-scene', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            schedule: confirmedSchedule,
+            playerStats: stats,
+            currentWeek,
+            relationships,
+          }),
+        });
+        if (ctxRes.ok) {
+          aiScene = await ctxRes.json();
+        }
+      } catch {
+        // AI unavailable — will fall back to hardcoded
+      }
+
+      clearTimeout(timeoutId);
+      setIsLoadingAI(false);
+      if (controller.signal.aborted) return;
+
+      if (aiScene) {
+        // AI scene succeeded — use it (schedule-contextual, unique each time)
+        setSceneQueue([aiScene]);
+        setPhase('simulation');
+        return;
+      }
+    }
+
+    // Fallback: use hardcoded scenes
+    if (hardcodedScenes.length > 0) {
+      setSceneQueue(hardcodedScenes);
+      setPhase('simulation');
+    } else {
+      // No scenes at all — go to summary
+      updateStats(useGameStore.getState().weekStatDeltas);
+      setPhase('summary');
+    }
+  }, [stats, relationships, currentWeek, setSceneQueue, setPhase, updateStats]);
 
   // Handle schedule completion -- simulate the week
   const handleScheduleComplete = useCallback(async (confirmedSchedule: WeekSchedule) => {
     if (isLoadingAI) return; // prevent double-submit
 
-    const { statDeltas, scenes } = simulateWeek(confirmedSchedule, currentWeek, stats);
+    const { statDeltas, scenes, combos, weeklyEvent } = simulateWeek(confirmedSchedule, currentWeek, stats);
     setWeekStatDeltas(statDeltas);
+    useGameStore.getState().setWeekCombos(combos);
+    useGameStore.getState().setWeeklyEvent(weeklyEvent);
     setCurrentSceneIndex(0);
 
-    if (scenes.length > 0) {
-      // Hardcoded scenes available (weeks 1-2)
+    // Build activity list for ActionPhase vignettes (1 highlight per day, max 7)
+    const ACTIVITY_EMOJI: Record<string, string> = {
+      lecture: '📖', study: '📚', parttime: '💼', club: '🎵',
+      date: '💕', exercise: '🏃', rest: '😴', friends: '👫',
+    };
+    const DAY_NAMES = ['월요일','화요일','수요일','목요일','금요일','토요일','일요일'];
+    const DAY_ORDER = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const;
+    const actList: {name:string;icon:string;statEffects:Partial<PlayerStats>;timeSlot:string}[] = [];
+    for (let i = 0; i < DAY_ORDER.length; i++) {
+      const day = DAY_ORDER[i];
+      const daySlots = confirmedSchedule[day] ?? [];
+      if (daySlots.length === 0) continue;
+      // Pick the most interesting activity (non-rest, non-lecture preferred)
+      const priority = ['date','club','friends','exercise','parttime','study','lecture','rest'];
+      const sorted = [...daySlots].sort((a, b) =>
+        (priority.indexOf(a.activityId) === -1 ? 99 : priority.indexOf(a.activityId)) -
+        (priority.indexOf(b.activityId) === -1 ? 99 : priority.indexOf(b.activityId))
+      );
+      const highlight = sorted[0];
+      const act = ACTIVITIES[highlight.activityId];
+      if (act) {
+        actList.push({
+          name: `${DAY_NAMES[i]} — ${act.name}`,
+          icon: ACTIVITY_EMOJI[highlight.activityId] ?? '📋',
+          statEffects: act.statEffects,
+          timeSlot: highlight.timeSlot,
+        });
+      }
+    }
+
+    // Store pending data for after action phase
+    pendingScenesRef.current = scenes;
+    pendingScheduleRef.current = confirmedSchedule; // always pass schedule for AI contextual scenes
+
+    if (actList.length > 0) {
+      // Show max 4 activity vignettes for snappy pacing
+      setActionActivities(actList.slice(0, 4));
+      setShowActionPhase(true);
+    } else if (scenes.length > 0) {
+      // No activities but has scenes (shouldn't happen, but handle it)
       setSceneQueue(scenes);
       setPhase('simulation');
     } else {
-      // No hardcoded scenes -- try 3-tier AI engine (Sprint 3-6) first, fall back to legacy
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
-      setIsLoadingAI(true);
-
-      // Initialize NPCs in the new store if not already done
-      const newState = useNewStore.getState();
-      if (Object.keys(newState.npcs.sheets).length === 0) {
-        const { sheets, states } = initializeNPCs();
-        useNewStore.getState().registerNPCs(sheets, states);
-      }
-
-      // Try the 3-tier AI engine: story director → NPC brains → simulation
-      let aiScene: Scene | null = null;
-      try {
-        // Call story director for tension evaluation
-        const directorRes = await fetch('/api/ai/story-director', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal,
-          body: JSON.stringify({
-            director: useNewStore.getState().story.director,
-            playerStats: stats,
-            day: currentWeek * 7,
-            npcSummaries: CORE_NPC_SHEETS.slice(0, 4).map(npc => ({
-              id: npc.id, name: npc.name,
-              emotion: 'anticipation (3/10)',
-              goal: npc.goals[0], playerRel: 30,
-            })),
-            recentDayLogs: useGameStore.getState().eventHistory.slice(-10).map(e => `${e.week}주차: ${e.summary}${e.choiceMade ? ` (선택: ${e.choiceMade})` : ''}`),
-            playerActivities: Object.values(confirmedSchedule).flat().map((s: { activityId: string }) => s.activityId).join(', '),
-          }),
-        });
-
-        if (directorRes.ok) {
-          const director = await directorRes.json();
-
-          // Pick an NPC to encounter based on director intervention
-          const targetNPC = director.interventions?.[0]?.targetNPC
-            ? CORE_NPC_SHEETS.find(n => n.id === director.interventions[0].targetNPC)
-            : CORE_NPC_SHEETS[Math.floor(Math.random() * CORE_NPC_SHEETS.length)];
-
-          if (targetNPC) {
-            // Call NPC brain with director bias
-            const npcRes = await fetch('/api/ai/npc-brain', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              signal: controller.signal,
-              body: JSON.stringify({
-                sheet: targetNPC,
-                state: useNewStore.getState().npcs.states[targetNPC.id] ?? {
-                  npcId: targetNPC.id,
-                  emotion: { primary: 'anticipation', primaryIntensity: 3, secondary: null, secondaryIntensity: 0, mood: 2, stressLevel: 2 },
-                  relationshipToPlayer: { level: 30, attitude: '아직 잘 모르는 사이.', trust: 30 },
-                  npcRelationships: {}, memory: { shortTerm: [], longTerm: [], impressions: {} },
-                  currentGoal: targetNPC.goals[0], currentLocation: targetNPC.primaryLocationIds[0],
-                  recentDecisions: [], secretKnowledge: [],
-                },
-                playerName: player?.name ?? '학생',
-                playerStats: stats,
-                situation: `${currentWeek}주차. 캠퍼스에서 ${targetNPC.name}을(를) 만났다.`,
-                directorBias: director.interventions?.[0]?.description,
-                thinkingLevel: director.interventions?.[0]?.suggestedThinkingLevel ?? 'low',
-                forceChoice: director.choiceRequired,
-              }),
-            });
-
-            if (npcRes.ok) {
-              const npcData = await npcRes.json();
-              aiScene = {
-                id: `ai_3tier_w${currentWeek}_${Date.now()}`,
-                location: targetNPC.primaryLocationIds[0] ?? 'campus',
-                backgroundVariant: 'day',
-                characters: [{
-                  characterId: targetNPC.id.replace('npc_', ''),
-                  expression: npcData.emotion?.type === 'joy' ? 'happy' : 'neutral',
-                  position: 'center' as const,
-                }],
-                dialogue: [{
-                  characterId: targetNPC.id.replace('npc_', ''),
-                  text: npcData.dialogue ?? '...',
-                }],
-                choices: npcData.choice ? npcData.choice.options.map((opt: { label: string; consequences: string }, i: number) => ({
-                  id: `choice_${i}`,
-                  text: opt.label,
-                  statEffects: npcData.statModifiers ?? {},
-                  relationshipEffects: [{ characterId: targetNPC.id.replace('npc_', ''), change: npcData.relationshipDelta ?? 0 }],
-                })) : undefined,
-              };
-            }
-          }
-        }
-      } catch (e) {
-        console.warn('3-tier AI engine failed, falling back to legacy:', e);
-      }
-
-      // Fall back to legacy AI director if 3-tier failed
-      if (!aiScene) {
-        const tension = calculateTension(stats, relationships, currentWeek);
-        aiScene = await fetchAIScene(stats, relationships, currentWeek, tension);
-      }
-
-      setIsLoadingAI(false);
-      if (controller.signal.aborted) return; // user navigated away or double-submitted
-
-      if (aiScene) {
-        setSceneQueue([aiScene]);
-        setPhase('simulation');
-      } else {
-        updateStats(statDeltas);
-        setPhase('summary');
-      }
+      // Fallback: no activities and no scenes — go straight to summary
+      updateStats(statDeltas);
+      setPhase('summary');
     }
-  }, [currentWeek, stats, relationships, setWeekStatDeltas, setSceneQueue, setCurrentSceneIndex, setPhase, updateStats]);
+  }, [currentWeek, stats, setWeekStatDeltas, setCurrentSceneIndex, setPhase, updateStats, isLoadingAI]);
 
   // Handle scene end -- move to next scene or summary
   const handleSceneEnd = useCallback((choice?: Choice) => {
@@ -286,85 +236,219 @@ export default function GameScreen() {
       // All scenes done -- apply weekly stat deltas and show summary
       const weekDeltas = useGameStore.getState().weekStatDeltas;
       updateStats(weekDeltas);
+
+      // Check for newly unlocked achievements
+      const store = useGameStore.getState();
+      const newAch = checkAchievements(store.stats, store.relationships, currentWeek, store.unlockedAchievements);
+      for (const a of newAch) {
+        store.addUnlockedAchievement(a.id, a.title, a.emoji);
+      }
+
       setPhase('summary');
     }
   }, [currentSceneIndex, sceneQueue, currentWeek, setCurrentSceneIndex, updateStats, updateRelationship, setPhase]);
 
-  // Handle KakaoTalk dismiss → then advance week
+  // Handle KakaoTalk dismiss → then advance week (or go to ending)
   const handleKakaoDismiss = useCallback(() => {
     setShowKakao(false);
     setKakaoMessages([]);
-    advanceWeek();
-  }, [advanceWeek]);
+    if (currentWeek >= 16) {
+      router.push('/game/ending');
+    } else {
+      setShowWeeklyOverview(true);
+    }
+  }, [currentWeek, router]);
 
-  // Handle week advance — show KakaoTalk messages from NPCs first if any
+  // Handle week advance — NPC KakaoTalk reacts to player stats and events
   const handleWeekContinue = useCallback(() => {
     const NPC_NAMES: Record<string, string> = {
       soyeon: '박소연', jaemin: '이재민', minji: '최민지',
       hyunwoo: '김현우', 'prof-kim': '김 교수',
     };
-    const NPC_MSGS: Record<string, string[]> = {
-      soyeon: ['이번 주도 고생 많았어요! 다음에 같이 밥 먹어요 😊', '시험 준비는 잘 되고 있어요?'],
-      jaemin: ['야 오늘 넘 힘들었다ㅠ 내일 밥은 같이 먹자!', '요즘 어때? 연락 좀 하자~'],
-      minji: ['이번 주 수업 노트 공유해줄 수 있어요?', '같이 스터디 해요!'],
-      hyunwoo: ['주말에 같이 농구 한 판 어때?', '오늘 동아리 회의 있는 거 알지?'],
-      'prof-kim': ['이번 과제 결과 확인해보세요', '다음 수업 질문 있으면 준비해오세요'],
-    };
+
+    // Stat-reactive NPC messages — NPCs notice your condition
+    function getReactiveMsg(charId: string, playerStats: typeof stats): string {
+      // Soyeon (caring senior) — reacts to health and stress
+      if (charId === 'soyeon') {
+        if (playerStats.stress > 75) return '요즘 너무 무리하는 것 같아... 괜찮아? 밥이라도 같이 먹자 😢';
+        if (playerStats.health < 30) return '얼굴이 안 좋아 보여. 좀 쉬어야 하는 거 아니야?';
+        if (playerStats.gpa > 75) return '요즘 공부 열심히 하더라! 대단해 😊';
+        return '이번 주도 고생 많았어요! 다음에 같이 밥 먹어요 😊';
+      }
+      // Jaemin (roommate) — reacts to social and stress
+      if (charId === 'jaemin') {
+        if (playerStats.social < 25) return '야 요즘 왜 이렇게 안 보여? 방에만 있지 말고 좀 나와!';
+        if (playerStats.stress > 70) return '야 너 요즘 얼굴이 좀 어두워. 치킨 먹으러 갈래?';
+        if (playerStats.money < 50000) return '야 너 통장 괜찮아? 내가 밥 사줄까ㅋㅋ';
+        return '야 오늘 넘 힘들었다ㅠ 내일 밥은 같이 먹자!';
+      }
+      // Minji (rival) — reacts to GPA
+      if (charId === 'minji') {
+        if (playerStats.gpa > 80) return '요즘 성적 좋더라... 기말에도 이 페이스 유지할 수 있을까? 😏';
+        if (playerStats.gpa < 40) return '수업 노트 필요하면 말해. 빌려줄 수 있어.';
+        return '이번 주 수업 노트 공유해줄 수 있어요?';
+      }
+      // Hyunwoo (club senior) — reacts to social and charm
+      if (charId === 'hyunwoo') {
+        if (playerStats.charm > 60) return '요즘 분위기 달라졌다? 동아리에서 인기 많던데ㅋㅋ';
+        if (playerStats.social < 30) return '동아리 모임 좀 나와! 다들 네가 보고 싶대.';
+        return '주말에 같이 농구 한 판 어때?';
+      }
+      return '안녕하세요!';
+    }
+
     const msgs = Object.entries(relationships)
       .filter(([, rel]) => rel.affection > 25 && rel.encounters > 0)
       .slice(0, 3)
-      .map(([charId, rel]) => {
-        const msgArr = NPC_MSGS[charId] ?? ['안녕하세요!'];
-        return {
-          senderId: charId,
-          senderName: NPC_NAMES[charId] ?? charId,
-          text: msgArr[rel.encounters % msgArr.length],
-          timestamp: '방금',
-          isRead: false,
-        };
-      });
-    if (msgs.length > 0) {
+      .map(([charId]) => ({
+        senderId: charId,
+        senderName: NPC_NAMES[charId] ?? charId,
+        text: getReactiveMsg(charId, stats),
+        timestamp: '방금',
+        isRead: false,
+      }));
+    if (currentWeek >= 16) {
+      // Semester over — go to ending (skip KakaoTalk)
+      router.push('/game/ending');
+    } else if (msgs.length > 0) {
       setKakaoMessages(msgs);
       setShowKakao(true);
     } else {
-      advanceWeek();
+      setShowWeeklyOverview(true);
     }
-  }, [advanceWeek, relationships]);
+  }, [relationships, currentWeek, router]);
 
   const goalWarnings = useGameStore((state) => state.goalWarnings);
   const tierNotification = useGameStore((state) => state.tierNotification);
   const clearTierNotification = useGameStore((state) => state.clearTierNotification);
 
+  // All hooks MUST be above this line — React requires stable hook order
+  if (!hydrated) {
+    return (
+      <div className="flex items-center justify-center h-[100dvh] bg-navy">
+        <div className="animate-spin w-12 h-12 border-4 border-teal border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
   if (!player) return null;
 
-  const showOnboarding = currentWeek === 1 && !onboardingDone;
-  const showSugangsincheong = currentWeek === 1 && onboardingDone && !sugangsincheongDone;
+  const showPrologue = currentWeek === 1 && !prologueDone;
+  const showSugangsincheong = currentWeek === 1 && prologueDone && !sugangsincheongDone;
+  const showMT = currentWeek === 4 && !mtDone;
+  const showFestival = currentWeek === 9 && !festivalDone;
+  const showExam = (currentWeek === 7 || currentWeek === 14) && !examDone;
+  const hasCrisis = !crisisDismissed && detectCrisis(stats, currentWeek) !== null;
   const currentScene = sceneQueue[currentSceneIndex];
+
+  // Stress visual intensity: subtle red vignette when stress > 60
+  const stressIntensity = Math.max(0, (stats.stress - 60) / 40); // 0 at 60, 1 at 100
 
   return (
     <div className="min-h-[100dvh] bg-navy relative">
-      {/* Relationship tier notification toast */}
-      {tierNotification && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-slide-down">
-          <div className="glass-strong px-6 py-3 rounded-xl flex items-center gap-3 shadow-2xl border border-teal/30">
-            <span className="text-2xl">💫</span>
-            <div>
-              <div className="text-sm font-bold text-teal">{tierNotification.label} 달성!</div>
-              <div className="text-xs text-txt-secondary">{tierNotification.characterId}와(과)의 관계가 깊어졌습니다</div>
-            </div>
-            <button onClick={clearTierNotification} className="text-txt-secondary hover:text-txt-primary ml-2">✕</button>
-          </div>
+      {/* Save indicator */}
+      {showSaveIndicator && (
+        <div className="fixed bottom-4 right-4 z-50 px-3 py-1.5 rounded-lg bg-teal/20 text-teal text-xs font-medium backdrop-blur-sm border border-teal/20 animate-fade-in-up">
+          💾 자동 저장됨
         </div>
       )}
 
-      {/* Onboarding tutorial (week 1 only, before planning) */}
-      {phase === 'planning' && showOnboarding && (
-        <OnboardingOverlay onComplete={() => setOnboardingDone(true)} />
+      {/* Stress vignette overlay */}
+      {stressIntensity > 0 && (
+        <div
+          className="fixed inset-0 pointer-events-none z-30 transition-opacity duration-1000"
+          style={{
+            background: `radial-gradient(ellipse at center, transparent 50%, rgba(255, 80, 80, ${stressIntensity * 0.15}) 100%)`,
+            opacity: 1,
+          }}
+        />
+      )}
+
+      {/* Relationship tier notification toast */}
+      {tierNotification && (() => {
+        const NPC_KO: Record<string, string> = {
+          soyeon: '박소연', jaemin: '이재민', minji: '한민지',
+          hyunwoo: '정현우', 'prof-kim': '김 교수', boss: '이사장님',
+        };
+        const TIER_EMOJI: Record<string, string> = {
+          acquaintance: '🤝', friend: '😊', close_friend: '💛', soulmate: '💕',
+        };
+        const TIER_DESC: Record<string, string> = {
+          acquaintance: '서로 이름을 기억하게 되었다',
+          friend: '편하게 대화할 수 있는 사이가 되었다',
+          close_friend: '속 깊은 이야기를 나눌 수 있게 되었다',
+          soulmate: '무엇이든 함께할 수 있는 소중한 사람이 되었다',
+        };
+        const name = NPC_KO[tierNotification.characterId] ?? tierNotification.characterId;
+        const emoji = TIER_EMOJI[tierNotification.newTier] ?? '💫';
+        const desc = TIER_DESC[tierNotification.newTier] ?? '관계가 깊어졌습니다';
+        return (
+          <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-slide-down">
+            <div className="glass-strong px-6 py-4 rounded-xl flex items-center gap-3 shadow-2xl border border-pink/30">
+              <span className="text-3xl">{emoji}</span>
+              <div>
+                <div className="text-sm font-bold text-pink">{name} — {tierNotification.label}</div>
+                <div className="text-xs text-txt-secondary">{desc}</div>
+              </div>
+              <button onClick={clearTierNotification} className="text-txt-secondary hover:text-txt-primary ml-2 cursor-pointer">✕</button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Prologue sequence (week 1 only, before planning) */}
+      {phase === 'planning' && showPrologue && (
+        <PrologueSequence onComplete={() => setPrologueDone(true)} />
       )}
 
       {/* 수강신청 mini-game (week 1 only, after onboarding) */}
       {phase === 'planning' && showSugangsincheong && (
         <SugangsincheongEvent onComplete={() => setSugangsincheongDone(true)} />
+      )}
+
+      {/* Crisis event — fires when stats reach critical levels (PM2 forced consequences) */}
+      {phase === 'planning' && hasCrisis && !showPrologue && !showSugangsincheong && (
+        <CrisisEvent onDismiss={() => setCrisisDismissed(true)} />
+      )}
+
+      {/* MT event (week 4 — overrides normal scheduling) */}
+      {phase === 'planning' && showMT && (
+        <MTEvent onComplete={(effects) => {
+          setMTDone(true);
+          setWeekStatDeltas(effects);
+          // Check achievements after event stats applied
+          const s = useGameStore.getState();
+          const newAch = checkAchievements(s.stats, s.relationships, currentWeek, s.unlockedAchievements);
+          for (const a of newAch) s.addUnlockedAchievement(a.id, a.title, a.emoji);
+          setPhase('summary');
+        }} />
+      )}
+
+      {/* 축제 event (week 9 — overrides normal scheduling, PM2 Harvest Festival pattern) */}
+      {phase === 'planning' && showFestival && (
+        <FestivalEvent onComplete={(effects) => {
+          setFestivalDone(true);
+          setWeekStatDeltas(effects);
+          const s = useGameStore.getState();
+          const newAch = checkAchievements(s.stats, s.relationships, currentWeek, s.unlockedAchievements);
+          for (const a of newAch) s.addUnlockedAchievement(a.id, a.title, a.emoji);
+          setPhase('summary');
+        }} />
+      )}
+
+      {/* 중간/기말고사 exam event (weeks 7, 14 — overrides normal scheduling) */}
+      {phase === 'planning' && showExam && (
+        <ExamEvent
+          type={currentWeek === 7 ? 'midterm' : 'finals'}
+          onComplete={(effects) => {
+            setExamDone(true);
+            setWeekStatDeltas(effects);
+            const s = useGameStore.getState();
+            const newAch = checkAchievements(s.stats, s.relationships, currentWeek, s.unlockedAchievements);
+            for (const a of newAch) s.addUnlockedAchievement(a.id, a.title, a.emoji);
+            setPhase('summary');
+          }}
+        />
       )}
 
       {/* KakaoTalk messages from NPCs after weekly summary */}
@@ -375,12 +459,79 @@ export default function GameScreen() {
       {/* HUD -- always visible except during scenes */}
       {phase !== 'simulation' && <HUDBar />}
 
+      {/* Quick-access buttons (visible except during scenes) */}
+      {phase !== 'simulation' && (
+        <div className="fixed top-3 right-4 z-40 flex gap-1.5">
+          <button
+            onClick={() => setShowPauseMenu(true)}
+            className="px-2.5 py-1.5 rounded-lg text-xs bg-white/10 hover:bg-white/20 text-txt-secondary hover:text-txt-primary transition-all cursor-pointer backdrop-blur-sm"
+            title="메뉴 (ESC)"
+          >
+            ⚙️
+          </button>
+          <button
+            onClick={() => setShowRelationships(true)}
+            className="px-2.5 py-1.5 rounded-lg text-xs bg-white/10 hover:bg-white/20 text-txt-secondary hover:text-txt-primary transition-all cursor-pointer backdrop-blur-sm"
+            title="인간관계"
+          >
+            👥
+          </button>
+          {currentSchedule && (
+            <button
+              onClick={() => setShowScheduleViewer(true)}
+              className="px-2.5 py-1.5 rounded-lg text-xs bg-white/10 hover:bg-white/20 text-txt-secondary hover:text-txt-primary transition-all cursor-pointer backdrop-blur-sm"
+              title="스케줄 보기"
+            >
+              📅
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Pause menu */}
+      {showPauseMenu && (
+        <PauseMenu onClose={() => setShowPauseMenu(false)} />
+      )}
+
+      {/* Relationship panel */}
+      {showRelationships && (
+        <RelationshipPanel onClose={() => setShowRelationships(false)} />
+      )}
+
+      {/* Schedule viewer modal */}
+      {showScheduleViewer && currentSchedule && (
+        <ScheduleViewer
+          schedule={currentSchedule}
+          onClose={() => setShowScheduleViewer(false)}
+          onReplan={phase === 'simulation' ? () => {
+            setShowScheduleViewer(false);
+            setPhase('planning');
+          } : undefined}
+        />
+      )}
+
       {/* Stats sidebar -- visible during planning and summary */}
       {(phase === 'planning' || phase === 'summary') && <StatsSidebar />}
 
       {/* Main content */}
-      {phase === 'planning' && !showOnboarding && !showSugangsincheong && (
-        <div className="lg:ml-72 pt-16">
+      {phase === 'planning' && !showPrologue && !showSugangsincheong && !showMT && !showFestival && !showExam && !hasCrisis && (
+        <div className="lg:ml-72 pt-16 animate-fade-in-up">
+          {/* Character status card (PM2 pattern: always show the character) */}
+          <div className="px-3 sm:px-4 mb-2">
+            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/5">
+              <span className="text-2xl">
+                {stats.stress >= 80 ? '😰' : stats.stress >= 50 ? '😓' : stats.health < 30 ? '🤒' : stats.social >= 60 ? '😊' : '🙂'}
+              </span>
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-medium text-txt-primary">{player?.name ?? '학생'}</span>
+                <span className="text-xs text-txt-secondary ml-2">
+                  {stats.stress >= 80 ? '지쳐 보인다...' : stats.health < 30 ? '컨디션이 안 좋다' : stats.gpa >= 70 ? '의욕이 넘친다!' : stats.social >= 60 ? '기분이 좋아 보인다' : '이번 주도 화이팅'}
+                </span>
+              </div>
+              <span className="text-[10px] text-txt-secondary/50">{currentWeek}주차</span>
+            </div>
+          </div>
+
           {/* Goal warnings */}
           {goalWarnings.length > 0 && (
             <div className="px-4 md:px-8 mb-4 flex flex-col gap-2">
@@ -393,12 +544,22 @@ export default function GameScreen() {
         </div>
       )}
 
+      {/* Activity vignettes (PM2-style action phase) */}
+      {showActionPhase && (
+        <ActionPhase
+          activities={actionActivities}
+          currentStats={stats}
+          onComplete={handleActionComplete}
+        />
+      )}
+
       {/* AI loading indicator */}
       {isLoadingAI && (
         <div className="flex items-center justify-center h-[100dvh]">
-          <div className="text-center">
-            <div className="animate-spin w-12 h-12 border-4 border-teal border-t-transparent rounded-full mx-auto mb-4" />
-            <p className="text-txt-secondary text-lg">AI Game Director is creating your story...</p>
+          <div className="text-center animate-fade-in-up">
+            <div className="animate-spin w-10 h-10 border-3 border-teal border-t-transparent rounded-full mx-auto mb-4" />
+            <p className="text-txt-secondary text-sm">AI가 이야기를 만들고 있어요...</p>
+            <p className="text-txt-secondary/40 text-xs mt-1">잠시만 기다려 주세요</p>
           </div>
         </div>
       )}
@@ -411,10 +572,28 @@ export default function GameScreen() {
         />
       )}
 
-      {phase === 'summary' && (
-        <div className="lg:ml-72 pt-16">
+      {phase === 'summary' && !showKakao && !showWeeklyOverview && (
+        <div className="lg:ml-72 pt-16 animate-fade-in-up">
           <WeekSummary onContinue={handleWeekContinue} />
         </div>
+      )}
+
+      {/* Weekly overview — breathing room between weeks */}
+      {showWeeklyOverview && (
+        <WeeklyOverview onContinue={() => {
+          setShowWeeklyOverview(false);
+          advanceWeek();
+          setShowWeekTitle(true);
+          setMTDone(false); setFestivalDone(false); setExamDone(false); setCrisisDismissed(false);
+          // Show save indicator briefly
+          setShowSaveIndicator(true);
+          setTimeout(() => setShowSaveIndicator(false), 2000);
+        }} />
+      )}
+
+      {/* Week title card — brief cinematic moment at start of each week */}
+      {phase === 'planning' && showWeekTitle && !showPrologue && (
+        <WeekTitleCard week={currentWeek} onDone={() => setShowWeekTitle(false)} />
       )}
     </div>
   );
