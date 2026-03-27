@@ -416,6 +416,8 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
           const weekLocked = activity.unlockWeek && currentWeek < activity.unlockWeek;
           const isLocked = !!(statLocked || weekLocked);
           const lockReason = statLocked ? `🔒 ${activity.unlockRequirement!.label}` : weekLocked ? `🔒 ${activity.unlockWeek}주차부터` : '';
+          // Count how many times this activity is already scheduled
+          const scheduledCount = Object.values(slots).filter(s => s?.activityId === activity.id).length;
           return (
             <button
               key={activity.id}
@@ -425,8 +427,13 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
               className={`flex flex-col items-center gap-1 px-1.5 py-2.5 rounded-xl transition-all duration-150 cursor-pointer active:scale-[0.95] ${isLocked ? 'opacity-40 cursor-not-allowed' : ''} ${isSelected ? '' : 'bg-white/5 hover:bg-white/10 border border-transparent'}`}
               style={isSelected ? { backgroundColor: `${colorHex}20`, border: `2px solid ${colorHex}` } : undefined}
             >
-              <span style={{ color: isLocked ? '#555' : colorHex }}>
+              <span className="relative" style={{ color: isLocked ? '#555' : colorHex }}>
                 <iconify-icon icon={isLocked ? 'solar:lock-bold' : activity.icon} width="22" height="22" />
+                {scheduledCount > 0 && !isLocked && (
+                  <span className={`absolute -top-1 -right-2 text-[8px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center ${scheduledCount >= 4 ? 'bg-coral text-white' : 'bg-white/20 text-txt-secondary'}`}>
+                    {scheduledCount}
+                  </span>
+                )}
               </span>
               <span className={`text-[11px] font-medium leading-tight ${isLocked ? 'text-txt-secondary/40' : 'text-txt-primary'}`}>
                 {isLocked ? '???' : activity.name}
