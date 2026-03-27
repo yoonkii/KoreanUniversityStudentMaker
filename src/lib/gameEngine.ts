@@ -396,6 +396,32 @@ const WEEKLY_EVENT_POOL: WeeklyEventDef[] = [
     priority: 3,
     condition: (_, w) => w === 10 || w === 11,
   },
+  // ─── Jealousy / Social Dynamics ───
+  {
+    id: 'minji_jealous',
+    name: '민지의 질투',
+    description: '민지가 묘하게 차갑다. "요즘 다른 사람이랑 많이 노나 봐?"',
+    effects: { stress: 5, social: -2 },
+    probability: 0.2,
+    priority: 3,
+    condition: (_, _w, rels) => {
+      const minji = rels?.['minji']?.affection ?? 0;
+      const others = Object.entries(rels ?? {}).filter(([id, r]) => id !== 'minji' && r.affection > minji + 15);
+      return minji >= 40 && others.length > 0;
+    },
+  },
+  {
+    id: 'jaemin_neglected',
+    name: '재민이의 섭섭함',
+    description: '재민: "야 요즘 나한테 관심 없지? 밥도 같이 안 먹잖아."',
+    effects: { stress: 3, social: -1 },
+    probability: 0.2,
+    priority: 3,
+    condition: (_, w, rels) => {
+      const jaemin = rels?.['jaemin'];
+      return w >= 5 && (jaemin?.affection ?? 0) >= 40 && (jaemin?.lastInteraction ?? 0) <= w - 3;
+    },
+  },
 ];
 
 // ─── Weather System ───
