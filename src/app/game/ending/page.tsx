@@ -948,6 +948,46 @@ export default function EndingPage() {
           </div>
         </div>
 
+        {/* Epilogue letter to parents — PM-style personal letter */}
+        <div
+          className={`bg-white/[0.04] backdrop-blur-md rounded-2xl p-6 border border-white/10 transition-all duration-1000 ${
+            animStep >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}
+        >
+          <p className="text-[10px] text-white/30 mb-2">✉️ 부모님께 보내는 편지</p>
+          <div className="text-sm text-white/60 leading-relaxed italic space-y-2">
+            {(() => {
+              const name = player?.name ?? '학생';
+              const lines: string[] = [];
+              lines.push(`엄마, 아빠. ${name}입니다.`);
+              lines.push('1학기가 벌써 끝났어요.');
+
+              // Academic
+              const er = useGameStore.getState().examResults;
+              if (er.semesterGpa && er.semesterGpa >= 3.5) lines.push('공부 열심히 해서 좋은 성적을 받았어요. 걱정 마세요.');
+              else if (er.semesterGpa && er.semesterGpa >= 2.5) lines.push('성적은 보통이지만 나름 최선을 다했어요.');
+              else if (er.semesterGpa) lines.push('공부가 좀 어려웠지만... 2학기에는 더 잘할게요.');
+              else lines.push('이번 학기 많이 배웠어요.');
+
+              // Social
+              const friendCount = Object.values(relationships).filter(r => r.affection >= 50).length;
+              if (friendCount >= 3) lines.push('좋은 친구들을 많이 만났어요. 대학 오길 잘한 것 같아요.');
+              else if (friendCount >= 1) lines.push('소중한 친구를 만났어요. 가끔 집에 데려올게요.');
+              else lines.push('아직 친한 친구는 없지만... 괜찮아요. 천천히 만들어갈게요.');
+
+              // Health
+              if (stats.stress > 70) lines.push('좀 힘들긴 했는데, 잘 버텼어요. 방학에 좀 쉴게요.');
+              else if (stats.health >= 60) lines.push('건강은 괜찮아요. 밥도 잘 챙겨 먹고 있어요.');
+
+              // Closing
+              lines.push('방학에 집에 갈게요. 보고 싶어요.');
+              lines.push(`${name} 올림`);
+
+              return lines.map((line, i) => <p key={i}>{line}</p>);
+            })()}
+          </div>
+        </div>
+
         {/* Action buttons */}
         <div
           className={`flex flex-col gap-3 transition-all duration-1000 ${
