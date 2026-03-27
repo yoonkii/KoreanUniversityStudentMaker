@@ -494,6 +494,47 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
         </p>
       )}
 
+      {/* ─── Predicted Stat Changes ─── */}
+      {totalScheduled >= 3 && (() => {
+        // Calculate total predicted stat changes from scheduled activities
+        const predicted: Record<string, number> = {};
+        for (const slotData of Object.values(slots)) {
+          if (!slotData) continue;
+          const act = ACTIVITIES[slotData.activityId];
+          if (!act) continue;
+          let effects = act.statEffects;
+          if (slotData.targetNpcId && act.npcVariants) {
+            const variant = act.npcVariants.find(v => v.npcId === slotData.targetNpcId);
+            if (variant) effects = variant.statEffects;
+          }
+          for (const [k, v] of Object.entries(effects)) {
+            if (v) predicted[k] = (predicted[k] ?? 0) + v;
+          }
+        }
+        // Add weekly baseline drains
+        predicted['money'] = (predicted['money'] ?? 0) - 30000;
+        predicted['health'] = (predicted['health'] ?? 0) - 3;
+        predicted['stress'] = (predicted['stress'] ?? 0) + 5;
+
+        const entries = Object.entries(predicted).filter(([, v]) => v !== 0);
+        if (entries.length === 0) return null;
+        return (
+          <div className="px-2 sm:px-4 mb-2">
+            <p className="text-[10px] text-txt-secondary/50 mb-1">📊 예상 스탯 변화 (생활비 포함)</p>
+            <div className="flex flex-wrap gap-1.5">
+              {entries.map(([k, v]) => {
+                const isGood = k === 'stress' ? v < 0 : v > 0;
+                return (
+                  <span key={k} className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${isGood ? 'bg-teal/10 text-teal' : 'bg-coral/10 text-coral'}`}>
+                    {STAT_LABELS[k] ?? k} {v > 0 ? '+' : ''}{k === 'money' ? `${(v / 1000).toFixed(0)}K` : v}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ─── Confirm ─── */}
       <div className="mt-auto pt-2 sm:pt-4">
         <button
