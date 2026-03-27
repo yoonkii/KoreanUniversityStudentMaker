@@ -37,18 +37,22 @@ const NPC_REPLY_OPTIONS: Record<string, KakaoReplyOption[]> = {
     { id: 'jaemin-1', text: 'ㅋㅋ 치킨 시키자!', affectionChange: 5, statEffects: { money: -10000 } },
     { id: 'jaemin-2', text: '미안 바빠서...', affectionChange: 1 },
     { id: 'jaemin-3', text: '야 진짜 힘들어. 얘기하자.', affectionChange: 8, statEffects: { stress: -5 } },
+    { id: 'jaemin-gift', text: '🎁 선물 보내기 (게임 기프티콘)', affectionChange: 12, statEffects: { money: -25000 } },
   ],
   soyeon: [
     { id: 'soyeon-1', text: '네! 같이 먹어요 😊', affectionChange: 5 },
     { id: 'soyeon-2', text: '요즘 좀 바빠서...', affectionChange: 1 },
+    { id: 'soyeon-gift', text: '🎁 선물 보내기 (카페 기프티콘)', affectionChange: 12, statEffects: { money: -20000 } },
   ],
   minji: [
     { id: 'minji-1', text: '응 확인했어. 같이 하자!', affectionChange: 5, statEffects: { knowledge: 1 } },
     { id: 'minji-2', text: '아직 안 봤는데...', affectionChange: 1 },
+    { id: 'minji-gift', text: '🎁 선물 보내기 (문구 세트)', affectionChange: 12, statEffects: { money: -15000 } },
   ],
   hyunwoo: [
     { id: 'hyunwoo-1', text: '좋아요 선배!', affectionChange: 5, statEffects: { money: -10000 } },
     { id: 'hyunwoo-2', text: '요즘 좀 바빠요...', affectionChange: 1 },
+    { id: 'hyunwoo-gift', text: '🎁 선물 보내기 (기타 피크)', affectionChange: 12, statEffects: { money: -18000 } },
   ],
 };
 
