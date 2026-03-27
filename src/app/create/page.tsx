@@ -17,11 +17,11 @@ const MAJORS: { type: MajorType; emoji: string; vibe: string }[] = [
   { type: "arts", emoji: "🎨", vibe: "창의적이고 자유로운" },
 ];
 
-const DREAMS: { id: string; label: string; emoji: string; hint: string }[] = [
-  { id: "scholar", label: "학자의 꿈", emoji: "🎓", hint: "최고의 학점으로 대학원에 진학하고 싶다" },
-  { id: "social", label: "인맥왕", emoji: "🤝", hint: "캠퍼스에서 모르는 사람이 없는 인싸가 되고 싶다" },
-  { id: "balance", label: "갓생러", emoji: "⚖️", hint: "공부, 운동, 인간관계... 모든 걸 균형 있게 챙기고 싶다" },
-  { id: "freedom", label: "마이웨이", emoji: "🌊", hint: "남들의 시선 신경 쓰지 않고 나만의 길을 가고 싶다" },
+const DREAMS: { id: string; label: string; emoji: string; hint: string; bonus: string; style: string }[] = [
+  { id: "scholar", label: "학자의 꿈", emoji: "🎓", hint: "최고의 학점으로 대학원에 진학하고 싶다", bonus: "준비도 +10", style: "교수님의 인정을 받는 모범생" },
+  { id: "social", label: "인맥왕", emoji: "🤝", hint: "캠퍼스에서 모르는 사람이 없는 인싸가 되고 싶다", bonus: "인맥 +10, 매력 +5", style: "사람을 좋아하는 사교형" },
+  { id: "balance", label: "갓생러", emoji: "⚖️", hint: "공부, 운동, 인간관계... 모든 걸 균형 있게 챙기고 싶다", bonus: "체력 +5, 준비도 +3, 인맥 +3", style: "완벽한 균형의 올라운더" },
+  { id: "freedom", label: "마이웨이", emoji: "🌊", hint: "남들의 시선 신경 쓰지 않고 나만의 길을 가고 싶다", bonus: "스트레스 -10, 매력 +5", style: "자유로운 영혼의 낭만파" },
 ];
 
 const UNIVERSITIES = [
@@ -158,9 +158,13 @@ export default function CreatePage() {
                   className="flex items-center gap-4 px-5 py-4 rounded-xl border-2 border-white/15 bg-white/5 hover:border-teal/40 hover:bg-teal/5 text-left transition-all cursor-pointer active:scale-[0.98]"
                 >
                   <span className="text-3xl">{d.emoji}</span>
-                  <div>
+                  <div className="flex-1">
                     <div className="font-bold text-white">{d.label}</div>
                     <div className="text-xs text-white/50 mt-0.5">{d.hint}</div>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal/15 text-teal">{d.bonus}</span>
+                      <span className="text-[9px] text-white/30">{d.style}</span>
+                    </div>
                   </div>
                 </button>
               ))}
