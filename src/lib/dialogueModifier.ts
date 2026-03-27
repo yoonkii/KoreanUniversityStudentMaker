@@ -131,3 +131,69 @@ export function getMemoryCallback(
   const memType = lastMemory.split('_')[0];
   return npcCallbacks[memType] ?? null;
 }
+
+/**
+ * Get a bonus affection line — extra dialogue only for high-affection NPCs.
+ * These create an exclusive "deep relationship" experience.
+ */
+export function getAffectionBonusLine(
+  characterId: string,
+  relationships: Record<string, CharacterRelationship>,
+): string | null {
+  const rel = relationships[characterId];
+  if (!rel) return null;
+
+  // Only for close friends (70+) or soulmates (90+)
+  if (rel.affection < 70) return null;
+
+  // 25% chance to trigger
+  if (Math.random() > 0.25) return null;
+
+  const BONUS_LINES: Record<string, Record<string, string[]>> = {
+    jaemin: {
+      close_friend: [
+        '(재민이가 조용히) 야... 너 옆에 있으면 편해. 진짜야.',
+        '(재민이) 솔직히 너 없으면 이 학기 못 버텼을 거야.',
+      ],
+      soulmate: [
+        '(재민이가 진지하게) 졸업해도 우리 연락하자. 약속.',
+        '(재민이) 네가 내 대학 생활 최고의 선택이야.',
+      ],
+    },
+    minji: {
+      close_friend: [
+        '(민지가 작게) ...고마워. 네가 있어서 외롭지 않았어.',
+        '(민지) 너 아니었으면 공부만 했을 텐데. 다행이야.',
+      ],
+      soulmate: [
+        '(민지가 진심으로) 처음엔 라이벌인 줄 알았는데... 지금은 달라.',
+        '(민지) 앞으로도... 계속 곁에 있어 줄 거지?',
+      ],
+    },
+    soyeon: {
+      close_friend: [
+        '(소연 선배) 이런 후배 만나서 선배 생활이 행복해.',
+        '(소연 선배가 웃으며) 너를 가르치는 건 내 대학 생활 최고의 경험이야.',
+      ],
+      soulmate: [
+        '(소연 선배가 눈가를 훔치며) 졸업하면... 정말 보고 싶을 거야.',
+        '(소연 선배) 후배가 아니라 동생 같아. 진짜 소중해.',
+      ],
+    },
+    hyunwoo: {
+      close_friend: [
+        '(현우가 진지하게) 너 때문에 동아리가 더 재밌어졌어.',
+        '(현우) 졸업 공연, 너한테 꼭 보여주고 싶어.',
+      ],
+      soulmate: [
+        '(현우가 기타를 내려놓으며) 너를 위한 곡을 쓰고 있어.',
+        '(현우) 네가 없는 동아리는 상상이 안 돼.',
+      ],
+    },
+  };
+
+  const tier = rel.affection >= 90 ? 'soulmate' : 'close_friend';
+  const lines = BONUS_LINES[characterId]?.[tier];
+  if (!lines || lines.length === 0) return null;
+  return lines[Math.floor(Math.random() * lines.length)];
+}

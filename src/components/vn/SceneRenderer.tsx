@@ -10,7 +10,7 @@ import StatChangePopup from './StatChangePopup';
 import CharacterPortrait from './CharacterPortrait';
 import DialogueBox from './DialogueBox';
 import ChoiceList from './ChoiceList';
-import { getRelationshipGreeting, getRelationshipReaction, getMemoryCallback } from '@/lib/dialogueModifier';
+import { getRelationshipGreeting, getRelationshipReaction, getMemoryCallback, getAffectionBonusLine } from '@/lib/dialogueModifier';
 
 /** Derive an activity key from a scene's location string */
 function locationToActivity(location: string): ActivityColorKey {
@@ -93,15 +93,16 @@ export default function SceneRenderer({ scene, onSceneEnd, activityId, timeLabel
       }
     }
 
-    // Insert memory callback as a bonus dialogue line (30% chance)
+    // Insert memory callback OR affection bonus line (not both)
     if (lines.length > 1) {
       const firstNpcId = lines.find(l => l.characterId)?.characterId;
       if (firstNpcId) {
         const memCallback = getMemoryCallback(firstNpcId, relationships);
-        if (memCallback) {
-          // Insert memory line after the first NPC line
+        const bonusLine = !memCallback ? getAffectionBonusLine(firstNpcId, relationships) : null;
+        const injectedText = memCallback ?? bonusLine;
+        if (injectedText) {
           const insertIdx = lines.findIndex(l => l.characterId === firstNpcId) + 1;
-          lines.splice(insertIdx, 0, { characterId: null, text: memCallback });
+          lines.splice(insertIdx, 0, { characterId: null, text: injectedText });
         }
       }
     }
