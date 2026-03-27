@@ -574,6 +574,20 @@ export default function EndingPage() {
             {archetype.description}
           </p>
 
+          {/* Dynamic stat callout — makes description personal */}
+          <p className="text-sm text-white/40 mt-2">
+            {(() => {
+              const er = useGameStore.getState().examResults;
+              const parts: string[] = [];
+              if (er.semesterGpa) parts.push(`학기 GPA ${er.semesterGpa.toFixed(2)}`);
+              parts.push(`준비도 ${stats.knowledge}`);
+              if (stats.social >= 50) parts.push(`인맥 ${stats.social}`);
+              if (stats.charm >= 50) parts.push(`매력 ${stats.charm}`);
+              parts.push(`₩${Math.round(stats.money / 10000)}만`);
+              return parts.join(' · ');
+            })()}
+          </p>
+
           {/* Personalized semester narrative — YOUR story */}
           {(() => {
             const name = player?.name ?? '학생';
