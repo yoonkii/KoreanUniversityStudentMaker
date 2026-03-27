@@ -180,6 +180,9 @@ export default function SceneRenderer({ scene, onSceneEnd, activityId, timeLabel
       <div className="absolute bottom-0 left-0 right-0 z-20 px-4 pb-4">
         {isAILoading && !currentLine ? (
           <div className="glass-dialogue rounded-2xl px-6 py-4 text-white/50 text-sm animate-pulse">...</div>
+        ) : pendingChoice ? (
+          /* Hide dialogue while stat popup is showing to prevent click-through */
+          null
         ) : showChoices && choices && choices.length > 0 ? (
           <ChoiceList choices={choices} onChoose={handleChoose} />
         ) : currentLine ? (

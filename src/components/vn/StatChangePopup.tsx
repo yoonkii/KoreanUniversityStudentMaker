@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { PlayerStats } from '@/store/types';
 
 interface StatChangePopupProps {
@@ -20,14 +20,16 @@ function formatValue(key: string, value: number): string {
 
 export default function StatChangePopup({ statEffects, onDone }: StatChangePopupProps) {
   const [visible, setVisible] = useState(true);
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setVisible(false);
-      setTimeout(onDone, 300); // wait for fade-out
+      setTimeout(() => onDoneRef.current(), 300); // wait for fade-out
     }, 2000);
     return () => clearTimeout(timer);
-  }, [onDone]);
+  }, []); // stable — runs once on mount, uses ref for latest callback
 
   const entries = Object.entries(statEffects).filter(([, v]) => v !== undefined && v !== 0);
   if (entries.length === 0) return null;
