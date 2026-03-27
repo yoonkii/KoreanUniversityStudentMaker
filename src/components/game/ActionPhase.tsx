@@ -5,6 +5,7 @@ import Image from 'next/image';
 import type { PlayerStats, CharacterRelationship } from '@/store/types';
 import { generateEncounters, generateGossip, type CampusEncounter } from '@/lib/campusSimulation';
 import { getNpcContextualLine } from '@/lib/weeklyDialogueCache';
+import { getInnerMonologue } from '@/lib/innerMonologue';
 import { useGameStore } from '@/store/gameStore';
 
 interface DayActivity {
@@ -197,6 +198,7 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
   const [gossip, setGossip] = useState<string | null>(null);
   const [activeChoice, setActiveChoice] = useState<MidActivityChoice | null>(null);
   const [choiceFlavor, setChoiceFlavor] = useState<string | null>(null);
+  const [monologue, setMonologue] = useState<string | null>(null);
   const [runningStats, setRunningStats] = useState<PlayerStats>({ ...currentStats });
   const currentWeek = useGameStore((s) => s.currentWeek);
   const relationships = useGameStore((s) => s.relationships);
@@ -223,8 +225,16 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
     setNpcEncounter(null);
     setCampusEncounter(null);
     setChoiceFlavor(null);
+    setMonologue(null);
 
     const day = days[dayIdx];
+
+    // Inner monologue — VN-style character thoughts
+    const mainActivity = day.activities.find(a => !a.skipped);
+    const thought = mainActivity ? getInnerMonologue(runningStats, currentWeek + dayIdx, mainActivity.name) : null;
+    if (thought) {
+      setTimeout(() => setMonologue(thought), actRevealDelay * day.activities.length + 100);
+    }
     const actCount = day.activities.length;
 
     // Reveal activities one by one with stat ticking
@@ -460,6 +470,13 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
           {npcEncounter && (
             <div className="mt-3 px-4 py-2.5 glass-strong rounded-xl text-sm text-pink/90 border border-pink/20 animate-fade-in">
               💬 {npcEncounter}
+            </div>
+          )}
+
+          {/* Inner monologue — VN-style character thought */}
+          {monologue && !npcEncounter && !campusEncounter && (
+            <div className="mt-3 px-4 py-2 rounded-xl text-sm text-white/50 italic text-center animate-fade-in">
+              💭 {monologue}
             </div>
           )}
 
