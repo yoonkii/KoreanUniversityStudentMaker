@@ -300,6 +300,33 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
           );
         })()}
 
+        {/* Activity streaks */}
+        {(() => {
+          const streaks = useGameStore.getState().activityStreaks;
+          const STREAK_LABELS: Record<string, { name: string; emoji: string }> = {
+            study: { name: '공부', emoji: '📚' },
+            exercise: { name: '운동', emoji: '💪' },
+            parttime: { name: '알바', emoji: '💼' },
+            club: { name: '동아리', emoji: '🎵' },
+          };
+          const activeStreaks = Object.entries(streaks)
+            .filter(([, count]) => count >= 3)
+            .map(([id, count]) => ({ ...STREAK_LABELS[id], count }))
+            .filter(s => s.name);
+          if (activeStreaks.length === 0) return null;
+          return (
+            <div className="flex flex-wrap gap-2 mb-3 animate-stat-reveal" style={{ animationDelay: '870ms' }}>
+              {activeStreaks.map((s, i) => (
+                <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-lavender/10 border border-lavender/20">
+                  <span>{s.emoji}</span>
+                  <span className="text-[10px] text-lavender font-bold">{s.name} {s.count}주 연속!</span>
+                  <span className="text-[10px] text-lavender/50">🔥</span>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
         {/* Character diary entry */}
         <div className="mb-4 animate-stat-reveal" style={{ animationDelay: '900ms' }}>
           <div className="bg-white/[0.03] rounded-xl px-4 py-3 border border-white/5">

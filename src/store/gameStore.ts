@@ -82,6 +82,7 @@ interface GameStore {
   examResults: ExamResults;
   startingStats: PlayerStats | null;
   diaryEntries: { week: number; text: string }[];
+  activityStreaks: Record<string, number>; // activity → consecutive weeks count
 
   // --- Actions ---
   setHasHydrated: (v: boolean) => void;
@@ -135,6 +136,7 @@ export const useGameStore = create<GameStore>()(
       examResults: {},
       startingStats: null,
       diaryEntries: [],
+      activityStreaks: {},
 
       // --- Actions ---
 
@@ -227,7 +229,27 @@ export const useGameStore = create<GameStore>()(
       },
 
       advanceWeek() {
-        const { stats, currentWeek, relationships } = get();
+        const { stats, currentWeek, relationships, schedule, activityStreaks } = get();
+
+        // Update activity streaks based on completed schedule
+        const newStreaks: Record<string, number> = {};
+        const thisWeekActivities = new Set<string>();
+        if (schedule) {
+          for (const slots of Object.values(schedule)) {
+            for (const slot of slots) {
+              thisWeekActivities.add(slot.activityId);
+            }
+          }
+        }
+        // Activities done this week: increment streak. Others: reset to 0.
+        const STREAK_ACTIVITIES = ['study', 'exercise', 'parttime', 'club'];
+        for (const act of STREAK_ACTIVITIES) {
+          if (thisWeekActivities.has(act)) {
+            newStreaks[act] = (activityStreaks[act] ?? 0) + 1;
+          } else {
+            newStreaks[act] = 0;
+          }
+        }
 
         // Relationship decay: -2 affection for NPCs not interacted with for 3+ weeks
         const decayedRelationships = { ...relationships };
@@ -263,6 +285,7 @@ export const useGameStore = create<GameStore>()(
           weeklyEvent: null,
           phase: 'planning',
           goalWarnings: warnings,
+          activityStreaks: newStreaks,
           tierNotification: null,
           relationships: decayedRelationships,
         }));
@@ -378,6 +401,7 @@ export const useGameStore = create<GameStore>()(
           examResults: {},
           startingStats: null,
           diaryEntries: [],
+          activityStreaks: {},
         });
       },
     }),
