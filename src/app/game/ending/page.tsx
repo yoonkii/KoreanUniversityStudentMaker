@@ -991,11 +991,23 @@ export default function EndingPage() {
               else if (er.semesterGpa) lines.push('공부가 좀 어려웠지만... 2학기에는 더 잘할게요.');
               else lines.push('이번 학기 많이 배웠어요.');
 
-              // Social
+              // Social — name specific NPCs for emotional impact
+              const NPC_LETTER: Record<string, string> = { jaemin: '재민이', minji: '민지', soyeon: '소연 선배', hyunwoo: '현우 선배' };
+              const bestFriend = Object.entries(relationships)
+                .filter(([id]) => NPC_LETTER[id])
+                .sort(([, a], [, b]) => b.affection - a.affection)[0];
               const friendCount = Object.values(relationships).filter(r => r.affection >= 50).length;
-              if (friendCount >= 3) lines.push('좋은 친구들을 많이 만났어요. 대학 오길 잘한 것 같아요.');
-              else if (friendCount >= 1) lines.push('소중한 친구를 만났어요. 가끔 집에 데려올게요.');
-              else lines.push('아직 친한 친구는 없지만... 괜찮아요. 천천히 만들어갈게요.');
+
+              if (bestFriend && bestFriend[1].affection >= 70) {
+                const bfName = NPC_LETTER[bestFriend[0]];
+                lines.push(`${bfName}라는 정말 좋은 친구를 만났어요. 방학에 소개할게요.`);
+              } else if (friendCount >= 3) {
+                lines.push('좋은 친구들을 많이 만났어요. 대학 오길 잘한 것 같아요.');
+              } else if (friendCount >= 1) {
+                lines.push('소중한 친구를 만났어요. 가끔 집에 데려올게요.');
+              } else {
+                lines.push('아직 친한 친구는 없지만... 괜찮아요. 천천히 만들어갈게요.');
+              }
 
               // Health
               if (stats.stress > 70) lines.push('좀 힘들긴 했는데, 잘 버텼어요. 방학에 좀 쉴게요.');
