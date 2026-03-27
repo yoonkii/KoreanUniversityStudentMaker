@@ -80,6 +80,89 @@ const NPC_ENCOUNTER_LINES: Record<string, Record<string, string[]>> = {
   },
 };
 
+// ─── Mid-Activity Choice Events ───
+// These pause the action phase and present a choice to the player
+interface MidActivityChoice {
+  id: string;
+  prompt: string;
+  options: { text: string; effects: Partial<PlayerStats>; flavor: string }[];
+  activityKeyword: string; // Only triggers during matching activities
+  probability: number;
+}
+
+const MID_ACTIVITY_CHOICES: MidActivityChoice[] = [
+  {
+    id: 'study_distraction',
+    prompt: '공부 중에 핸드폰 알림이 울렸다. SNS에 재밌는 글이 올라왔다.',
+    activityKeyword: '공부',
+    probability: 0.2,
+    options: [
+      { text: '무시하고 공부 계속', effects: { knowledge: 3, stress: 3 }, flavor: '집중력을 유지했다. 한 챕터를 더 끝냈다.' },
+      { text: '잠깐만 볼게... (30분 후)', effects: { stress: -5, knowledge: -2 }, flavor: '30분이 1시간이 됐다... 하지만 스트레스는 풀렸다.' },
+    ],
+  },
+  {
+    id: 'gym_challenge',
+    prompt: '체육관에서 누군가가 "한 판 붙을래요?" 라고 말을 걸어왔다.',
+    activityKeyword: '운동',
+    probability: 0.2,
+    options: [
+      { text: '좋아! 한 판 하자', effects: { health: 5, charm: 3, stress: 2 }, flavor: '치열한 경기 끝에 간신히 이겼다! 스포츠맨십이 빛난다.' },
+      { text: '아, 오늘은 혼자 할게요', effects: { health: 2, stress: -2 }, flavor: '편하게 내 페이스대로 운동했다.' },
+    ],
+  },
+  {
+    id: 'parttime_difficult_customer',
+    prompt: '"이거 내가 주문한 거 아닌데요?" 진상 손님이 왔다.',
+    activityKeyword: '알바',
+    probability: 0.2,
+    options: [
+      { text: '죄송합니다, 바로 바꿔드릴게요', effects: { charm: 3, stress: 5 }, flavor: '사장님이 "잘 처리했어" 하며 칭찬했다.' },
+      { text: '확인해보니 맞는데요...', effects: { stress: 3, charm: -1, money: 5000 }, flavor: '약간 어색했지만, 실수가 아니었다는 걸 증명했다.' },
+    ],
+  },
+  {
+    id: 'lecture_question',
+    prompt: '교수님이 갑자기 "이 문제 풀 사람?" 하고 교실을 둘러봤다.',
+    activityKeyword: '수업',
+    probability: 0.15,
+    options: [
+      { text: '손을 든다 ✋', effects: { knowledge: 4, charm: 3, stress: 4 }, flavor: '떨리는 마음으로 답했는데... 맞았다! 교수님이 끄덕였다.' },
+      { text: '눈을 피한다 👀', effects: { stress: -1 }, flavor: '다른 학생이 대답했다. 조용히 넘어갔다.' },
+    ],
+  },
+  {
+    id: 'club_solo_offer',
+    prompt: '선배가 "다음 공연에서 솔로 파트 해볼래?" 하고 물었다.',
+    activityKeyword: '동아리',
+    probability: 0.15,
+    options: [
+      { text: '해볼게요!', effects: { charm: 5, stress: 8, social: 3 }, flavor: '긴장되지만 흥분된다. 연습이 더 필요할 것 같다.' },
+      { text: '아직 실력이 부족해서...', effects: { stress: -3, social: 1 }, flavor: '선배가 이해한다는 듯 웃었다. "다음에 하자."' },
+    ],
+  },
+  {
+    id: 'rest_jaemin_invite',
+    prompt: '재민이가 방문을 열며 "야 PC방 갈래? 쿠폰 있어!" 했다.',
+    activityKeyword: '휴식',
+    probability: 0.25,
+    options: [
+      { text: '가자! 🎮', effects: { social: 5, stress: -8, money: -5000, knowledge: -1 }, flavor: '3시간이 순식간에 지나갔다. 재밌었다!' },
+      { text: '오늘은 좀 쉴래', effects: { health: 3, stress: -5 }, flavor: '혼자만의 조용한 시간. 이것도 필요하다.' },
+    ],
+  },
+  {
+    id: 'friend_gossip',
+    prompt: '친구가 "야 너 그 소문 들었어?" 하고 귀엣말을 했다.',
+    activityKeyword: '친구',
+    probability: 0.2,
+    options: [
+      { text: '뭔데 뭔데? 😮', effects: { social: 4, charm: 2, knowledge: -1 }, flavor: '캠퍼스 소문통이 됐다. 정보력 +1.' },
+      { text: '뒷담화는 별로...', effects: { charm: 2, social: -1 }, flavor: '친구가 "너 진짜 착하다" 라고 했다.' },
+    ],
+  },
+];
+
 // 17% random event chance per activity
 const RANDOM_EVENTS = [
   { text: '교수님이 갑자기 퀴즈를 냈다!', effects: { knowledge: 3, stress: 5 } },
@@ -112,6 +195,8 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
   const [npcEncounter, setNpcEncounter] = useState<string | null>(null);
   const [campusEncounter, setCampusEncounter] = useState<CampusEncounter | null>(null);
   const [gossip, setGossip] = useState<string | null>(null);
+  const [activeChoice, setActiveChoice] = useState<MidActivityChoice | null>(null);
+  const [choiceFlavor, setChoiceFlavor] = useState<string | null>(null);
   const [runningStats, setRunningStats] = useState<PlayerStats>({ ...currentStats });
   const currentWeek = useGameStore((s) => s.currentWeek);
   const relationships = useGameStore((s) => s.relationships);
@@ -122,6 +207,9 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
   // Slower pacing: 2.5s per day at 2x, 4s at 1x — gives time to observe
   const dayDelay = gameSpeed === 2 ? 2500 : 4000;
   const actRevealDelay = gameSpeed === 2 ? 500 : 800;
+
+  // processDay ref for use in choice handler (avoids block-scope issue)
+  const processDayRef = useRef<(idx: number) => void>(() => {});
 
   const processDay = useCallback((dayIdx: number) => {
     if (dayIdx >= days.length) {
@@ -134,6 +222,7 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
     setRandomEvent(null);
     setNpcEncounter(null);
     setCampusEncounter(null);
+    setChoiceFlavor(null);
 
     const day = days[dayIdx];
     const actCount = day.activities.length;
@@ -210,11 +299,47 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
         const g = generateGossip(currentWeek, runningStats);
         if (g) setGossip(g.text);
       }
+
+      // Check for mid-activity choice event (pauses the timer!)
+      if (mainAct) {
+        const eligible = MID_ACTIVITY_CHOICES.filter(c =>
+          mainAct.name.includes(c.activityKeyword) && Math.random() < c.probability
+        );
+        if (eligible.length > 0) {
+          // Pause! Show choice to player
+          if (timerRef.current) clearTimeout(timerRef.current);
+          setActiveChoice(eligible[0]);
+          return; // Don't auto-advance — wait for player choice
+        }
+      }
     }, encounterTime);
 
     // Move to next day
     timerRef.current = setTimeout(() => processDay(dayIdx + 1), dayDelay);
   }, [days, dayDelay, actRevealDelay, onComplete]);
+
+  // Keep ref in sync
+  processDayRef.current = processDay;
+
+  // Handle mid-activity choice selection
+  const handleMidActivityChoice = useCallback((option: { text: string; effects: Partial<PlayerStats>; flavor: string }) => {
+    setRunningStats(prev => {
+      const next = { ...prev };
+      for (const [k, v] of Object.entries(option.effects)) {
+        if (v !== undefined) {
+          const key = k as keyof PlayerStats;
+          next[key] = key === 'money' ? Math.max(0, next[key] + v) : Math.max(0, Math.min(100, next[key] + v));
+        }
+      }
+      return next;
+    });
+    setChoiceFlavor(option.flavor);
+    setActiveChoice(null);
+    setTimeout(() => {
+      setChoiceFlavor(null);
+      processDayRef.current(currentDayIndex + 1);
+    }, 2000);
+  }, [currentDayIndex]);
 
   useEffect(() => {
     if (isSkipping) {
@@ -389,6 +514,44 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Mid-activity choice event — pauses the timer */}
+      {activeChoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fade-in">
+          <div className="glass-strong rounded-2xl p-5 max-w-sm w-full">
+            <p className="text-sm text-txt-primary mb-4 leading-relaxed">{activeChoice.prompt}</p>
+            <div className="flex flex-col gap-2">
+              {activeChoice.options.map((opt, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleMidActivityChoice(opt)}
+                  className="text-left px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-teal/30 transition-all cursor-pointer active:scale-[0.98]"
+                >
+                  <span className="text-sm text-txt-primary">{opt.text}</span>
+                  <div className="flex gap-1.5 mt-1.5">
+                    {Object.entries(opt.effects).filter(([,v]) => v !== 0).map(([k, v]) => (
+                      <span key={k} className={`text-[10px] px-1.5 py-0.5 rounded ${
+                        (k === 'stress' ? (v as number) < 0 : (v as number) > 0) ? 'bg-teal/10 text-teal' : 'bg-coral/10 text-coral'
+                      }`}>
+                        {STAT_LABELS[k as keyof PlayerStats]?.[0]}{(v as number) > 0 ? '+' : ''}{v}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Choice flavor text — shows briefly after choosing */}
+      {choiceFlavor && !activeChoice && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
+          <div className="glass rounded-xl px-6 py-4 max-w-sm text-center animate-fade-in">
+            <p className="text-sm text-txt-primary/80 italic">{choiceFlavor}</p>
           </div>
         </div>
       )}
