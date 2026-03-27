@@ -63,7 +63,7 @@ export async function generateStructured<T>(
   schema: { parse: (data: unknown) => T }
 ): Promise<GenerateResult<T>> {
   const {
-    model = "gemini-3.0-flash-lite",
+    model = "gemini-3.1-flash-lite-preview",
     systemPrompt,
     userPrompt,
     jsonSchema,
@@ -104,7 +104,7 @@ export async function generateStructured<T>(
 
       // Only add thinking config for models that support it (not flash-lite)
       // thinkingConfig only for models that support it (2.5+ flash)
-      // gemini-3.0-flash-lite does NOT support thinking
+      // gemini-3.1-flash-lite-preview does NOT support thinking
       // if (thinkingLevel !== "minimal" && model.includes("2.5")) {
       //   config.thinkingConfig = { thinkingLevel };
       // }
@@ -156,7 +156,7 @@ export async function generateText(
   options: Omit<GenerateOptions, "jsonSchema">
 ): Promise<string> {
   const {
-    model = "gemini-3.0-flash-lite",
+    model = "gemini-3.1-flash-lite-preview",
     systemPrompt,
     userPrompt,
     thinkingLevel = "low",
@@ -189,7 +189,7 @@ export async function generateText(
 
       const config: Record<string, unknown> = {};
       // thinkingConfig only for models that support it (2.5+ flash)
-      // gemini-3.0-flash-lite does NOT support thinking
+      // gemini-3.1-flash-lite-preview does NOT support thinking
       // if (thinkingLevel !== "minimal" && model.includes("2.5")) {
       //   config.thinkingConfig = { thinkingLevel };
       // }
