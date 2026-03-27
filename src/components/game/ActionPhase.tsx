@@ -7,6 +7,7 @@ import { generateEncounters, generateGossip, type CampusEncounter } from '@/lib/
 import { getNpcContextualLine } from '@/lib/weeklyDialogueCache';
 import { getInnerMonologue } from '@/lib/innerMonologue';
 import { getActivityFlavorText } from '@/lib/activityFlavor';
+import { getActivityResult } from '@/lib/activityResults';
 import { useGameStore } from '@/store/gameStore';
 
 interface DayActivity {
@@ -488,9 +489,11 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
                     {activity.targetNpcName && !activity.skipped && (
                       <span className="text-[10px] text-pink">with {activity.targetNpcName}</span>
                     )}
-                    {!activity.skipped && !activity.targetNpcName && i < revealedActivities && (() => {
-                      const flavor = getActivityFlavorText(activity.name, currentWeek);
-                      return flavor ? <span className="text-[9px] text-txt-secondary/40 italic truncate">{flavor}</span> : null;
+                    {!activity.skipped && i < revealedActivities && (() => {
+                      const flavor = activity.targetNpcName ? null : getActivityFlavorText(activity.name, currentWeek);
+                      const result = getActivityResult(activity.name, currentWeek, i);
+                      const text = flavor || result;
+                      return text ? <span className="text-[9px] text-txt-secondary/40 italic truncate">{text}</span> : null;
                     })()}
                   </div>
                 </div>
