@@ -1043,4 +1043,32 @@ Complete rewrite of core game mechanics across 59 files (+1496/-707 lines):
 - Semester awards, growth chart, personalized narrative in ending
 - Screen effects, time-of-day atmosphere, campus gossip
 
+### AUTOPLAY Cycles C40-C44 (final batch)
+
+| Cycle | Feature | Key Impact |
+|-------|---------|-----------|
+| C40 | Campus rumor system | Reputation-based gossip (10+ rumor types) |
+| C41 | Combo discovery system | Meta-progression across playthroughs |
+| C42 | Weekly highlight reel | "Moment of the week" in summary |
+| C43 | Smart activity suggestions | Contextual planning tips |
+| C44 | Play statistics grid | VN-style journey-in-numbers ending |
+
+**Grand total session stats:**
+- **55 commits** across QA fixes, realism overhaul, Gemini fix, 44 AUTOPLAY cycles
+- **48 tests passing**, build clean throughout
+- **13 activities** (8 base + 3 unlockable + 2 exploration)
+- **14 endings** (9 base + 5 hidden relationship-based)
+- **55+ weekly events** (random, NPC-initiated, narrative arc, milestone, calendar, special days)
+- **7 mid-activity choice events**
+- **27 campus NPCs** (4 main + 23 background) with location-aware dialogue
+- **30+ inner monologue thoughts**, **40+ activity flavor texts**
+- **10+ campus rumor types**, **7 combo recipes** (with discovery system)
+- **Relationship-aware dialogue modifiers** (20 tone variants)
+- **Energy budget**, **stat-gated choices**, **relationship-gated choices**
+- **Persistent diary**, **NPC memory tags**, **semester awards**
+- **Grade reveal ceremony**, **growth chart**, **play statistics**
+- **Screen effects** (shake, desaturation, vignette, time-of-day atmosphere)
+- **Gemini weekly dialogue cache** (1 API call/week)
+- **Smart fill**, **templates**, **undo**, **danger alerts**, **activity count badges**
+
 ---
