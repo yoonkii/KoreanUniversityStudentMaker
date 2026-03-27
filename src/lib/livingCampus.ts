@@ -12,6 +12,79 @@
 
 import type { PlayerStats, CharacterRelationship } from '@/store/types';
 
+// ─── Gemini-powered campus life cache ───
+interface AiCampusData {
+  week: number;
+  routines: Array<{
+    npcId: string;
+    morning: { location: string; doing: string; dialogue: string };
+    afternoon: { location: string; doing: string; dialogue: string };
+    evening: { location: string; doing: string; dialogue: string };
+  }>;
+  overheard?: string;
+  atmosphere?: string;
+}
+
+let aiCampusCache: AiCampusData | null = null;
+let fetchingCampus = false;
+
+export function getCachedAiCampus(): AiCampusData | null {
+  return aiCampusCache;
+}
+
+export function getOverheardConversation(week: number): string | null {
+  if (aiCampusCache?.week === week && aiCampusCache.overheard) return aiCampusCache.overheard;
+  // Fallback overheard conversations
+  const FALLBACKS: Record<number, string> = {
+    1: '"야 OT 언제야?" "내일인데 뭐 입지?" — 신입생들의 대화',
+    3: '"조별과제 누구랑 할 거야?" "아무나 괜찮은데..." — 복도에서',
+    5: '"교수님 과제 또 내셨대" "아 진짜?" — 한숨 소리',
+    7: '"시험 범위 어디까지야?" "몰라 다 나온대" — 도서관 앞',
+    9: '"축제 라인업 봤어?" "대박이다!" — 학생회관에서',
+    12: '"기말 언제부터야?" "2주 남았어" "..." — 카페에서',
+  };
+  return FALLBACKS[week] ?? null;
+}
+
+/**
+ * Trigger background Gemini call for living campus data.
+ * One call per week, results cached.
+ */
+export function triggerAiCampusGeneration(
+  week: number,
+  stats: PlayerStats,
+  relationships: Record<string, CharacterRelationship>,
+  recentEvents: string,
+): void {
+  if (aiCampusCache?.week === week) return;
+  if (fetchingCampus) return;
+  fetchingCampus = true;
+
+  const relSummary = Object.entries(relationships)
+    .map(([id, r]) => `${id}: ${r.affection}`)
+    .join(', ');
+
+  fetch('/api/ai/living-campus', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      week,
+      stats: { knowledge: stats.knowledge, health: stats.health, stress: stats.stress, social: stats.social, money: stats.money },
+      relationships: relSummary,
+      recentEvents,
+    }),
+    signal: AbortSignal.timeout(8000),
+  })
+    .then(res => res.ok ? res.json() : null)
+    .then(data => {
+      if (data?.routines) {
+        aiCampusCache = { week, ...data };
+      }
+    })
+    .catch(() => {})
+    .finally(() => { fetchingCampus = false; });
+}
+
 export interface NpcRoutine {
   npcId: string;
   npcName: string;
@@ -177,13 +250,31 @@ export function getWeeklyRoutines(week: number): CampusLife {
 
 /**
  * Find NPCs at the same location during a specific time slot.
- * Returns encounter-ready data with dialogue.
+ * Prefers AI-generated data, falls back to deterministic routines.
  */
 export function findNpcsAtLocation(
   activityLocation: string,
   timeSlot: 'morning' | 'afternoon' | 'evening',
   week: number,
 ): { npcId: string; npcName: string; activity: string; dialogue: string }[] {
+  // Try AI-generated campus data first
+  const aiData = getCachedAiCampus();
+  if (aiData?.week === week && aiData.routines.length > 0) {
+    const NPC_NAMES: Record<string, string> = { jaemin: '이재민', minji: '한민지', soyeon: '박소연', hyunwoo: '정현우' };
+    return aiData.routines
+      .filter(r => {
+        const slot = r[timeSlot];
+        return slot?.location?.includes(activityLocation) || activityLocation.includes(slot?.location ?? '');
+      })
+      .map(r => ({
+        npcId: r.npcId,
+        npcName: NPC_NAMES[r.npcId] ?? r.npcId,
+        activity: r[timeSlot].doing,
+        dialogue: r[timeSlot].dialogue,
+      }));
+  }
+
+  // Fallback to deterministic routines
   const campus = getWeeklyRoutines(week);
   const LOCATION_MAP: Record<string, string[]> = {
     classroom: ['classroom'],

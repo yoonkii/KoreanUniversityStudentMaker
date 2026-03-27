@@ -32,6 +32,7 @@ import type { DayGroup } from '@/components/game/ActionPhase';
 // import { CORE_NPC_SHEETS } from '@/engine/data/core-npcs';
 import { checkAchievements } from '@/lib/achievements';
 import { triggerDialogueGeneration } from '@/lib/weeklyDialogueCache';
+import { triggerAiCampusGeneration, getOverheardConversation } from '@/lib/livingCampus';
 
 export default function GameScreen() {
   const router = useRouter();
@@ -710,8 +711,10 @@ export default function GameScreen() {
           setShowWeeklyOverview(false);
           advanceWeek();
           setShowWeekTitle(true);
-          // Trigger background Gemini dialogue generation for next week (1 API call)
+          // Trigger background Gemini generation for next week (2 API calls total)
           triggerDialogueGeneration(currentWeek + 1, stats, relationships);
+          const recentEvts = useGameStore.getState().eventHistory.slice(-3).map(e => e.summary).join(', ');
+          triggerAiCampusGeneration(currentWeek + 1, stats, relationships, recentEvts);
           setMTDone(false); setFestivalDone(false); setExamDone(false); setCrisisDismissed(false);
           // Show save indicator briefly
           setShowSaveIndicator(true);

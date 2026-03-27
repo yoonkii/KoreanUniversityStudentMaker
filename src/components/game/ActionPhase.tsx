@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import type { PlayerStats, CharacterRelationship } from '@/store/types';
 import { generateEncounters, generateGossip, type CampusEncounter } from '@/lib/campusSimulation';
-import { findNpcsAtLocation } from '@/lib/livingCampus';
+import { findNpcsAtLocation, getOverheardConversation } from '@/lib/livingCampus';
 import { getSpecificLocation, getLocationFlavor } from '@/lib/campusLocations';
 import { getNpcContextualLine } from '@/lib/weeklyDialogueCache';
 import { getInnerMonologue } from '@/lib/innerMonologue';
@@ -418,10 +418,15 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
         setRandomEvent(event.text);
       }
 
-      // Show gossip on first day only
+      // Show gossip/overheard on first day only
       if (dayIdx === 0) {
-        const g = generateGossip(currentWeek, runningStats);
-        if (g) setGossip(g.text);
+        const overheard = getOverheardConversation(currentWeek);
+        if (overheard) {
+          setGossip(overheard);
+        } else {
+          const g = generateGossip(currentWeek, runningStats);
+          if (g) setGossip(g.text);
+        }
       }
 
       // Check for mid-activity choice event (pauses the timer!)
