@@ -99,10 +99,11 @@ export async function generateStructured<T>(
 
       if (jsonSchema) {
         config.responseMimeType = "application/json";
-        config.responseJsonSchema = jsonSchema;
+        config.responseSchema = jsonSchema;
       }
 
-      if (thinkingLevel !== "minimal") {
+      // Only add thinking config for models that support it (not flash-lite)
+      if (thinkingLevel !== "minimal" && !model.includes("lite")) {
         config.thinkingConfig = { thinkingLevel };
       }
 
@@ -119,9 +120,14 @@ export async function generateStructured<T>(
         throw new Error("Empty response from Gemini");
       }
 
-      // Parse JSON response
-      const jsonStr = extractJson(raw);
-      const parsed = JSON.parse(jsonStr);
+      // Parse JSON response — try direct parse first, then extraction
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        const jsonStr = extractJson(raw);
+        parsed = JSON.parse(jsonStr);
+      }
       const validated = schema.parse(parsed);
 
       return {
@@ -179,7 +185,7 @@ export async function generateText(
       });
 
       const config: Record<string, unknown> = {};
-      if (thinkingLevel !== "minimal") {
+      if (thinkingLevel !== "minimal" && !model.includes("lite")) {
         config.thinkingConfig = { thinkingLevel };
       }
 
