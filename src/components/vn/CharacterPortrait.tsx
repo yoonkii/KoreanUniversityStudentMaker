@@ -90,7 +90,7 @@ export default function CharacterPortrait({
 
   return (
     <div
-      className={`absolute bottom-0 ${positionClass} h-[500px] md:h-[600px] lg:h-[700px] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${activeClass} ${enterClass} ${pulseClass}`}
+      className={`absolute bottom-0 ${positionClass} w-[200px] md:w-[280px] lg:w-[320px] h-[500px] md:h-[600px] lg:h-[700px] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${activeClass} ${enterClass} ${pulseClass}`}
     >
       {imgError ? (
         <SilhouetteFallback isActive={isActive} />
@@ -102,11 +102,7 @@ export default function CharacterPortrait({
           className="object-contain object-bottom drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]"
           sizes="(max-width: 768px) 50vw, 33vw"
           onError={() => {
-            if (!src.includes('neutral')) {
-              setImgError(false);
-            } else {
-              setImgError(true);
-            }
+            setImgError(true);
           }}
         />
       )}
