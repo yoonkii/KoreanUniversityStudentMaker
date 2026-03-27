@@ -376,8 +376,33 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
     setSlots(newSlots);
   }, [activityRequiresNpc, getAvailableNpcs]);
 
+  // First-time tutorial
+  const [showTutorial, setShowTutorial] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return !localStorage.getItem('kusm-tutorial-done');
+  });
+
   return (
     <div className="flex flex-col h-full max-w-3xl mx-auto p-3 sm:p-4 gap-3 sm:gap-4">
+      {/* First-time tutorial overlay */}
+      {showTutorial && (
+        <div className="px-3 py-3 rounded-xl bg-teal/10 border border-teal/20 text-xs text-teal/80 leading-relaxed">
+          <p className="font-bold mb-1.5">📋 스케줄 짜는 법</p>
+          <ul className="space-y-1 text-[11px]">
+            <li>1️⃣ 아래 활동 버튼을 탭하면 자동으로 빈 슬롯에 배정됩니다</li>
+            <li>2️⃣ 👥친구/💕데이트는 함께할 NPC를 선택합니다</li>
+            <li>3️⃣ ⚡에너지를 초과하면 체력이 떨어져요 — 휴식도 중요!</li>
+            <li>4️⃣ 같은 활동 조합으로 콤보 보너스를 발견하세요</li>
+          </ul>
+          <button
+            onClick={() => { setShowTutorial(false); localStorage.setItem('kusm-tutorial-done', '1'); }}
+            className="mt-2 text-[10px] text-teal underline cursor-pointer"
+          >
+            알겠어요! 닫기
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg sm:text-xl font-bold text-txt-primary">주간 스케줄</h2>
