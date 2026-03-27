@@ -385,17 +385,24 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
 
   return (
     <div className="flex flex-col h-full max-w-3xl mx-auto p-3 sm:p-4 gap-3 sm:gap-4">
-      {/* Campus life ticker — what NPCs are doing right now */}
+      {/* Campus life ticker — what ALL NPCs are doing right now */}
       {(() => {
         const campus = getWeeklyRoutines(currentWeek);
         const timeOfDay = new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening';
-        const routine = campus.routines[currentWeek % campus.routines.length];
-        const slot = routine[timeOfDay];
+        const NPC_EMOJI: Record<string, string> = { jaemin: '🏠', minji: '📚', soyeon: '💛', hyunwoo: '🎸' };
         return (
-          <div className="px-3 py-2 rounded-lg bg-white/[0.03] border border-white/5 text-[10px] text-txt-secondary/40">
-            <span className="text-txt-secondary/60">{routine.npcName}</span>
-            <span className="mx-1">·</span>
-            <span className="italic">{slot.activity}</span>
+          <div className="px-3 py-2 rounded-lg bg-white/[0.03] border border-white/5">
+            <p className="text-[9px] text-txt-secondary/30 mb-1">📍 지금 캠퍼스에서는</p>
+            <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+              {campus.routines.map(r => {
+                const slot = r[timeOfDay];
+                return (
+                  <span key={r.npcId} className="text-[9px] text-txt-secondary/40">
+                    {NPC_EMOJI[r.npcId] ?? '👤'} <span className="text-txt-secondary/55">{r.npcName}</span> {slot.activity.slice(0, 15)}
+                  </span>
+                );
+              })}
+            </div>
           </div>
         );
       })()}
