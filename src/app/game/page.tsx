@@ -156,13 +156,18 @@ export default function GameScreen() {
   const handleScheduleComplete = useCallback(async (confirmedSchedule: WeekSchedule) => {
     if (isLoadingAI) return; // prevent double-submit
 
-    const { statDeltas, scenes, combos, weeklyEvent } = simulateWeek(
+    const { statDeltas, scenes, combos, weeklyEvent, npcInteractions } = simulateWeek(
       confirmedSchedule, currentWeek, stats, { relationships },
     );
     setWeekStatDeltas(statDeltas);
     useGameStore.getState().setWeekCombos(combos);
     useGameStore.getState().setWeeklyEvent(weeklyEvent);
     setCurrentSceneIndex(0);
+
+    // Apply NPC affection bumps from social activities
+    for (const [npcId, affBump] of Object.entries(npcInteractions)) {
+      updateRelationship(npcId, affBump);
+    }
 
     // Build day-grouped activity list for ActionPhase (all 3 activities per day, 7 days)
     const ACTIVITY_EMOJI: Record<string, string> = {

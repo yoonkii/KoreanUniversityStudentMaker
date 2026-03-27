@@ -434,7 +434,7 @@ export function simulateWeek(
     disableRandomEvents?: boolean;
     relationships?: Record<string, CharacterRelationship>;
   },
-): { statDeltas: Partial<PlayerStats>; scenes: Scene[]; combos: ActiveCombo[]; weeklyEvent: WeeklyEvent | null; skippedActivities?: string[] } {
+): { statDeltas: Partial<PlayerStats>; scenes: Scene[]; combos: ActiveCombo[]; weeklyEvent: WeeklyEvent | null; skippedActivities?: string[]; npcInteractions: Record<string, number> } {
   const deltas: Record<keyof PlayerStats, number> = {
     knowledge: 0,
     money: 0,
@@ -461,6 +461,9 @@ export function simulateWeek(
     }
   }
 
+  // Track NPC interactions from targeted social activities
+  const npcInteractions: Record<string, number> = {};
+
   // Accumulate raw stat changes with diminishing returns for 4+ repeats
   const activitySeen: Record<string, number> = {};
   for (const day of DAY_KEYS) {
@@ -476,8 +479,15 @@ export function simulateWeek(
       if (slot.targetNpcId && activity.npcVariants) {
         const variant = activity.npcVariants.find(v => v.npcId === slot.targetNpcId);
         effects = variant?.statEffects ?? activity.statEffects;
+        // Auto-bump NPC affection (+3 per slot for friends, +5 for date)
+        const affBump = slot.activityId === 'date' ? 5 : 3;
+        npcInteractions[slot.targetNpcId] = (npcInteractions[slot.targetNpcId] || 0) + affBump;
       } else {
         effects = activity.statEffects;
+        // Club activity implicitly interacts with Hyunwoo
+        if (slot.activityId === 'club') {
+          npcInteractions['hyunwoo'] = (npcInteractions['hyunwoo'] || 0) + 2;
+        }
       }
 
       activitySeen[slot.activityId] = (activitySeen[slot.activityId] || 0) + 1;
@@ -644,7 +654,7 @@ export function simulateWeek(
 
   const scenes = getScenesForWeek(currentWeek);
 
-  return { statDeltas: trimmedDeltas, scenes, combos, weeklyEvent, skippedActivities };
+  return { statDeltas: trimmedDeltas, scenes, combos, weeklyEvent, skippedActivities, npcInteractions };
 }
 
 /**
