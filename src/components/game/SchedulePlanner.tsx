@@ -27,6 +27,18 @@ const TIME_LABELS_SHORT: Record<TimeSlot, string> = {
   morning: '오전', afternoon: '오후', evening: '저녁',
 };
 
+// Energy costs per activity (higher = more draining)
+const ENERGY_COSTS: Record<string, number> = {
+  study: 15,    // Intensive
+  lecture: 8,   // Passive
+  parttime: 18, // Physical + mental
+  club: 10,     // Moderate
+  date: 12,     // Social energy
+  exercise: 14, // Physical
+  rest: 0,      // Restores energy
+  friends: 10,  // Social
+};
+
 const ACTIVITY_COLOR_HEX: Record<string, string> = {
   teal: '#4ECDC4', gold: '#FFD166', pink: '#F5A0B5',
   coral: '#FF6B6B', lavender: '#A78BFA', 'txt-secondary': '#8B95A8',
@@ -124,6 +136,18 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
   const [npcPicker, setNpcPicker] = useState<NpcPickerState | null>(null);
 
   const totalScheduled = useMemo(() => Object.keys(slots).length, [slots]);
+
+  // Energy system: max energy based on health, activities cost energy
+  const maxEnergy = useMemo(() => Math.max(50, Math.round(stats.health * 1.5 + 30)), [stats.health]);
+  const usedEnergy = useMemo(() => {
+    let total = 0;
+    for (const slotData of Object.values(slots)) {
+      if (slotData) total += ENERGY_COSTS[slotData.activityId] ?? 10;
+    }
+    return total;
+  }, [slots]);
+  const energyPercent = Math.min(100, (usedEnergy / maxEnergy) * 100);
+  const isOverworked = usedEnergy > maxEnergy;
 
   // Live combo preview
   const activeCombos = useMemo(() => {
@@ -425,6 +449,29 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
           </div>
         ))}
       </div>
+
+      {/* Energy bar — PM-style constraint visualization */}
+      {totalScheduled > 0 && (
+        <div className="px-2 sm:px-4">
+          <div className="flex items-center justify-between text-[10px] mb-1">
+            <span className="text-txt-secondary">⚡ 에너지</span>
+            <span className={`font-mono font-bold ${isOverworked ? 'text-coral' : usedEnergy > maxEnergy * 0.8 ? 'text-gold' : 'text-teal'}`}>
+              {usedEnergy} / {maxEnergy}
+            </span>
+          </div>
+          <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${isOverworked ? 'bg-coral' : usedEnergy > maxEnergy * 0.8 ? 'bg-gold' : 'bg-teal'}`}
+              style={{ width: `${Math.min(100, energyPercent)}%` }}
+            />
+          </div>
+          {isOverworked && (
+            <p className="text-[10px] text-coral mt-1">
+              ⚠️ 과로 주의! 체력이 크게 떨어질 수 있어요
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Partial fill hint */}
       {totalScheduled > 0 && totalScheduled < 7 && (

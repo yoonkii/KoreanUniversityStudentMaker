@@ -530,6 +530,24 @@ export function simulateWeek(
     charm: 0,
   };
 
+  // ─── Energy Overwork Penalty ───
+  // If player scheduled too many intensive activities, health takes a hit
+  const ENERGY_COSTS: Record<string, number> = {
+    study: 15, lecture: 8, parttime: 18, club: 10, date: 12, exercise: 14, rest: 0, friends: 10,
+  };
+  const maxEnergy = Math.max(50, Math.round(currentStats.health * 1.5 + 30));
+  let totalEnergy = 0;
+  for (const day of DAY_KEYS) {
+    for (const slot of (schedule[day] ?? [])) {
+      totalEnergy += ENERGY_COSTS[slot.activityId] ?? 10;
+    }
+  }
+  if (totalEnergy > maxEnergy) {
+    const overwork = Math.round((totalEnergy - maxEnergy) * 0.5);
+    deltas.health -= overwork;
+    deltas.stress += Math.round(overwork * 0.5);
+  }
+
   // ─── Weekly Baseline Drains ───
   for (const [stat, value] of Object.entries(WEEKLY_DRAINS)) {
     if (value !== undefined) {
