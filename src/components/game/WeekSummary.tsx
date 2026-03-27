@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import GlassPanel from '@/components/ui/GlassPanel';
 import ProgressBar from '@/components/ui/ProgressBar';
@@ -101,6 +102,7 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
   const weeklyEvent = useGameStore((state) => state.weeklyEvent);
   const newAchievements = useGameStore((state) => state.newAchievements);
   const clearNewAchievements = useGameStore((state) => state.clearNewAchievements);
+  const [reflectionDone, setReflectionDone] = useState(false);
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/40">
@@ -336,6 +338,32 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
             </p>
           </div>
         </div>
+
+        {/* Weekly reflection — quick mindset choice */}
+        {currentWeek < 16 && currentWeek >= 2 && !reflectionDone && (
+          <div className="mb-3">
+            <p className="text-[10px] text-txt-secondary/50 mb-1.5 text-center">다음 주 마음가짐은?</p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {[
+                { emoji: '🔥', label: '열정!', effect: { knowledge: 2, stress: 3 } },
+                { emoji: '😌', label: '여유', effect: { stress: -5, health: 2 } },
+                { emoji: '💪', label: '도전', effect: { charm: 2, social: 2 } },
+              ].map((mood) => (
+                <button
+                  key={mood.label}
+                  onClick={() => {
+                    useGameStore.getState().updateStats(mood.effect);
+                    setReflectionDone(true);
+                  }}
+                  className="py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all cursor-pointer text-center active:scale-[0.95]"
+                >
+                  <span className="text-lg block">{mood.emoji}</span>
+                  <span className="text-[9px] text-txt-secondary">{mood.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Continue button */}
         <button
