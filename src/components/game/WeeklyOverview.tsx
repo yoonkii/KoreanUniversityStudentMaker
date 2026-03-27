@@ -51,6 +51,14 @@ function getSoyeonAdvice(week: number, stress: number, knowledge: number, social
   if (week === 4) return { text: 'MT 가기로 했지? 선배들이랑 친해질 좋은 기회야. 즐겁게 보내!', expression: 'teasing' };
   if (knowledge >= 75 && stress <= 30) return { text: '와, 요즘 진짜 잘하고 있다! 이 페이스 유지하면 장학금도 노려볼 만해.', expression: 'happy' };
   if (week <= 3) return { text: '새 학기 잘 적응하고 있지? 모르는 거 있으면 언제든 물어봐. 선배가 다 알려줄게~', expression: 'happy' };
+
+  // Trajectory-aware advice — Soyeon notices your direction
+  if (week >= 8) {
+    if (knowledge >= 60 && social >= 50) return { text: '공부도 인맥도 다 챙기고 있네! 진짜 갓생러다. 선배가 부러워~', expression: 'happy' };
+    if (knowledge >= 60 && social < 30) return { text: '공부는 잘하고 있는데... 사람들이랑도 좀 어울려봐. 대학은 사람이야.', expression: 'teasing' };
+    if (social >= 60 && knowledge < 30) return { text: '친구는 많은데 공부가 걱정이야... 시험 준비는 하고 있어?', expression: 'worried' };
+  }
+
   return { text: '이번 주도 잘 해보자! 뭐 고민 있으면 언제든 카톡해.', expression: 'neutral' };
 }
 
