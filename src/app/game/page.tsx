@@ -403,7 +403,7 @@ export default function GameScreen() {
       {/* Save indicator */}
       {showSaveIndicator && (
         <div className="fixed bottom-4 right-4 z-50 px-3 py-1.5 rounded-lg bg-teal/20 text-teal text-xs font-medium backdrop-blur-sm border border-teal/20 animate-fade-in-up">
-          💾 자동 저장됨
+          💾 {currentWeek}주차 저장됨
         </div>
       )}
 
