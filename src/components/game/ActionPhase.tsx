@@ -48,6 +48,35 @@ const NPC_PORTRAITS: Record<string, string> = {
   hyunwoo: '/assets/characters/hyunwoo/neutral.png',
 };
 
+// Contextual NPC encounter lines — triggered by activity + NPC presence
+const NPC_ENCOUNTER_LINES: Record<string, Record<string, string[]>> = {
+  '수업': {
+    minji: ['민지가 옆자리에 앉았다. "오늘 교수님 말 잘 들어."', '민지: "여기 필기 빌려줄까?"'],
+    jaemin: ['재민이가 뒤에서 졸고 있다... 😴', '재민: "야 이거 시험 나와?"'],
+    soyeon: ['소연 선배가 강의실 앞에서 손을 흔들었다.'],
+  },
+  '도서관': {
+    minji: ['민지가 맞은편에서 집중하고 있다. 왠지 경쟁심이 생긴다.', '민지: "...조용히 해."'],
+    soyeon: ['소연 선배: "여기서 공부하고 있었어? 나도 같이 할까?"'],
+    jaemin: ['재민이가 옆에서 유튜브를 보고 있다. 집중이 안 된다...'],
+  },
+  '아르바이트': {
+    hyunwoo: ['현우 선배가 카페에 손님으로 왔다. "후배 알바 중이었어?"'],
+    jaemin: ['재민이가 "야 나도 알바 좀 소개해줘" 라고 카톡을 보냈다.'],
+  },
+  '동아리': {
+    hyunwoo: ['현우: "오늘 합주 좋았어! 실력 늘었다?"', '현우: "다음 공연 준비하자!"'],
+    soyeon: ['소연 선배가 동아리 MT 계획을 얘기하고 있다.'],
+  },
+  '운동': {
+    jaemin: ['재민: "같이 뛸래? 1대1 농구!"', '재민이랑 같이 러닝을 했다.'],
+    hyunwoo: ['현우 선배가 체육관에서 운동 중이다. "같이 하자!"'],
+  },
+  '휴식': {
+    jaemin: ['재민: "야 치킨 시킬까?" 🍗', '재민이가 넷플릭스 추천을 해줬다.'],
+  },
+};
+
 // 17% random event chance per activity
 const RANDOM_EVENTS = [
   { text: '교수님이 갑자기 퀴즈를 냈다!', effects: { knowledge: 3, stress: 5 } },
@@ -77,11 +106,15 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
   const [currentDayIndex, setCurrentDayIndex] = useState(-1);
   const [revealedActivities, setRevealedActivities] = useState(0);
   const [randomEvent, setRandomEvent] = useState<string | null>(null);
+  const [npcEncounter, setNpcEncounter] = useState<string | null>(null);
+  const [runningStats, setRunningStats] = useState<PlayerStats>({ ...currentStats });
   const [gameSpeed, setGameSpeed] = useState(2);
   const [isSkipping, setIsSkipping] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const dayDelay = gameSpeed === 2 ? 1500 : 2500;
+  // Slower pacing: 2.5s per day at 2x, 4s at 1x — gives time to observe
+  const dayDelay = gameSpeed === 2 ? 2500 : 4000;
+  const actRevealDelay = gameSpeed === 2 ? 500 : 800;
 
   const processDay = useCallback((dayIdx: number) => {
     if (dayIdx >= days.length) {
@@ -92,27 +125,64 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
     setCurrentDayIndex(dayIdx);
     setRevealedActivities(0);
     setRandomEvent(null);
+    setNpcEncounter(null);
 
     const day = days[dayIdx];
     const actCount = day.activities.length;
 
-    // Reveal activities one by one
+    // Reveal activities one by one with stat ticking
     for (let i = 0; i < actCount; i++) {
-      setTimeout(() => setRevealedActivities(i + 1), (i + 1) * (gameSpeed === 2 ? 300 : 500));
+      setTimeout(() => {
+        setRevealedActivities(i + 1);
+        // Tick running stats as each activity reveals
+        const act = day.activities[i];
+        if (act && !act.skipped) {
+          setRunningStats(prev => {
+            const next = { ...prev };
+            for (const [k, v] of Object.entries(act.statEffects)) {
+              if (v !== undefined) {
+                const key = k as keyof PlayerStats;
+                next[key] = key === 'money'
+                  ? Math.max(0, next[key] + v)
+                  : Math.max(0, Math.min(100, next[key] + v));
+              }
+            }
+            return next;
+          });
+        }
+      }, (i + 1) * actRevealDelay);
     }
 
-    // Random event check after all activities shown
-    const revealTime = actCount * (gameSpeed === 2 ? 300 : 500) + 200;
+    // NPC encounter check — contextual based on activity type
+    const encounterTime = actCount * actRevealDelay + 300;
     setTimeout(() => {
-      if (Math.random() < 0.12) {
+      // Pick a random activity from today for encounter context
+      const mainAct = day.activities.find(a => !a.skipped);
+      if (mainAct) {
+        for (const [keyword, npcLines] of Object.entries(NPC_ENCOUNTER_LINES)) {
+          if (mainAct.name.includes(keyword)) {
+            const npcIds = Object.keys(npcLines);
+            // 30% chance of encounter per eligible NPC
+            const eligible = npcIds.filter(() => Math.random() < 0.3);
+            if (eligible.length > 0) {
+              const npcId = eligible[0];
+              const lines = npcLines[npcId];
+              setNpcEncounter(lines[Math.floor(Math.random() * lines.length)]);
+            }
+            break;
+          }
+        }
+      }
+      // Also check for random event (lower chance since we have NPC encounters)
+      if (Math.random() < 0.08) {
         const event = RANDOM_EVENTS[Math.floor(Math.random() * RANDOM_EVENTS.length)];
         setRandomEvent(event.text);
       }
-    }, revealTime);
+    }, encounterTime);
 
     // Move to next day
     timerRef.current = setTimeout(() => processDay(dayIdx + 1), dayDelay);
-  }, [days, dayDelay, gameSpeed, onComplete]);
+  }, [days, dayDelay, actRevealDelay, onComplete]);
 
   useEffect(() => {
     if (isSkipping) {
@@ -229,12 +299,50 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
             ))}
           </div>
 
+          {/* NPC encounter */}
+          {npcEncounter && (
+            <div className="mt-3 px-4 py-2.5 glass-strong rounded-xl text-sm text-pink/90 border border-pink/20 animate-fade-in">
+              💬 {npcEncounter}
+            </div>
+          )}
+
           {/* Random event */}
           {randomEvent && (
-            <div className="mt-3 px-4 py-2 glass-strong rounded-xl text-sm text-txt-primary text-center animate-shake">
+            <div className="mt-2 px-4 py-2 glass-strong rounded-xl text-sm text-txt-primary text-center animate-shake">
               ⚡ {randomEvent}
             </div>
           )}
+
+          {/* Mini stat bar — shows real-time stat changes */}
+          <div className="mt-4 grid grid-cols-3 gap-2 px-2">
+            {([
+              { key: 'knowledge' as const, label: '준비도', emoji: '📚' },
+              { key: 'health' as const, label: '체력', emoji: '💚' },
+              { key: 'stress' as const, label: '스트레스', emoji: '🔥' },
+              { key: 'social' as const, label: '인맥', emoji: '👥' },
+              { key: 'money' as const, label: '돈', emoji: '💰' },
+              { key: 'charm' as const, label: '매력', emoji: '✨' },
+            ]).map(({ key, label, emoji }) => {
+              const val = runningStats[key];
+              const prev = currentStats[key];
+              const delta = val - prev;
+              return (
+                <div key={key} className="flex items-center gap-1 text-[10px]">
+                  <span>{emoji}</span>
+                  <span className="text-txt-secondary">{label}</span>
+                  <span className={`font-mono font-bold ml-auto transition-all duration-300 ${
+                    key === 'money'
+                      ? (delta >= 0 ? 'text-teal' : 'text-coral')
+                      : key === 'stress'
+                        ? (delta <= 0 ? 'text-teal' : 'text-coral')
+                        : (delta >= 0 ? 'text-teal' : 'text-coral')
+                  }`}>
+                    {key === 'money' ? `${Math.round(val / 1000)}K` : val}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
