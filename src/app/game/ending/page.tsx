@@ -1082,6 +1082,33 @@ export default function EndingPage() {
             메인으로 돌아가기
           </button>
         </div>
+
+        {/* Credits — acknowledgment of the journey */}
+        <div className={`text-center mt-8 mb-12 transition-all duration-1000 ${animStep >= 5 ? 'opacity-100' : 'opacity-0'}`}>
+          <p className="text-[10px] text-white/15 tracking-widest mb-3">— 함께한 사람들 —</p>
+          <div className="flex flex-col gap-1 text-[11px] text-white/20">
+            {Object.entries(relationships)
+              .filter(([, r]) => r.encounters > 0)
+              .sort(([, a], [, b]) => b.affection - a.affection)
+              .map(([id]) => {
+                const NPC_CREDIT: Record<string, string> = {
+                  jaemin: '이재민 — 룸메이트이자 최고의 친구',
+                  minji: '한민지 — 라이벌이자 동료',
+                  soyeon: '박소연 — 따뜻한 선배',
+                  hyunwoo: '정현우 — 자유로운 영혼',
+                  'prof-kim': '김 교수 — 엄하지만 따뜻한 스승',
+                };
+                return NPC_CREDIT[id] ? <p key={id}>{NPC_CREDIT[id]}</p> : null;
+              })}
+            <p className="mt-2 text-white/10">그리고 {player?.name ?? '나'}의 1학기</p>
+          </div>
+          <p className="text-[9px] text-white/10 mt-6 tracking-wider">
+            KOREAN UNIVERSITY STUDENT MAKER
+          </p>
+          <p className="text-[8px] text-white/[0.06] mt-1">
+            Built with 💛 through 112 AUTOPLAY cycles
+          </p>
+        </div>
       </div>
     </div>
   );
