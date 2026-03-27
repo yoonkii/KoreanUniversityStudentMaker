@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
-import { generateStructured } from "../_shared/ai-client";
-import { NPCBrainResponseSchema } from "@/engine/ai/schemas/npc-response";
+import { generateText } from "../_shared/ai-client";
 import { buildNPCSystemPrompt, buildNPCContextPrompt, buildNPCSituationPrompt } from "@/engine/ai/prompt-templates/npc-dialogue";
 import type { NPCCharacterSheet, NPCLiveState } from "@/engine/types/npc";
 import type { PlayerStats } from "@/engine/types/stats";
 import type { ThinkingLevel } from "../_shared/ai-client";
-import { z } from "zod";
 
 interface NPCBrainRequest {
   sheet: NPCCharacterSheet;
@@ -36,19 +34,23 @@ export async function POST(request: Request) {
     const contextPrompt = buildNPCContextPrompt(state, playerName, playerStats, directorBias);
     const situationPrompt = buildNPCSituationPrompt(sheet, playerName, situation, forceChoice);
 
-    const userPrompt = `${contextPrompt}\n\n${situationPrompt}`;
+    const combinedPrompt = `${systemPrompt}\n\n${contextPrompt}\n\n${situationPrompt}\n\nRespond in JSON format.`;
 
-    const result = await generateStructured(
-      {
-        systemPrompt,
-        userPrompt,
-        jsonSchema: z.toJSONSchema(NPCBrainResponseSchema) as Record<string, unknown>,
-        thinkingLevel,
-      },
-      NPCBrainResponseSchema
-    );
+    const raw = await generateText({
+      userPrompt: combinedPrompt,
+      thinkingLevel,
+    });
 
-    return NextResponse.json(result.data);
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      const m = raw.match(/\{[\s\S]*\}/);
+      if (m) parsed = JSON.parse(m[0]);
+      else return NextResponse.json({ error: "Parse failed" }, { status: 502 });
+    }
+
+    return NextResponse.json(parsed);
   } catch (error) {
     console.error("NPC brain error:", error);
     // Return fallback response

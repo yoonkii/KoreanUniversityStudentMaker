@@ -67,6 +67,30 @@ function getWeekSpecificLine(activityKeyword: string, npcId: string, week: numbe
     };
     return examLines[npcId]?.[activityKeyword] ?? null;
   }
+  // Early semester — everything is new and exciting
+  if (week <= 3) {
+    const earlyLines: Record<string, Record<string, string>> = {
+      jaemin: {
+        '수업': '재민: "야 이 강의실 어디야? 건물이 다 똑같아ㅋㅋ"',
+        '공부': '재민이가 도서관 자리를 찾느라 헤매고 있다. "여기 처음인데 어디 앉아?"',
+        '운동': '재민: "헬스장 무료래! 같이 가자 오늘!"',
+        '휴식': '재민이가 기숙사 와이파이 비번을 물어보고 있다.',
+      },
+      minji: {
+        '수업': '민지가 첫 수업인데 벌써 교재에 포스트잇을 붙여놨다.',
+        '공부': '민지: "도서관 3층이 가장 조용해. 참고해."',
+      },
+      soyeon: {
+        '수업': '소연 선배가 복도에서 "첫 수업 어때? 재밌지?" 하고 물었다.',
+        '공부': '소연 선배: "1학년 때 공부 습관 잡는 게 제일 중요해. 화이팅!"',
+      },
+      hyunwoo: {
+        '동아리': '현우: "오늘 첫 모임이야! 긴장하지 마, 다 처음이니까."',
+      },
+    };
+    return earlyLines[npcId]?.[activityKeyword] ?? null;
+  }
+
   // Festival week — everyone is excited
   if (week === 9) {
     const festLines: Record<string, string> = {

@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
-import { generateStructured } from "../_shared/ai-client";
-import { DirectorResponseSchema } from "@/engine/ai/schemas/director-response";
+import { generateText } from "../_shared/ai-client";
 import { buildDirectorSystemPrompt, buildDirectorEvaluationPrompt } from "@/engine/ai/prompt-templates/director-evaluate";
 import type { StoryDirectorState } from "@/engine/types/story";
 import type { PlayerStats } from "@/engine/types/stats";
-import { z } from "zod";
 
 interface DirectorRequest {
   director: StoryDirectorState;
@@ -29,17 +27,23 @@ export async function POST(request: Request) {
       body.playerActivities
     );
 
-    const result = await generateStructured(
-      {
-        systemPrompt,
-        userPrompt,
-        jsonSchema: z.toJSONSchema(DirectorResponseSchema) as Record<string, unknown>,
-        thinkingLevel: "medium",
-      },
-      DirectorResponseSchema
-    );
+    const combinedPrompt = `${systemPrompt}\n\n${userPrompt}\n\nRespond in JSON format.`;
 
-    return NextResponse.json(result.data);
+    const raw = await generateText({
+      userPrompt: combinedPrompt,
+      thinkingLevel: "medium",
+    });
+
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      const m = raw.match(/\{[\s\S]*\}/);
+      if (m) parsed = JSON.parse(m[0]);
+      else return NextResponse.json({ error: "Parse failed" }, { status: 502 });
+    }
+
+    return NextResponse.json(parsed);
   } catch (error) {
     console.error("Story director error:", error);
     return NextResponse.json({

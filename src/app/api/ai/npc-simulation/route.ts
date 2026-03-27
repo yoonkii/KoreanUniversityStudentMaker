@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import { generateStructured } from "../_shared/ai-client";
-import { SimulationResponseSchema } from "@/engine/ai/schemas/simulation-response";
+import { generateText } from "../_shared/ai-client";
 import { buildSimulationSystemPrompt, buildSimulationPrompt } from "@/engine/ai/prompt-templates/npc-simulation";
-import { z } from "zod";
 
 interface SimulationRequest {
   npcs: Array<{
@@ -31,17 +29,23 @@ export async function POST(request: Request) {
       body.activeThreads
     );
 
-    const result = await generateStructured(
-      {
-        systemPrompt,
-        userPrompt,
-        jsonSchema: z.toJSONSchema(SimulationResponseSchema) as Record<string, unknown>,
-        thinkingLevel: "low",
-      },
-      SimulationResponseSchema
-    );
+    const combinedPrompt = `${systemPrompt}\n\n${userPrompt}\n\nRespond in JSON format.`;
 
-    return NextResponse.json(result.data);
+    const raw = await generateText({
+      userPrompt: combinedPrompt,
+      thinkingLevel: "low",
+    });
+
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      const m = raw.match(/\{[\s\S]*\}/);
+      if (m) parsed = JSON.parse(m[0]);
+      else return NextResponse.json({ error: "Parse failed" }, { status: 502 });
+    }
+
+    return NextResponse.json(parsed);
   } catch (error) {
     console.error("NPC simulation error:", error);
     return NextResponse.json({

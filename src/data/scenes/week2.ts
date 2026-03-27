@@ -84,6 +84,10 @@ export const WEEK_2_SCENES: Scene[] = [
         text: '정현우. 밴드 동아리 "블루노트" 부회장이란다. 가죽 팔찌에 살짝 긴 머리, 전형적인 "밴드 선배" 비주얼이다.',
       },
       {
+        characterId: null,
+        text: '부스 뒤쪽에서 누군가 기타를 연습하고 있고, 옆 테이블에서는 신입생 두 명이 가입 신청서를 작성 중이다.',
+      },
+      {
         characterId: 'hyunwoo',
         expression: 'helpful',
         text: '악기 못 쳐도 괜찮아. 우리 동아리는 음악만 하는 게 아니라 MT도 가고, 축제 무대도 서고, 진짜 재밌어.',
