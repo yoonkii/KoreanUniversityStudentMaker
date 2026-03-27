@@ -76,6 +76,13 @@ export default function HUDBar() {
                 </span>
               );
             })()}
+            {/* Exam countdown — builds anticipation */}
+            {(() => {
+              const w = weekInSemester;
+              if (w >= 5 && w < 7) return <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-coral/10 text-coral/70 animate-pulse">중간고사 D-{7 - w}주</span>;
+              if (w >= 12 && w < 14) return <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-red-500/10 text-red-400/70 animate-pulse">기말고사 D-{14 - w}주</span>;
+              return null;
+            })()}
           </div>
 
           {/* Center: Character mood (PM-style persistent mood display) */}
