@@ -33,7 +33,7 @@ import type { DayGroup } from '@/components/game/ActionPhase';
 // import { CORE_NPC_SHEETS } from '@/engine/data/core-npcs';
 import { checkAchievements } from '@/lib/achievements';
 import { triggerDialogueGeneration } from '@/lib/weeklyDialogueCache';
-import { triggerAiCampusGeneration, getOverheardConversation } from '@/lib/livingCampus';
+import { triggerAiCampusGeneration, getOverheardConversation, getWeeklyRoutines } from '@/lib/livingCampus';
 
 export default function GameScreen() {
   const router = useRouter();
@@ -305,11 +305,19 @@ export default function GameScreen() {
       hyunwoo: '김현우', 'prof-kim': '김 교수',
     };
 
-    // Stat-reactive NPC messages — NPCs notice your condition AND remember past
+    // NPC messages — they tell you what THEY'VE been doing + react to your condition
     const allRelationships = useGameStore.getState().relationships;
+    const campusRoutines = getWeeklyRoutines(currentWeek);
     function getReactiveMsg(charId: string, playerStats: typeof stats): string {
       const rel = allRelationships[charId];
       const memories = rel?.memories ?? [];
+
+      // NPC shares what they did today (40% chance — makes them feel autonomous)
+      const routine = campusRoutines.routines.find(r => r.npcId === charId);
+      if (routine && Math.random() < 0.4) {
+        const slot = routine.evening; // What they did this evening
+        return slot.dialogue;
+      }
 
       // Decay warning messages — NPC notices you've been absent
       const weeksSince = rel?.lastInteraction ? currentWeek - rel.lastInteraction : 99;
