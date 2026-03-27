@@ -29,14 +29,19 @@ const TIME_LABELS_SHORT: Record<TimeSlot, string> = {
 
 // Energy costs per activity (higher = more draining)
 const ENERGY_COSTS: Record<string, number> = {
-  study: 15,    // Intensive
-  lecture: 8,   // Passive
-  parttime: 18, // Physical + mental
-  club: 10,     // Moderate
-  date: 12,     // Social energy
-  exercise: 14, // Physical
-  rest: 0,      // Restores energy
-  friends: 10,  // Social
+  study: 15,      // Intensive
+  lecture: 8,     // Passive
+  parttime: 18,   // Physical + mental
+  club: 10,       // Moderate
+  date: 12,       // Social energy
+  exercise: 14,   // Physical
+  rest: 0,        // Restores energy
+  friends: 10,    // Social
+  tutoring: 16,   // Teaching is tiring
+  networking: 12, // Social energy
+  selfcare: 5,    // Light
+  explore: 8,     // Walking around
+  volunteer: 15,  // Physical + emotional
 };
 
 const ACTIVITY_COLOR_HEX: Record<string, string> = {

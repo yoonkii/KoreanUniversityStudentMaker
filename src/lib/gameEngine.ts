@@ -534,6 +534,7 @@ export function simulateWeek(
   // If player scheduled too many intensive activities, health takes a hit
   const ENERGY_COSTS: Record<string, number> = {
     study: 15, lecture: 8, parttime: 18, club: 10, date: 12, exercise: 14, rest: 0, friends: 10,
+    tutoring: 16, networking: 12, selfcare: 5, explore: 8, volunteer: 15,
   };
   const maxEnergy = Math.max(50, Math.round(currentStats.health * 1.5 + 30));
   let totalEnergy = 0;

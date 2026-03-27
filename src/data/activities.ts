@@ -109,6 +109,25 @@ export const ACTIVITIES: Record<string, ActivityDef> = {
     description: '피부관리, 헤어, 쇼핑... 자신에게 투자하는 시간.',
     unlockRequirement: { stat: 'charm', min: 40, label: '매력 40 이상' },
   },
+  // ─── Weekend-Only Activities ───
+  explore: {
+    id: 'explore',
+    name: '캠퍼스 탐험',
+    icon: 'solar:map-bold',
+    color: 'teal',
+    statEffects: { charm: 3, stress: -6, social: 4, health: 2 },
+    description: '주말에 캠퍼스를 돌아다니며 숨은 명소를 발견한다.',
+    unlockWeek: 2,
+  },
+  volunteer: {
+    id: 'volunteer',
+    name: '봉사활동',
+    icon: 'solar:hand-heart-bold',
+    color: 'teal',
+    statEffects: { social: 8, charm: 5, stress: 3, health: -3 },
+    description: '지역 봉사활동에 참여한다. 힘들지만 보람 있다.',
+    unlockWeek: 3,
+  },
 };
 
 export const ACTIVITY_LIST: ActivityDef[] = Object.values(ACTIVITIES);
