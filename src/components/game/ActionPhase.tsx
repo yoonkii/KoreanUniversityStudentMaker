@@ -541,9 +541,13 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
               {(() => {
                 // Try to find which NPC is speaking from the current day's targeted activity
                 const targetNpc = currentDay?.activities.find(a => a.targetNpcId)?.targetNpcId;
-                const portrait = targetNpc ? NPC_PORTRAITS[targetNpc] : null;
                 const NPC_DISPLAY: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연', hyunwoo: '현우' };
                 const name = targetNpc ? NPC_DISPLAY[targetNpc] : null;
+                // Dynamic expression based on encounter content
+                const expression = npcEncounter.includes('웃') || npcEncounter.includes('좋') || npcEncounter.includes('재밌') ? 'happy'
+                  : npcEncounter.includes('걱정') || npcEncounter.includes('힘들') ? 'worried'
+                  : 'neutral';
+                const portrait = targetNpc ? `/assets/characters/${targetNpc}/${expression === 'worried' && targetNpc === 'jaemin' ? 'concerned' : expression === 'worried' && targetNpc === 'minji' ? 'frustrated' : expression === 'happy' && targetNpc === 'jaemin' ? 'happy' : expression === 'happy' && targetNpc === 'minji' ? 'friendly' : expression === 'happy' && targetNpc === 'soyeon' ? 'happy' : expression === 'happy' && targetNpc === 'hyunwoo' ? 'cool' : 'neutral'}.png` : null;
                 return portrait ? (
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 rounded-full overflow-hidden border border-pink/30">
