@@ -144,3 +144,33 @@
 .break-keep {
   word-break: keep-all;
 }
+
+/* Mobile touch improvements */
+@media (max-width: 640px) {
+  /* Larger touch targets on mobile */
+  button {
+    min-height: 36px;
+  }
+  /* Prevent double-tap zoom on game buttons */
+  .game-btn {
+    touch-action: manipulation;
+  }
+}
+
+/* Tap feedback — subtle flash on interactive elements */
+button:active, [role="button"]:active {
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}
+
+/* Smooth scrolling for diary and other scrollable content */
+.scroll-smooth {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Safe area padding for notched devices */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
