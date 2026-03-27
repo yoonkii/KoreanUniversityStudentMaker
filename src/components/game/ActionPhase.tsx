@@ -309,7 +309,10 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
   const [choiceFlavor, setChoiceFlavor] = useState<string | null>(null);
   const [monologue, setMonologue] = useState<string | null>(null);
   const [dayTransition, setDayTransition] = useState<string | null>(null);
+  const [fatigueWarning, setFatigueWarning] = useState<string | null>(null);
   const [runningStats, setRunningStats] = useState<PlayerStats>({ ...currentStats });
+  // Track activity repetition for diminishing returns display
+  const activityCountRef = useRef<Record<string, number>>({});
   const currentWeek = useGameStore((s) => s.currentWeek);
   const relationships = useGameStore((s) => s.relationships);
   const [gameSpeed, setGameSpeed] = useState(2);
@@ -371,17 +374,40 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
     for (let i = 0; i < actCount; i++) {
       setTimeout(() => {
         setRevealedActivities(i + 1);
-        // Tick running stats as each activity reveals
+        // Tick running stats with variance + diminishing returns
         const act = day.activities[i];
         if (act && !act.skipped) {
+          // Track repetition
+          const actName = act.name;
+          activityCountRef.current[actName] = (activityCountRef.current[actName] ?? 0) + 1;
+          const repeatCount = activityCountRef.current[actName];
+
+          // Show fatigue warning at 4+ repeats
+          if (repeatCount >= 4) {
+            setFatigueWarning(`😫 ${actName} 반복 ${repeatCount}회째... 능률이 떨어진다`);
+            setTimeout(() => setFatigueWarning(null), 1500);
+          } else if (repeatCount === 3) {
+            setFatigueWarning(`😓 ${actName} 3회째. 좀 다른 것도 해볼까?`);
+            setTimeout(() => setFatigueWarning(null), 1200);
+          }
+
           setRunningStats(prev => {
             const next = { ...prev };
+            // Diminishing returns multiplier: 100% → 100% → 100% → 50%
+            const diminish = repeatCount >= 4 ? 0.5 : 1.0;
+            // Random variance: ±25% for non-money stats
             for (const [k, v] of Object.entries(act.statEffects)) {
               if (v !== undefined) {
                 const key = k as keyof PlayerStats;
+                let adjusted = v;
+                if (key !== 'money') {
+                  // Apply variance: ±25%
+                  const variance = 0.75 + Math.random() * 0.5;
+                  adjusted = Math.round(v * variance * diminish);
+                }
                 next[key] = key === 'money'
-                  ? Math.max(0, next[key] + v)
-                  : Math.max(0, Math.min(100, next[key] + v));
+                  ? Math.max(0, next[key] + adjusted)
+                  : Math.max(0, Math.min(100, next[key] + adjusted));
               }
             }
             return next;
@@ -561,6 +587,13 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
           건너뛰기 ⏭️
         </button>
       </div>
+
+      {/* Fatigue/diminishing returns warning */}
+      {fatigueWarning && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 glass-strong rounded-xl text-sm text-coral border border-coral/30 animate-shake">
+          {fatigueWarning}
+        </div>
+      )}
 
       {/* Day transition text */}
       {dayTransition && !currentDay && (
