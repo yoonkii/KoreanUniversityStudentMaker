@@ -61,9 +61,11 @@ function getContextualSubtitle(week: number, stats: { stress: number; knowledge:
 export default function WeekTitleCard({ week, onDone }: WeekTitleCardProps) {
   const [visible, setVisible] = useState(true);
   const stats = useGameStore((s) => s.stats);
+  const diaryEntries = useGameStore((s) => s.diaryEntries);
 
   const info = WEEK_TITLES[week] ?? { title: `${week}주차` };
   const subtitle = getContextualSubtitle(week, stats);
+  const lastDiary = week > 1 ? diaryEntries.find(d => d.week === week - 1) : null;
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -85,6 +87,12 @@ export default function WeekTitleCard({ week, onDone }: WeekTitleCardProps) {
         <p className="text-lg text-txt-secondary/70 animate-fade-in-up max-w-md px-4" style={{ animationDelay: '0.2s' }}>
           {subtitle}
         </p>
+        {/* Last week memory flash */}
+        {lastDiary && (
+          <p className="text-[10px] text-txt-secondary/30 mt-2 animate-fade-in-up italic max-w-sm px-6" style={{ animationDelay: '0.3s' }}>
+            지난 주: {lastDiary.text.slice(0, 50)}{lastDiary.text.length > 50 ? '...' : ''}
+          </p>
+        )}
         {/* Mood music indicator — atmospheric suggestion */}
         <p className="text-[10px] text-txt-secondary/20 mt-4 animate-fade-in-up tracking-wider" style={{ animationDelay: '0.4s' }}>
           {week <= 3 ? '♪ 새로운 시작 — 설레는 봄의 멜로디' :
