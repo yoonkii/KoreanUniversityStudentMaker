@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { calculateExamGpa } from '@/lib/gameEngine';
 import GlassPanel from '@/components/ui/GlassPanel';
@@ -212,48 +212,126 @@ export default function ExamEvent({ type, onComplete }: ExamEventProps) {
           </div>
         )}
 
-        {/* Result */}
+        {/* Result — dramatic grade reveal ceremony */}
         {phase === 'result' && selectedStrategy && (
-          <GlassPanel variant="strong" className="p-6 text-center animate-modal-enter">
-            <span className="text-5xl block mb-3">{selectedStrategy.emoji}</span>
-            <h2 className="text-xl font-bold text-txt-primary mb-1">{selectedStrategy.title}</h2>
-            <p className="text-sm text-txt-secondary/80 italic mb-4">{selectedStrategy.resultText}</p>
-
-            {/* GPA Result */}
-            <div className="mb-4 p-4 glass rounded-xl">
-              <p className="text-xs text-txt-secondary mb-1">{examLabel} 성적</p>
-              <div className="flex items-baseline justify-center gap-2">
-                <span className={`text-4xl font-bold ${getGpaGrade(examGpa).color}`}>
-                  {examGpa.toFixed(2)}
-                </span>
-                <span className="text-lg text-txt-secondary">/ 4.50</span>
-              </div>
-              <span className={`text-sm font-bold ${getGpaGrade(examGpa).color}`}>
-                {getGpaGrade(examGpa).label}
-              </span>
-            </div>
-
-            <div className="flex flex-wrap justify-center gap-2 mb-5">
-              {Object.entries(selectedStrategy.statEffects).map(([k, v]) => {
-                const labels: Record<string, string> = { knowledge: '준비도', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력' };
-                const isGood = k === 'stress' ? v < 0 : v > 0;
-                return (
-                  <span key={k} className={`px-3 py-1 rounded-full text-xs font-bold ${isGood ? 'bg-teal/15 text-teal' : 'bg-coral/15 text-coral'}`}>
-                    {labels[k] ?? k} {v > 0 ? '+' : ''}{v}
-                  </span>
-                );
-              })}
-            </div>
-
-            <button
-              onClick={() => onComplete(selectedStrategy.statEffects)}
-              className="w-full py-3 rounded-xl font-semibold text-base bg-teal/20 text-teal border border-teal/30 hover:bg-teal/30 transition-all cursor-pointer active:scale-[0.98]"
-            >
-              시험 끝!
-            </button>
-          </GlassPanel>
+          <GradeReveal
+            examLabel={examLabel}
+            strategy={selectedStrategy}
+            gpa={examGpa}
+            getGpaGrade={getGpaGrade}
+            onDone={() => onComplete(selectedStrategy.statEffects)}
+          />
         )}
       </div>
     </div>
+  );
+}
+
+/** Dramatic grade reveal with counting animation */
+function GradeReveal({
+  examLabel,
+  strategy,
+  gpa,
+  getGpaGrade,
+  onDone,
+}: {
+  examLabel: string;
+  strategy: ExamStrategy;
+  gpa: number;
+  getGpaGrade: (gpa: number) => { label: string; color: string };
+  onDone: () => void;
+}) {
+  const [displayGpa, setDisplayGpa] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const animRef = useRef<number | null>(null);
+
+  // Count-up animation from 0 to final GPA
+  useEffect(() => {
+    const duration = 1500; // 1.5 seconds
+    const startTime = Date.now();
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      // Ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayGpa(gpa * eased);
+      if (progress < 1) {
+        animRef.current = requestAnimationFrame(animate);
+      } else {
+        setDisplayGpa(gpa);
+        setRevealed(true);
+        setTimeout(() => setShowDetails(true), 500);
+      }
+    };
+    // Start after a brief pause
+    const timer = setTimeout(() => {
+      animRef.current = requestAnimationFrame(animate);
+    }, 800);
+    return () => {
+      clearTimeout(timer);
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+  }, [gpa]);
+
+  const grade = getGpaGrade(displayGpa);
+  const finalGrade = getGpaGrade(gpa);
+
+  // Reaction text based on GPA
+  const reactionText = gpa >= 4.0 ? '🎉 대박! 최고의 성적이야!'
+    : gpa >= 3.5 ? '😊 잘했어! 노력한 보람이 있다.'
+    : gpa >= 3.0 ? '🙂 나쁘지 않아. 다음엔 더 잘할 수 있어.'
+    : gpa >= 2.0 ? '😅 아슬아슬하다... 다음에는 더 준비하자.'
+    : '😰 위험하다... 2학기에 만회해야 해.';
+
+  return (
+    <GlassPanel variant="strong" className="p-6 text-center animate-modal-enter">
+      <p className="text-sm text-txt-secondary mb-1">{strategy.resultText}</p>
+
+      {/* Grade reveal — big animated number */}
+      <div className="my-6 relative">
+        <p className="text-xs text-txt-secondary/50 mb-2">{examLabel} 성적 발표</p>
+        <div className="flex items-baseline justify-center gap-2">
+          <span
+            className={`text-6xl font-bold transition-colors duration-300 ${grade.color}`}
+            style={{ fontVariantNumeric: 'tabular-nums' }}
+          >
+            {displayGpa.toFixed(2)}
+          </span>
+          <span className="text-xl text-txt-secondary/40">/ 4.50</span>
+        </div>
+        {revealed && (
+          <div className="mt-2 animate-fade-in-up">
+            <span className={`text-2xl font-bold ${finalGrade.color}`}>{finalGrade.label}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Reaction + details — fade in after reveal */}
+      {showDetails && (
+        <div className="animate-fade-in-up">
+          <p className="text-sm text-txt-primary/80 mb-4">{reactionText}</p>
+
+          <div className="flex flex-wrap justify-center gap-2 mb-5">
+            {Object.entries(strategy.statEffects).map(([k, v]) => {
+              const labels: Record<string, string> = { knowledge: '준비도', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력' };
+              const isGood = k === 'stress' ? v < 0 : v > 0;
+              return (
+                <span key={k} className={`px-3 py-1 rounded-full text-xs font-bold ${isGood ? 'bg-teal/15 text-teal' : 'bg-coral/15 text-coral'}`}>
+                  {labels[k] ?? k} {v > 0 ? '+' : ''}{v}
+                </span>
+              );
+            })}
+          </div>
+
+          <button
+            onClick={onDone}
+            className="w-full py-3 rounded-xl font-semibold text-base bg-teal/20 text-teal border border-teal/30 hover:bg-teal/30 transition-all cursor-pointer active:scale-[0.98]"
+          >
+            시험 끝! 💪
+          </button>
+        </div>
+      )}
+    </GlassPanel>
   );
 }
