@@ -1057,6 +1057,25 @@ export default function EndingPage() {
             새 학기 시작하기
           </button>
           <button
+            onClick={() => {
+              const er = useGameStore.getState().examResults;
+              const friendCount2 = Object.values(relationships).filter(r => r.affection >= 50).length;
+              const shareText = [
+                `🎓 한국 대학생 메이커 — ${archetype.emoji} ${archetype.ko}`,
+                er.semesterGpa ? `📊 GPA: ${er.semesterGpa.toFixed(2)}` : '',
+                `👥 친구: ${friendCount2}명`,
+                `🏆 업적: ${unlockedAchievements.length}개`,
+                `#한국대학생메이커 #KoreanUniversityStudentMaker`,
+              ].filter(Boolean).join('\n');
+              navigator.clipboard?.writeText(shareText).then(() => {
+                alert('결과가 클립보드에 복사됐어요! 붙여넣기로 공유하세요 📋');
+              });
+            }}
+            className="w-full py-3 text-white/40 hover:text-white/70 text-sm transition-colors border border-white/10 rounded-xl hover:border-white/20"
+          >
+            📋 결과 공유하기
+          </button>
+          <button
             onClick={() => router.push("/")}
             className="w-full py-3 text-white/50 hover:text-white/80 text-sm transition-colors"
           >
