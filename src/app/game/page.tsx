@@ -308,6 +308,18 @@ export default function GameScreen() {
       const rel = allRelationships[charId];
       const memories = rel?.memories ?? [];
 
+      // Decay warning messages — NPC notices you've been absent
+      const weeksSince = rel?.lastInteraction ? currentWeek - rel.lastInteraction : 99;
+      if (weeksSince >= 3 && rel && rel.affection >= 40) {
+        const MISS_MSGS: Record<string, string> = {
+          jaemin: '야... 요즘 왜 연락이 없어? 바쁜 거야? 😔',
+          minji: '...요즘 안 보이네. 바쁜가 보다.',
+          soyeon: '후배야, 요즘 얼굴을 못 봤네. 괜찮아? 걱정돼.',
+          hyunwoo: '후배 요즘 어디 갔어? 동아리도 안 나오고.',
+        };
+        if (MISS_MSGS[charId]) return MISS_MSGS[charId];
+      }
+
       // Memory-based messages (30% chance — references past shared experiences)
       if (memories.length > 0 && Math.random() < 0.3) {
         const lastMemory = memories[memories.length - 1];
