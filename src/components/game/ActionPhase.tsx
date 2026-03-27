@@ -539,18 +539,15 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
                   </div>
                 </div>
 
-                {/* NPC portrait (if targeted) */}
-                {activity.targetNpcId && NPC_PORTRAITS[activity.targetNpcId] && !activity.skipped && (
-                  <div className="w-8 h-8 rounded-full overflow-hidden border border-white/20 flex-shrink-0">
-                    <Image
-                      src={NPC_PORTRAITS[activity.targetNpcId]}
-                      alt={activity.targetNpcName ?? ''}
-                      width={32}
-                      height={32}
-                      className="object-cover"
-                    />
+                {/* NPC portrait + affection indicator (if targeted) */}
+                {activity.targetNpcId && NPC_PORTRAITS[activity.targetNpcId] && !activity.skipped ? (
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {i < revealedActivities && <span className="text-[9px] text-pink font-bold">❤️</span>}
+                    <div className="w-8 h-8 rounded-full overflow-hidden border border-pink/30">
+                      <Image src={NPC_PORTRAITS[activity.targetNpcId]} alt={activity.targetNpcName ?? ''} width={32} height={32} className="object-cover" />
+                    </div>
                   </div>
-                )}
+                ) : null}
 
                 {/* Stat chips */}
                 {!activity.skipped && i < revealedActivities && (
