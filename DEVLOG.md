@@ -1129,7 +1129,8 @@ Complete rewrite of core game mechanics across 59 files (+1496/-707 lines):
 - Gemini weekly dialogue cache, relationship-gated exam strategies
 - C109-C111: tier-up stat bonuses, enhanced play stats, share results button,
   week-specific NPC encounters, dynamic title tagline, first-time tutorial
-- **ULTIMATE TOTAL: 126 session commits, 112 AUTOPLAY cycles, 147 repo commits**
+- C113-C114: VN credits, NG+ fix (9→14), dynamic subtitle, share button
+- **ULTIMATE TOTAL: 129 session commits, 115 AUTOPLAY cycles, 150 repo commits, 48 tests, ZERO regressions**
 - 8,800+ lines across game libraries + components, 13 activities, 28 achievements,
   14 endings, 70+ events, 27 NPCs, 120+ text variants, dozens of interconnected systems
 
