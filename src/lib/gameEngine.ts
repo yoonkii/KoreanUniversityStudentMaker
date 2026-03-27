@@ -488,9 +488,19 @@ export function simulateWeek(
       const hyunwooRel = options?.relationships?.['hyunwoo'];
       const clubDiscount = slot.activityId === 'club' && hyunwooRel && hyunwooRel.affection >= 70;
 
+      // Probabilistic variance: ±20% random, 5% crit success (+50%), 5% bad day (-30%)
+      const varianceRoll = options?.disableRandomEvents ? 1.0 : (() => {
+        const r = Math.random();
+        if (r < 0.05) return 1.5;  // Critical success!
+        if (r > 0.95) return 0.7;  // Bad day...
+        return 0.8 + Math.random() * 0.4; // ±20% normal variance
+      })();
+
       for (const [stat, value] of Object.entries(effects)) {
         if (value !== undefined) {
-          let finalValue = Math.round(value * diminish);
+          // Money doesn't get variance (₩45K is ₩45K)
+          const useVariance = stat !== 'money' ? varianceRoll : 1.0;
+          let finalValue = Math.round(value * diminish * useVariance);
           if (clubDiscount && stat === 'money' && finalValue < 0) {
             finalValue = Math.round(finalValue * 0.5);
           }
