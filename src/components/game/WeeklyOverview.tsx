@@ -184,17 +184,32 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
         {/* Stat overview with trend indicators */}
         <div className="flex flex-col gap-2 mb-4">
           <p className="text-xs text-txt-secondary font-medium">현재 상태</p>
-          {topStats.map((stat) => (
-            <div key={stat.label} className="flex items-center justify-between px-3 py-2 bg-white/5 rounded-lg">
-              <span className="text-sm text-txt-secondary">{stat.icon} {stat.label}</span>
-              <span className={`text-sm font-medium ${statusColor[stat.status]}`}>
-                {stat.label === '돈' ? `₩${stat.value.toLocaleString('ko-KR')}` : `${stat.value}/100`}
-                <span className="ml-1 text-[10px]">
-                  {stat.status === 'danger' ? '⬇️' : stat.status === 'warning' ? '➡️' : '⬆️'}
+          {topStats.map((stat) => {
+            // Qualitative descriptions for each stat
+            function getQualLabel(label: string, value: number): string {
+              if (label === '준비도') return value >= 70 ? '우수' : value >= 45 ? '보통' : value >= 25 ? '부족' : '위험';
+              if (label === '체력') return value >= 70 ? '건강' : value >= 45 ? '보통' : value >= 25 ? '피곤' : '위험';
+              if (label === '스트레스') return value <= 30 ? '여유' : value <= 50 ? '보통' : value <= 70 ? '힘듦' : '한계';
+              if (label === '인맥') return value >= 60 ? '인싸' : value >= 40 ? '보통' : value >= 20 ? '소수' : '외톨이';
+              if (label === '매력') return value >= 60 ? '인기' : value >= 40 ? '보통' : '평범';
+              return '';
+            }
+            const qual = stat.label !== '돈' ? getQualLabel(stat.label, stat.value) : '';
+            return (
+              <div key={stat.label} className="flex items-center justify-between px-3 py-2 bg-white/5 rounded-lg">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm text-txt-secondary">{stat.icon} {stat.label}</span>
+                  {qual && <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${statusColor[stat.status]} bg-white/5`}>{qual}</span>}
+                </div>
+                <span className={`text-sm font-medium ${statusColor[stat.status]}`}>
+                  {stat.label === '돈' ? `₩${stat.value.toLocaleString('ko-KR')}` : `${stat.value}/100`}
+                  <span className="ml-1 text-[10px]">
+                    {stat.status === 'danger' ? '⬇️' : stat.status === 'warning' ? '➡️' : '⬆️'}
+                  </span>
                 </span>
-              </span>
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
 
         {/* NPC Mood Board — who's feeling what this week */}
