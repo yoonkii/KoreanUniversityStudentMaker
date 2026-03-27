@@ -112,6 +112,44 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
           <p className="text-sm text-teal/80 mt-1.5">{getWeekComment(weekStatDeltas)}</p>
         </div>
 
+        {/* Weekly highlight — the single most notable thing */}
+        {(() => {
+          // Determine highlight based on what happened
+          const deltas = weekStatDeltas;
+          const highlights: { emoji: string; text: string; color: string }[] = [];
+
+          // Biggest stat change
+          const biggestGain = Object.entries(deltas)
+            .filter(([k, v]) => k !== 'money' && k !== 'stress' && (v ?? 0) > 0)
+            .sort(([, a], [, b]) => (b ?? 0) - (a ?? 0))[0];
+          const biggestLoss = Object.entries(deltas)
+            .filter(([k, v]) => k !== 'money' && k === 'stress' ? (v ?? 0) > 10 : (v ?? 0) < -5)
+            .sort(([, a], [, b]) => Math.abs(b ?? 0) - Math.abs(a ?? 0))[0];
+
+          if (weeklyEvent) {
+            highlights.push({ emoji: '🎲', text: `이번 주 사건: ${weeklyEvent.name}`, color: 'text-lavender' });
+          }
+          if (biggestGain && (biggestGain[1] ?? 0) >= 10) {
+            const labels: Record<string, string> = { knowledge: '준비도', health: '체력', social: '인맥', charm: '매력' };
+            highlights.push({ emoji: '📈', text: `${labels[biggestGain[0]] ?? biggestGain[0]}이(가) 크게 올랐다! (+${biggestGain[1]})`, color: 'text-teal' });
+          }
+          if (biggestLoss) {
+            highlights.push({ emoji: '📉', text: `이번 주 가장 힘들었던 것: 스트레스 +${biggestLoss[1]}`, color: 'text-coral' });
+          }
+          if (weekCombos.length >= 2) {
+            highlights.push({ emoji: '✨', text: `콤보 ${weekCombos.length}개 달성!`, color: 'text-gold' });
+          }
+
+          const highlight = highlights[0];
+          if (!highlight) return null;
+          return (
+            <div className={`flex items-center gap-2.5 px-4 py-2.5 mb-4 rounded-xl bg-white/5 border border-white/10 ${highlight.color}`}>
+              <span className="text-lg">{highlight.emoji}</span>
+              <span className="text-sm font-medium">{highlight.text}</span>
+            </div>
+          );
+        })()}
+
         {/* Stat changes */}
         <div className="flex flex-col gap-4 mb-6">
           {STAT_CONFIG.map(({ key, label, icon, color, isMoney, isKnowledge }, index) => {
