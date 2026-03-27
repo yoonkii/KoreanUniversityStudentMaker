@@ -42,6 +42,9 @@ export function useAIDialogue(scene: Scene, enabled: boolean = true): AIDialogue
     abortRef.current = controller;
     setIsLoading(true);
 
+    // 6-second timeout — don't make the player wait too long
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
     const characterIds = scene.characters.map(c => c.characterId);
     const originalText = scene.dialogue.map(d => d.text).join('\n');
 
@@ -77,7 +80,7 @@ export function useAIDialogue(scene: Scene, enabled: boolean = true): AIDialogue
         }
       });
 
-    return () => { controller.abort(); };
+    return () => { controller.abort(); clearTimeout(timeoutId); };
   }, [scene.id, enabled]); // Only re-run on scene change
 
   return {

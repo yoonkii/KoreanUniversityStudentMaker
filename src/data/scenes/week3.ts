@@ -13,17 +13,25 @@ export const WEEK_3_VARIANT_B: Scene[] = [
     dialogue: [
       {
         characterId: null,
-        text: '3주차. 점심시간 학식당. 의외로 맛있는 메뉴가 있다는 소문을 듣고 왔다.',
+        text: '3주차 점심시간. 학생식당은 12시가 되자마자 줄이 길어졌다. 트레이를 들고 자리를 찾는데, 재민이가 손을 흔든다.',
+      },
+      {
+        characterId: null,
+        text: '주변에서 수강 변경 얘기, 동아리 가입 고민, 교수님 험담이 뒤섞여 들려온다. 대학 특유의 활기찬 점심 풍경.',
       },
       {
         characterId: 'jaemin',
         expression: 'happy',
-        text: '야, 오늘 돈까스 나왔다! 3,500원에 이 퀄리티면 개이득이지.',
+        text: '야, 여기 여기! 오늘 돈까스 나왔다! 3,500원에 이 퀄리티면 개이득이지. 빨리 와 없어지기 전에!',
+      },
+      {
+        characterId: null,
+        text: '그때 기타 케이스를 멘 선배 한 명이 재민이 옆에 트레이를 내려놓으며 자연스럽게 합석했다.',
       },
       {
         characterId: 'hyunwoo',
         expression: 'cool',
-        text: '오, 신입? 나 밴드 동아리 정현우야. 같이 앉아도 돼?',
+        text: '오, 신입? 나 밴드 동아리 정현우. 재민이 친구야? 같이 먹자.',
       },
       {
         characterId: 'jaemin',
@@ -81,16 +89,20 @@ export const WEEK_3_SCENES: Scene[] = [
     dialogue: [
       {
         characterId: null,
-        text: '3주차. 꿀 같았던 개강 분위기가 끝나고, 교수님이 첫 조별과제를 공지했다.',
+        text: '3주차. 꿀 같았던 개강 분위기가 끝나고, 교수님이 첫 조별과제를 공지했다. 강의실에 한숨 소리가 퍼진다.',
       },
       {
         characterId: null,
-        text: '"4명이 한 조로 보고서를 작성하세요. 다음 주까지입니다."',
+        text: '교수님이 화면에 과제 내용을 띄우자 학생들이 급히 핸드폰으로 사진을 찍기 시작한다. "4명이 한 조, 다음 주까지."',
+      },
+      {
+        characterId: null,
+        text: '수업이 끝나자마자 강의실이 술렁인다. 이미 친한 사람끼리 눈빛을 교환하고, 아직 모르는 사이인 학생들은 어색하게 주변을 살핀다.',
       },
       {
         characterId: 'jaemin',
         expression: 'neutral',
-        text: '으... 벌써 조별과제? 누구랑 해야 하지... 아는 사람이 별로 없는데.',
+        text: '으... 벌써 조별과제? 누구랑 해야 하지... 아는 사람이 너밖에 없는데.',
       },
       {
         characterId: 'minji',
