@@ -319,9 +319,9 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
   const [isSkipping, setIsSkipping] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Slower pacing: 2.5s per day at 2x, 4s at 1x — gives time to observe
-  const dayDelay = gameSpeed === 2 ? 2500 : 4000;
-  const actRevealDelay = gameSpeed === 2 ? 500 : 800;
+  // Pacing: enough time to read each activity + encounters
+  const dayDelay = gameSpeed === 2 ? 3500 : 5000;
+  const actRevealDelay = gameSpeed === 2 ? 700 : 1100;
 
   // processDay ref for use in choice handler (avoids block-scope issue)
   const processDayRef = useRef<(idx: number) => void>(() => {});
@@ -501,9 +501,11 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
       }
 
       // Check for mid-activity choice event (pauses the timer!)
+      // Higher probability in early weeks to hook the player
       if (mainAct) {
+        const earlyBoost = currentWeek <= 4 ? 1.5 : 1.0; // 50% more interrupts in weeks 1-4
         const eligible = MID_ACTIVITY_CHOICES.filter(c =>
-          mainAct.name.includes(c.activityKeyword) && Math.random() < c.probability
+          mainAct.name.includes(c.activityKeyword) && Math.random() < c.probability * earlyBoost
         );
         if (eligible.length > 0) {
           // Pause! Show choice to player
