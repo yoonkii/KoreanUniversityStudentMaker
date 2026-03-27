@@ -160,7 +160,11 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
     for (const slotData of Object.values(slots)) {
       if (slotData) counts[slotData.activityId] = (counts[slotData.activityId] || 0) + 1;
     }
-    return [
+    // Track discovered combos in localStorage for meta-progression
+    const discoveredRaw = typeof window !== 'undefined' ? localStorage.getItem('kusm-discovered-combos') : null;
+    const discovered = new Set<string>(discoveredRaw ? JSON.parse(discoveredRaw) : []);
+
+    const combos = [
       { name: '효율적 학습', desc: '수업+공부', effect: '준비도 +2', active: !!(counts['study'] && counts['lecture']), penalty: false },
       { name: '균형 잡힌 생활', desc: '운동+휴식', effect: '체력 +5', active: !!(counts['exercise'] && counts['rest']), penalty: false },
       { name: '인맥 왕', desc: '동아리+친구', effect: '인맥 +3', active: !!(counts['club'] && counts['friends']), penalty: false },
@@ -169,6 +173,18 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
       { name: '벼락치기', desc: '공부 4회+', effect: '스트레스 +5', active: (counts['study'] || 0) >= 4, penalty: true },
       { name: '알바 중독', desc: '알바 3회+', effect: '체력 -5', active: (counts['parttime'] || 0) >= 3, penalty: true },
     ];
+
+    // Mark newly discovered combos
+    for (const combo of combos) {
+      if (combo.active && !discovered.has(combo.name)) {
+        discovered.add(combo.name);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('kusm-discovered-combos', JSON.stringify([...discovered]));
+        }
+      }
+    }
+
+    return combos.map(c => ({ ...c, discovered: discovered.has(c.name) }));
   }, [slots]);
 
   // Check if an activity requires NPC target
@@ -541,11 +557,12 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
         {activeCombos.map((combo) => (
           <div
             key={combo.name}
-            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-xs transition-all duration-200 ${combo.active ? (combo.penalty ? 'bg-coral/15 text-coral border border-coral/30' : 'bg-teal/15 text-teal border border-teal/30') : 'bg-white/5 text-txt-secondary/40 border border-white/5'}`}
+            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-xs transition-all duration-200 ${combo.active ? (combo.penalty ? 'bg-coral/15 text-coral border border-coral/30' : 'bg-teal/15 text-teal border border-teal/30') : combo.discovered ? 'bg-white/5 text-txt-secondary/40 border border-white/5' : 'bg-white/[0.02] text-txt-secondary/20 border border-white/[0.03]'}`}
           >
-            <span>{combo.active ? (combo.penalty ? '!' : '*') : '-'}</span>
-            <span>{combo.name}</span>
+            <span>{combo.active ? (combo.penalty ? '!' : '✦') : combo.discovered ? '-' : '?'}</span>
+            <span>{combo.discovered || combo.active ? combo.name : '???'}</span>
             {combo.active && <span className="font-medium">{combo.effect}</span>}
+            {!combo.discovered && !combo.active && <span className="text-[8px]">미발견</span>}
           </div>
         ))}
       </div>
