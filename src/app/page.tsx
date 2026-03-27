@@ -111,8 +111,36 @@ export default function Home() {
             )}
           </div>
 
+          {/* Collection progress — PM-style meta-progression */}
+          {(() => {
+            if (typeof window === 'undefined') return null;
+            const completions = parseInt(localStorage.getItem('kusm-completions') ?? '0', 10);
+            const archetypes = JSON.parse(localStorage.getItem('kusm-archetypes') ?? '[]') as string[];
+            const combos = JSON.parse(localStorage.getItem('kusm-discovered-combos') ?? '[]') as string[];
+            if (completions === 0) return null;
+            return (
+              <div className="mt-4 sm:mt-6 px-4 py-3 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 w-64 sm:w-72">
+                <p className="text-[10px] text-white/40 mb-2 text-center">📊 수집 현황</p>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <div className="text-sm font-bold text-gold">{completions}</div>
+                    <div className="text-[8px] text-white/30">클리어</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-pink">{archetypes.length}/14</div>
+                    <div className="text-[8px] text-white/30">엔딩</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-teal">{combos.length}/7</div>
+                    <div className="text-[8px] text-white/30">콤보</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Subtle tagline */}
-          <p className="text-[10px] sm:text-xs text-white/30 mt-4 sm:mt-8 tracking-wider">
+          <p className="text-[10px] sm:text-xs text-white/30 mt-4 sm:mt-6 tracking-wider">
             AI-DRIVEN EMERGENT UNIVERSITY LIFE SIMULATOR
           </p>
         </div>
