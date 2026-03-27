@@ -775,6 +775,20 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
                             <span className={`text-[10px] font-medium ${tierInfo.color}`}>
                               {tierInfo.emoji} {tierInfo.label}
                             </span>
+                            {/* Affection bar + decay warning */}
+                            <div className="flex items-center gap-1 ml-auto">
+                              <div className="w-12 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                <div className="h-full bg-pink rounded-full" style={{ width: `${currentAffection}%` }} />
+                              </div>
+                              <span className="text-[8px] text-txt-secondary/40">{currentAffection}</span>
+                              {(() => {
+                                const rel = relationships[variant.npcId];
+                                const weeksSince = rel?.lastInteraction ? currentWeek - rel.lastInteraction : 99;
+                                if (weeksSince >= 3) return <span className="text-[8px] text-coral" title="오래 안 만남">📉</span>;
+                                if (weeksSince >= 2) return <span className="text-[8px] text-gold" title="곧 감소">⚠️</span>;
+                                return null;
+                              })()}
+                            </div>
                           </div>
                           <p className="text-[11px] text-txt-secondary/70 mt-0.5">{variant.description}</p>
 
