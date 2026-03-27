@@ -597,8 +597,25 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
 
         const entries = Object.entries(predicted).filter(([, v]) => v !== 0);
         if (entries.length === 0) return null;
+
+        // Danger alerts — check if stats will cross dangerous thresholds
+        const dangers: string[] = [];
+        const projStress = stats.stress + (predicted['stress'] ?? 0);
+        const projHealth = stats.health + (predicted['health'] ?? 0);
+        const projMoney = stats.money + (predicted['money'] ?? 0);
+        if (projStress >= 80 && stats.stress < 80) dangers.push('🚨 스트레스 위험 수준 돌파 예상!');
+        if (projHealth <= 20 && stats.health > 20) dangers.push('💔 체력 위험! 쓰러질 수 있어요');
+        if (projMoney <= 0) dangers.push('💸 돈이 바닥날 예정입니다');
+
         return (
           <div className="px-2 sm:px-4 mb-2">
+            {dangers.length > 0 && (
+              <div className="mb-2 flex flex-col gap-1">
+                {dangers.map((d, i) => (
+                  <p key={i} className="text-[10px] text-coral font-bold animate-pulse">{d}</p>
+                ))}
+              </div>
+            )}
             <p className="text-[10px] text-txt-secondary/50 mb-1">📊 예상 스탯 변화 (생활비 포함)</p>
             <div className="flex flex-wrap gap-1.5">
               {entries.map(([k, v]) => {
