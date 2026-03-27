@@ -19,6 +19,8 @@ export default function PauseMenu({ onClose }: PauseMenuProps) {
   const resetNewStore = useNewStore((s) => s.resetGame);
   const diaryEntries = useGameStore((s) => s.diaryEntries);
   const [showDiary, setShowDiary] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const eventHistory = useGameStore((s) => s.eventHistory);
 
   const university = useNewStore((s) => s.player.university) || '대학교';
 
@@ -26,7 +28,47 @@ export default function PauseMenu({ onClose }: PauseMenuProps) {
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div className="w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
         <GlassPanel variant="strong" className="p-6 animate-modal-enter">
-          {showDiary ? (
+          {showCalendar ? (
+            /* Semester calendar view */
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-txt-primary">📅 학기 캘린더</h2>
+                <button onClick={() => setShowCalendar(false)} className="text-xs text-txt-secondary hover:text-txt-primary cursor-pointer">← 뒤로</button>
+              </div>
+              <div className="grid grid-cols-4 gap-1.5 max-h-[50vh] overflow-y-auto pr-1">
+                {Array.from({ length: 16 }, (_, i) => {
+                  const week = i + 1;
+                  const isPast = week < currentWeek;
+                  const isCurrent = week === currentWeek;
+                  const WEEK_EVENTS: Record<number, { emoji: string; label: string }> = {
+                    1: { emoji: '🌸', label: '입학' },
+                    4: { emoji: '🏕️', label: 'MT' },
+                    7: { emoji: '📝', label: '중간' },
+                    9: { emoji: '🎉', label: '축제' },
+                    14: { emoji: '📚', label: '기말' },
+                    15: { emoji: '🎓', label: '종강' },
+                  };
+                  const event = WEEK_EVENTS[week];
+                  const hasMemory = eventHistory.some(e => e.week === week);
+                  return (
+                    <div key={week} className={`text-center py-2 px-1 rounded-lg text-[10px] ${
+                      isCurrent ? 'bg-teal/20 border border-teal/40 text-teal' :
+                      isPast ? (hasMemory ? 'bg-white/5 text-txt-primary' : 'bg-white/[0.02] text-txt-secondary/50') :
+                      'bg-white/[0.01] text-txt-secondary/20'
+                    }`}>
+                      <div className="font-bold">{week}주</div>
+                      {event && <div>{event.emoji}</div>}
+                      {hasMemory && !event && <div>·</div>}
+                      {event && <div className="text-[8px]">{event.label}</div>}
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[9px] text-txt-secondary/30 text-center mt-2">
+                🟢 현재 · ⬜ 지나감 · ⬛ 미래
+              </p>
+            </div>
+          ) : showDiary ? (
             /* Diary view */
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -70,6 +112,9 @@ export default function PauseMenu({ onClose }: PauseMenuProps) {
               <div className="flex flex-col gap-2">
                 <button onClick={onClose} className="w-full py-3 rounded-xl font-semibold text-sm bg-teal/20 text-teal border border-teal/30 hover:bg-teal/30 transition-all cursor-pointer active:scale-[0.98]">
                   계속하기
+                </button>
+                <button onClick={() => setShowCalendar(true)} className="w-full py-2.5 rounded-xl text-sm text-teal/70 hover:text-teal bg-teal/5 hover:bg-teal/10 border border-teal/10 transition-all cursor-pointer">
+                  📅 학기 캘린더
                 </button>
                 {diaryEntries.length > 0 && (
                   <button onClick={() => setShowDiary(true)} className="w-full py-2.5 rounded-xl text-sm text-gold hover:text-gold bg-gold/5 hover:bg-gold/10 border border-gold/15 transition-all cursor-pointer">
