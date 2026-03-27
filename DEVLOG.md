@@ -994,6 +994,39 @@ Complete rewrite of core game mechanics across 59 files (+1496/-707 lines):
 
 **Gemini API Fix**: Switched from gemini-3-flash-preview to gemini-2.0-flash-lite. Fixed thinkingConfig (not supported on lite), responseJsonSchema→responseSchema field name.
 
-**Total**: 48 tests passing, build clean, 20+ commits.
+**Total**: 48 tests passing, build clean, 40+ commits.
+
+### AUTOPLAY Cycles C15-C33 (continued)
+
+| Cycle | Feature | Key Impact |
+|-------|---------|-----------|
+| C15 | Dramatic grade reveal ceremony | Count-up animation, emotional payoff |
+| C16 | Character mood text in HUD | "좋아!" / "힘들다" / "한계..." |
+| C17 | VN-style inner monologue (30+ thoughts) | 💭 character identification |
+| C18 | New activities (캠퍼스 탐험, 봉사활동) | More variety |
+| C19 | NPC memory system | NPCs remember shared experiences |
+| C20 | Growth comparison chart in ending | Before/after stats |
+| C21 | Semester phase-aware activity flavor | 40+ contextual descriptions |
+| C22 | Relationship milestone events | 민지의 미소, 재민이와의 밤, etc. |
+| C23 | Time-of-day atmosphere | Morning/afternoon/evening gradients |
+| C24 | Campus atmosphere narration | AI + 15 fallback descriptions |
+| C25 | Predicted stat changes in planner | Strategic preview |
+| C26 | Expanded campus NPCs (23 total) | 8 new background characters |
+| C27 | Schedule template presets | 학점러/인싸/밸런스/알바왕 |
+| C28 | Achievement toast notifications | Immediate celebration |
+| C29 | Personalized semester narrative | PM-style "your story" ending |
+| C30 | Quick actions (undo, fill rest) | Schedule planner QoL |
+| C31 | Stat-gated dialogue choices | VN-style skill checks |
+| C32 | Persistent diary system | PM-style journal in pause menu |
+| C33 | NPC special days + calendar events | Birthdays, 벚꽃, 졸업 준비 |
+
+**Session totals:**
+- 41 commits
+- 33 AUTOPLAY cycles + realism overhaul + QA fixes + Gemini fix
+- 48 tests passing, build clean
+- 13 activities, 14 endings, 50+ events, 27 NPCs
+- Inner monologue, diary, energy budget, mid-activity choices
+- Stat-gated + relationship-gated choices
+- Gemini weekly dialogue cache (1 API call/week)
 
 ---
