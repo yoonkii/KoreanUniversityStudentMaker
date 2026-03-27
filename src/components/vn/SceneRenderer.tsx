@@ -227,16 +227,25 @@ export default function SceneRenderer({ scene, onSceneEnd, activityId, timeLabel
         ) : null}
       </div>
 
-      {/* Stat change popup after choice */}
+      {/* Stat change popup after choice + consequence text */}
       {pendingChoice && (
-        <StatChangePopup
-          statEffects={pendingChoice.statEffects}
-          onDone={() => {
-            const choice = pendingChoice;
-            setPendingChoice(null);
-            onSceneEnd(choice);
-          }}
-        />
+        <>
+          <StatChangePopup
+            statEffects={pendingChoice.statEffects}
+            onDone={() => {
+              const choice = pendingChoice;
+              setPendingChoice(null);
+              onSceneEnd(choice);
+            }}
+          />
+          {pendingChoice.consequenceText && (
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 max-w-md px-4">
+              <div className="glass rounded-xl px-5 py-3 text-center animate-fade-in">
+                <p className="text-sm text-txt-primary/70 italic">{pendingChoice.consequenceText}</p>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

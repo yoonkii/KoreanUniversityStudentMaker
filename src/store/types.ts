@@ -57,6 +57,7 @@ export interface Choice {
   relationshipEffects?: { characterId: string; change: number }[];
   requiredRelationship?: { characterId: string; minAffection: number }; // Gray out if not met
   requiredStat?: { stat: keyof PlayerStats; min: number }; // Gray out if stat too low
+  consequenceText?: string; // Brief aftermath shown after choosing
 }
 
 export interface Scene {
