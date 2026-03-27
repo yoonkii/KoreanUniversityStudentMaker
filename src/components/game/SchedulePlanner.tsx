@@ -471,11 +471,17 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
       <div className="grid grid-cols-8 gap-px bg-white/5 rounded-xl overflow-hidden">
         {/* Header row — time labels */}
         <div className="bg-navy" />
-        {DAY_KEYS.map((day) => (
-          <div key={day} className="bg-navy py-1.5 text-center">
-            <span className="text-[10px] font-bold text-txt-secondary">{DAY_LABELS_SHORT[day]}</span>
-          </div>
-        ))}
+        {DAY_KEYS.map((day) => {
+          const isWeekend = day === 'saturday' || day === 'sunday';
+          return (
+            <div key={day} className={`py-1.5 text-center ${isWeekend ? 'bg-pink/5' : 'bg-navy'}`}>
+              <span className={`text-[10px] font-bold ${isWeekend ? 'text-pink/60' : 'text-txt-secondary'}`}>
+                {DAY_LABELS_SHORT[day]}
+              </span>
+              {isWeekend && <div className="text-[7px] text-pink/30">주말</div>}
+            </div>
+          );
+        })}
 
         {/* Grid rows — one per time slot */}
         {TIME_SLOTS.map((time) => (
