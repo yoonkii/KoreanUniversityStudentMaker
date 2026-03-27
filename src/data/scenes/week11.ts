@@ -37,7 +37,7 @@ export const WEEK_11_VARIANT_B: Scene[] = [
       {
         id: 'gossip_confident',
         text: '오히려 좋아. 사람들이 나를 기억한다는 거잖아.',
-        statEffects: { charm: 5, social: 3, stress: -2 },
+        statEffects: { charm: 5, social: 3, stress: -2, knowledge: -1 },
         relationshipEffects: [{ characterId: 'hyunwoo', change: 5 }],
       },
       {
@@ -49,7 +49,7 @@ export const WEEK_11_VARIANT_B: Scene[] = [
       {
         id: 'gossip_indifferent',
         text: '남들 얘기에 신경 쓸 시간 없어. 할 일이 많으니까.',
-        statEffects: { gpa: 3, charm: -2, stress: 2 },
+        statEffects: { knowledge: 3, charm: -2, stress: 2 },
         relationshipEffects: [{ characterId: 'hyunwoo', change: 1 }],
       },
     ],
@@ -99,7 +99,7 @@ export const WEEK_11_SCENES: Scene[] = [
       {
         id: 'grade_comfort_minji',
         text: '민지야, 한 번 시험으로 결정되는 건 아니야. 기말에 만회하면 돼.',
-        statEffects: { social: 4, charm: 3, stress: -2 },
+        statEffects: { social: 4, charm: 3, stress: -2, knowledge: -1 },
         relationshipEffects: [
           { characterId: 'minji', change: 8 },
           { characterId: 'jaemin', change: 2 },
@@ -108,7 +108,7 @@ export const WEEK_11_SCENES: Scene[] = [
       {
         id: 'grade_study_plan',
         text: '기말까지 7주 남았어. 지금부터 전략을 바꾸자.',
-        statEffects: { gpa: 3, stress: 3 },
+        statEffects: { knowledge: 3, stress: 3 },
         relationshipEffects: [
           { characterId: 'minji', change: 4 },
           { characterId: 'jaemin', change: 4 },

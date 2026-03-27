@@ -44,7 +44,7 @@ export const WEEK_13_SCENES: Scene[] = [
       {
         id: 'finals_jokbo',
         text: '족보 공유해줘! 어차피 기출 풀어보는 건 좋은 공부법이야.',
-        statEffects: { gpa: 4, social: 2, stress: -3 },
+        statEffects: { knowledge: 4, social: 2, stress: -3, charm: -2 },
         relationshipEffects: [
           { characterId: 'hyunwoo', change: 5 },
           { characterId: 'minji', change: -1 },
@@ -53,7 +53,7 @@ export const WEEK_13_SCENES: Scene[] = [
       {
         id: 'finals_study_group',
         text: '족보 대신 스터디 그룹 만들자. 같이 정리하면 더 확실해.',
-        statEffects: { gpa: 3, social: 5, stress: 3 },
+        statEffects: { knowledge: 3, social: 5, stress: 3 },
         relationshipEffects: [
           { characterId: 'hyunwoo', change: 3 },
           { characterId: 'minji', change: 6 },
@@ -62,7 +62,7 @@ export const WEEK_13_SCENES: Scene[] = [
       {
         id: 'finals_solo',
         text: '나는 혼자 공부하는 게 맞아. 집중해서 내 방식대로 할게.',
-        statEffects: { gpa: 5, stress: 6 },
+        statEffects: { knowledge: 5, stress: 6 },
         relationshipEffects: [
           { characterId: 'hyunwoo', change: -2 },
           { characterId: 'minji', change: 2 },

@@ -27,7 +27,7 @@ function detectCrisis(stats: PlayerStats, week: number): Crisis | null {
       emoji: '🏥',
       description: '체력이 바닥나서 수업 중에 쓰러졌다. 보건실에서 하루를 보냈다.',
       consequence: '이번 주는 강제로 쉬어야 한다. 체력이 회복되지만 학점에 영향이 있다.',
-      statEffects: { health: 20, gpa: -5, stress: -10 },
+      statEffects: { health: 20, knowledge: -5, stress: -10 },
     };
   }
 
@@ -39,7 +39,7 @@ function detectCrisis(stats: PlayerStats, week: number): Crisis | null {
       emoji: '💔',
       description: '스트레스가 극에 달했다. 아무것도 할 수 없는 상태가 되었다.',
       consequence: '학교 상담센터를 방문했다. 스트레스가 크게 줄지만 시간을 잃었다.',
-      statEffects: { stress: -30, health: -5, gpa: -3 },
+      statEffects: { stress: -30, health: -5, knowledge: -3 },
     };
   }
 
@@ -51,19 +51,19 @@ function detectCrisis(stats: PlayerStats, week: number): Crisis | null {
       emoji: '💸',
       description: '통장 잔고가 0원이다. 편의점 도시락도 못 사는 상황.',
       consequence: '급하게 단기 알바를 뛰었다. 돈은 벌었지만 체력과 시간을 잃었다.',
-      statEffects: { money: 100000, health: -10, stress: 10, gpa: -2 },
+      statEffects: { money: 100000, health: -10, stress: 10, knowledge: -2 },
     };
   }
 
   // Academic probation warning
-  if (stats.gpa <= 15 && week >= 8) {
+  if (stats.knowledge <= 15 && week >= 8) {
     return {
       id: 'academic_warning',
       title: '학사경고 위기',
       emoji: '⚠️',
       description: '학과 사무실에서 연락이 왔다. 이대로면 학사경고를 받게 된다.',
       consequence: '교수님과 상담을 했다. 충격은 크지만 정신이 번쩍 든다.',
-      statEffects: { stress: 10, gpa: 5, charm: -3 },
+      statEffects: { stress: 10, knowledge: 5, charm: -3 },
     };
   }
 
@@ -114,7 +114,7 @@ export default function CrisisEvent({ onDismiss }: CrisisEventProps) {
         <div className="flex flex-wrap justify-center gap-2 mb-5">
           {Object.entries(crisis.statEffects).map(([k, v]) => {
             if (!v) return null;
-            const labels: Record<string, string> = { gpa: '학점', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력' };
+            const labels: Record<string, string> = { knowledge: '준비도', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력' };
             const isGood = k === 'stress' ? v < 0 : v > 0;
             return (
               <span key={k} className={`px-3 py-1 rounded-full text-xs font-bold ${isGood ? 'bg-teal/15 text-teal' : 'bg-coral/15 text-coral'}`}>

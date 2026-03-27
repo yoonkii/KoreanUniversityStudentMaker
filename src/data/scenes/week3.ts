@@ -40,7 +40,7 @@ export const WEEK_3_VARIANT_B: Scene[] = [
       {
         id: 'cafe_club',
         text: '동아리 합주 꼭 가볼게요! 관심 있었거든요.',
-        statEffects: { social: 5, charm: 3, stress: -2 },
+        statEffects: { social: 5, charm: 3, stress: -2, knowledge: -1 },
         relationshipEffects: [
           { characterId: 'hyunwoo', change: 8 },
           { characterId: 'jaemin', change: 3 },
@@ -49,7 +49,7 @@ export const WEEK_3_VARIANT_B: Scene[] = [
       {
         id: 'cafe_study',
         text: '동아리는 시간 되면... 요즘 과제가 많아서요.',
-        statEffects: { gpa: 2, social: 1, stress: 2 },
+        statEffects: { knowledge: 2, social: 1, stress: 2 },
         relationshipEffects: [
           { characterId: 'hyunwoo', change: 1 },
           { characterId: 'jaemin', change: 2 },
@@ -58,7 +58,7 @@ export const WEEK_3_VARIANT_B: Scene[] = [
       {
         id: 'cafe_chill',
         text: '일단 밥이나 맛있게 먹자! 선배, 여기 뭐가 맛있어요?',
-        statEffects: { social: 4, charm: 2, health: 2 },
+        statEffects: { social: 4, charm: 2, health: 2, money: -3500 },
         relationshipEffects: [
           { characterId: 'hyunwoo', change: 5 },
           { characterId: 'jaemin', change: 4 },
@@ -112,7 +112,7 @@ export const WEEK_3_SCENES: Scene[] = [
       {
         id: 'assignment_lead',
         text: '내가 조장 할게! 역할 분배부터 하자.',
-        statEffects: { gpa: 4, charm: 3, stress: 6 },
+        statEffects: { knowledge: 4, charm: 3, stress: 6 },
         relationshipEffects: [
           { characterId: 'minji', change: 5 },
           { characterId: 'jaemin', change: 5 },
@@ -121,7 +121,7 @@ export const WEEK_3_SCENES: Scene[] = [
       {
         id: 'assignment_follow',
         text: '민지가 리드하는 게 나을 것 같아. 난 열심히 할게.',
-        statEffects: { gpa: 2, social: 3, stress: 3 },
+        statEffects: { knowledge: 2, social: 3, stress: 3 },
         relationshipEffects: [
           { characterId: 'minji', change: 3 },
           { characterId: 'jaemin', change: 3 },
@@ -130,7 +130,7 @@ export const WEEK_3_SCENES: Scene[] = [
       {
         id: 'assignment_solo',
         text: '나는 개인 과제가 더 편해... 혼자 해도 되나요?',
-        statEffects: { gpa: 3, social: -3, stress: 4 },
+        statEffects: { knowledge: 3, social: -3, stress: 4 },
         relationshipEffects: [
           { characterId: 'minji', change: -2 },
           { characterId: 'jaemin', change: -3 },

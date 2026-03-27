@@ -39,13 +39,13 @@ export const WEEK_2_SCENES: Scene[] = [
       {
         id: 'study_compete',
         text: '나도 거의 다 했어. (블러핑하고 빠르게 끝낸다)',
-        statEffects: { gpa: 4, stress: 6 },
+        statEffects: { knowledge: 4, stress: 6 },
         relationshipEffects: [{ characterId: 'minji', change: 3 }],
       },
       {
         id: 'study_honest',
         text: '솔직히 어디서부터 시작해야 할지 모르겠어...',
-        statEffects: { gpa: 2, social: 3, stress: -2 },
+        statEffects: { knowledge: 2, social: 3, stress: -2 },
         relationshipEffects: [{ characterId: 'minji', change: 5 }],
       },
       {
@@ -100,13 +100,13 @@ export const WEEK_2_SCENES: Scene[] = [
       {
         id: 'club_think',
         text: '좀 더 생각해볼게요. 다른 동아리도 보고 싶어서.',
-        statEffects: { social: 1 },
+        statEffects: { social: 1, stress: 1 },
         relationshipEffects: [{ characterId: 'hyunwoo', change: 1 }],
       },
       {
         id: 'club_study_focus',
         text: '동아리는 좀... 공부에 집중하고 싶어서요.',
-        statEffects: { gpa: 2, stress: 2 },
+        statEffects: { knowledge: 2, stress: 2 },
         relationshipEffects: [{ characterId: 'hyunwoo', change: -4 }],
       },
     ],
@@ -155,13 +155,13 @@ export const WEEK_2_SCENES: Scene[] = [
       {
         id: 'job_negotiate',
         text: '혹시 주 2일로 시작할 수 있을까요?',
-        statEffects: { money: 15000, charm: 2 },
+        statEffects: { money: 15000, charm: 2, stress: 2 },
         relationshipEffects: [{ characterId: 'boss', change: 3 }],
       },
       {
         id: 'job_decline',
         text: '죄송해요, 아직은 수업에 적응하는 게 먼저라서...',
-        statEffects: { gpa: 2, stress: -2 },
+        statEffects: { knowledge: 2, stress: -2 },
         relationshipEffects: [{ characterId: 'boss', change: -2 }],
       },
     ],

@@ -46,7 +46,7 @@ export const WEEK_4_SCENES: Scene[] = [
       {
         id: 'mt_skip',
         text: '이번엔 패스할게. 시험 준비도 해야 하고...',
-        statEffects: { gpa: 3, stress: -5 },
+        statEffects: { knowledge: 3, stress: -5 },
         relationshipEffects: [{ characterId: 'hyunwoo', change: -5 }],
       },
     ],
@@ -95,7 +95,7 @@ export const WEEK_4_SCENES: Scene[] = [
       {
         id: 'mt_goal_academic',
         text: '장학금 받는 게 목표야! 올 A+ 가자!',
-        statEffects: { gpa: 2 },
+        statEffects: { knowledge: 2, stress: 2 },
         relationshipEffects: [
           { characterId: 'soyeon', change: 5 },
           { characterId: 'jaemin', change: 2 },
@@ -104,7 +104,7 @@ export const WEEK_4_SCENES: Scene[] = [
       {
         id: 'mt_goal_social',
         text: '이번 학기에 평생 친구 만들고 싶어!',
-        statEffects: { social: 5, charm: 2 },
+        statEffects: { social: 5, charm: 2, money: -5000 },
         relationshipEffects: [
           { characterId: 'soyeon', change: 3 },
           { characterId: 'jaemin', change: 5 },
@@ -163,13 +163,13 @@ export const WEEK_4_SCENES: Scene[] = [
       {
         id: 'mt_soyeon_open',
         text: '고마워요 선배. 진짜 의지할게요!',
-        statEffects: { social: 3, stress: -8 },
+        statEffects: { social: 3, stress: -8, knowledge: -1 },
         relationshipEffects: [{ characterId: 'soyeon', change: 8 }],
       },
       {
         id: 'mt_soyeon_cool',
         text: '감사합니다. 저도 선배 도울 일 있으면 말씀하세요.',
-        statEffects: { charm: 2, social: 2 },
+        statEffects: { charm: 2, social: 2, stress: 1 },
         relationshipEffects: [{ characterId: 'soyeon', change: 5 }],
       },
     ],

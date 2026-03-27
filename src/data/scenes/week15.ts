@@ -30,13 +30,13 @@ export const WEEK_15_SCENES: Scene[] = [
       {
         id: 'finals_cover',
         text: '그냥 우리가 나눠서 하자. 싸우기엔 시간이 없어.',
-        statEffects: { gpa: 3, stress: 10, health: -5 },
+        statEffects: { knowledge: 3, stress: 10, health: -5 },
         relationshipEffects: [{ characterId: 'soyeon', change: 5 }],
       },
       {
         id: 'finals_report',
         text: '교수님께 말씀드리자. 이건 공정하지 않아.',
-        statEffects: { gpa: 2, stress: 5, charm: 3 },
+        statEffects: { knowledge: 2, stress: 5, charm: 3 },
         relationshipEffects: [{ characterId: 'soyeon', change: 3 }],
       },
       {
@@ -90,7 +90,7 @@ export const WEEK_15_SCENES: Scene[] = [
       {
         id: 'finals_promise',
         text: '다음 학기에 또 보자! 더 좋은 학기 만들자.',
-        statEffects: { social: 5, stress: -10 },
+        statEffects: { social: 5, stress: -10, money: -10000 },
         relationshipEffects: [
           { characterId: 'jaemin', change: 5 },
           { characterId: 'soyeon', change: 5 },
@@ -99,7 +99,7 @@ export const WEEK_15_SCENES: Scene[] = [
       {
         id: 'finals_solo',
         text: '방학 동안 혼자만의 시간도 필요해. 잠시 쉬어야겠다.',
-        statEffects: { health: 10, stress: -15 },
+        statEffects: { health: 10, stress: -15, social: -2 },
         relationshipEffects: [
           { characterId: 'jaemin', change: 2 },
           { characterId: 'soyeon', change: 2 },

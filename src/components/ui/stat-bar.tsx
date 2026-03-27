@@ -13,7 +13,7 @@ interface StatBarProps {
 }
 
 const STAT_COLORS: Record<StatKey, string> = {
-  gpa: "bg-blue-500",
+  knowledge: "bg-blue-500",
   energy: "bg-green-500",
   social: "bg-yellow-500",
   finances: "bg-emerald-500",
@@ -22,7 +22,7 @@ const STAT_COLORS: Record<StatKey, string> = {
 };
 
 const STAT_BG_COLORS: Record<StatKey, string> = {
-  gpa: "bg-blue-100",
+  knowledge: "bg-blue-100",
   energy: "bg-green-100",
   social: "bg-yellow-100",
   finances: "bg-emerald-100",

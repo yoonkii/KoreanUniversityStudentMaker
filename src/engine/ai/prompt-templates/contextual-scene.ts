@@ -81,7 +81,7 @@ ${scheduleLines.join("\n")}
 ### 주요 활동: ${dominantActivities}
 
 ### 플레이어 현재 상태
-- 학점: ${stats.gpa}/100
+- 준비도: ${stats.knowledge}/100
 - 체력: ${stats.health}/100
 - 인맥: ${stats.social}/100
 - 돈: ₩${stats.money.toLocaleString("ko-KR")}

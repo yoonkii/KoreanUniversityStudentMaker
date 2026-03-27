@@ -9,7 +9,7 @@ interface StatChangePopupProps {
 }
 
 const STAT_LABELS: Record<string, string> = {
-  gpa: '학점', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력',
+  knowledge: '준비도', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력',
 };
 
 function formatValue(key: string, value: number): string {

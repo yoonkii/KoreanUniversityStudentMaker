@@ -34,19 +34,19 @@ export const WEEK_8_SCENES: Scene[] = [
       {
         id: 'midterm_study_together',
         text: '좋아, 같이 하자! 분업하면 빠르겠다.',
-        statEffects: { gpa: 5, stress: 5, social: 2 },
+        statEffects: { knowledge: 5, stress: 5, social: 2 },
         relationshipEffects: [{ characterId: 'minji', change: 8 }],
       },
       {
         id: 'midterm_study_alone',
         text: '미안, 나는 혼자 집중해야 해. 다음에!',
-        statEffects: { gpa: 3, stress: 8 },
+        statEffects: { knowledge: 3, stress: 8 },
         relationshipEffects: [{ characterId: 'minji', change: -2 }],
       },
       {
         id: 'midterm_give_up',
         text: '솔직히... 이미 반쯤 포기했어. 카페나 갈래?',
-        statEffects: { stress: -10, health: 5 },
+        statEffects: { stress: -10, health: 5, knowledge: -3 },
         relationshipEffects: [{ characterId: 'minji', change: 2 }],
       },
     ],
@@ -90,7 +90,7 @@ export const WEEK_8_SCENES: Scene[] = [
       {
         id: 'midterm_reflect',
         text: '다음엔 더 잘 준비해야지. 오늘은 일찍 자자.',
-        statEffects: { health: 8, stress: -5, gpa: 2 },
+        statEffects: { health: 8, stress: -5, knowledge: 2 },
         relationshipEffects: [{ characterId: 'jaemin', change: 2 }],
       },
     ],

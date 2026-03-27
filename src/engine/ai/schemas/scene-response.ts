@@ -25,7 +25,7 @@ export const SceneResponseSchema = z.object({
         id: z.string(),
         text: z.string(),
         statEffects: z.object({
-          gpa: z.number().optional(),
+          knowledge: z.number().optional(),
           money: z.number().optional(),
           health: z.number().optional(),
           social: z.number().optional(),

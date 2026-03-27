@@ -25,7 +25,8 @@ import ScheduleViewer from '@/components/game/ScheduleViewer';
 import RelationshipPanel from '@/components/game/RelationshipPanel';
 import PauseMenu from '@/components/game/PauseMenu';
 import CrisisEvent, { detectCrisis } from '@/components/game/CrisisEvent';
-import type { Choice, PlayerStats, Scene, WeekSchedule } from '@/store/types';
+import type { Choice, PlayerStats, Scene, WeekSchedule, DayKey } from '@/store/types';
+import type { DayGroup } from '@/components/game/ActionPhase';
 // NPC engine imports available for future AI integration
 // import { initializeNPCs } from '@/engine/data/npc-initializer';
 // import { CORE_NPC_SHEETS } from '@/engine/data/core-npcs';
@@ -79,7 +80,7 @@ export default function GameScreen() {
   const [showSaveIndicator, setShowSaveIndicator] = useState(false);
   const [showPauseMenu, setShowPauseMenu] = useState(false);
   const [showActionPhase, setShowActionPhase] = useState(false);
-  const [actionActivities, setActionActivities] = useState<{name:string;icon:string;statEffects:Partial<PlayerStats>;timeSlot:string}[]>([]);
+  const [actionDays, setActionDays] = useState<DayGroup[]>([]);
   const [kakaoMessages, setKakaoMessages] = useState<{senderId:string;senderName:string;text:string;timestamp:string;isRead:boolean}[]>([]);
   const [showKakao, setShowKakao] = useState(false);
 
@@ -155,60 +156,64 @@ export default function GameScreen() {
   const handleScheduleComplete = useCallback(async (confirmedSchedule: WeekSchedule) => {
     if (isLoadingAI) return; // prevent double-submit
 
-    const { statDeltas, scenes, combos, weeklyEvent } = simulateWeek(confirmedSchedule, currentWeek, stats);
+    const { statDeltas, scenes, combos, weeklyEvent } = simulateWeek(
+      confirmedSchedule, currentWeek, stats, { relationships },
+    );
     setWeekStatDeltas(statDeltas);
     useGameStore.getState().setWeekCombos(combos);
     useGameStore.getState().setWeeklyEvent(weeklyEvent);
     setCurrentSceneIndex(0);
 
-    // Build activity list for ActionPhase vignettes (1 highlight per day, max 7)
+    // Build day-grouped activity list for ActionPhase (all 3 activities per day, 7 days)
     const ACTIVITY_EMOJI: Record<string, string> = {
       lecture: '📖', study: '📚', parttime: '💼', club: '🎵',
       date: '💕', exercise: '🏃', rest: '😴', friends: '👫',
     };
+    const NPC_NAMES: Record<string, string> = {
+      jaemin: '이재민', minji: '한민지', soyeon: '박소연', hyunwoo: '정현우',
+    };
     const DAY_NAMES = ['월요일','화요일','수요일','목요일','금요일','토요일','일요일'];
-    const DAY_ORDER = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const;
-    const actList: {name:string;icon:string;statEffects:Partial<PlayerStats>;timeSlot:string}[] = [];
+    const DAY_ORDER: DayKey[] = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+    const dayGroups: DayGroup[] = [];
     for (let i = 0; i < DAY_ORDER.length; i++) {
       const day = DAY_ORDER[i];
       const daySlots = confirmedSchedule[day] ?? [];
       if (daySlots.length === 0) continue;
-      // Pick the most interesting activity (non-rest, non-lecture preferred)
-      const priority = ['date','club','friends','exercise','parttime','study','lecture','rest'];
-      const sorted = [...daySlots].sort((a, b) =>
-        (priority.indexOf(a.activityId) === -1 ? 99 : priority.indexOf(a.activityId)) -
-        (priority.indexOf(b.activityId) === -1 ? 99 : priority.indexOf(b.activityId))
-      );
-      const highlight = sorted[0];
-      const act = ACTIVITIES[highlight.activityId];
-      if (act) {
-        actList.push({
-          name: `${DAY_NAMES[i]} — ${act.name}`,
-          icon: ACTIVITY_EMOJI[highlight.activityId] ?? '📋',
-          statEffects: act.statEffects,
-          timeSlot: highlight.timeSlot,
-        });
-      }
+      const activities = daySlots.map((slot) => {
+        const act = ACTIVITIES[slot.activityId];
+        // Use NPC-specific effects if targeting an NPC
+        let effects = act?.statEffects ?? {};
+        if (slot.targetNpcId && act?.npcVariants) {
+          const variant = act.npcVariants.find(v => v.npcId === slot.targetNpcId);
+          if (variant) effects = variant.statEffects;
+        }
+        return {
+          name: act?.name ?? slot.activityId,
+          icon: ACTIVITY_EMOJI[slot.activityId] ?? '📋',
+          timeSlot: slot.timeSlot,
+          statEffects: effects,
+          targetNpcId: slot.targetNpcId,
+          targetNpcName: slot.targetNpcId ? NPC_NAMES[slot.targetNpcId] : undefined,
+        };
+      });
+      dayGroups.push({ dayName: DAY_NAMES[i], activities });
     }
 
     // Store pending data for after action phase
     pendingScenesRef.current = scenes;
-    pendingScheduleRef.current = confirmedSchedule; // always pass schedule for AI contextual scenes
+    pendingScheduleRef.current = confirmedSchedule;
 
-    if (actList.length > 0) {
-      // Show max 4 activity vignettes for snappy pacing
-      setActionActivities(actList.slice(0, 4));
+    if (dayGroups.length > 0) {
+      setActionDays(dayGroups);
       setShowActionPhase(true);
     } else if (scenes.length > 0) {
-      // No activities but has scenes (shouldn't happen, but handle it)
       setSceneQueue(scenes);
       setPhase('simulation');
     } else {
-      // Fallback: no activities and no scenes — go straight to summary
       updateStats(statDeltas);
       setPhase('summary');
     }
-  }, [currentWeek, stats, setWeekStatDeltas, setCurrentSceneIndex, setPhase, updateStats, isLoadingAI]);
+  }, [currentWeek, stats, relationships, setWeekStatDeltas, setCurrentSceneIndex, setPhase, updateStats, isLoadingAI]);
 
   // Handle scene end -- move to next scene or summary
   const handleSceneEnd = useCallback((choice?: Choice) => {
@@ -248,16 +253,30 @@ export default function GameScreen() {
     }
   }, [currentSceneIndex, sceneQueue, currentWeek, setCurrentSceneIndex, updateStats, updateRelationship, setPhase]);
 
-  // Handle KakaoTalk dismiss → then advance week (or go to ending)
-  const handleKakaoDismiss = useCallback(() => {
+  // Handle KakaoTalk dismiss → apply reply effects, then advance week (or go to ending)
+  const handleKakaoDismiss = useCallback((replyData?: { repliedTo: string; affectionChange: number; statEffects?: Partial<import('@/store/types').PlayerStats>; ignoredNpcs: string[] }) => {
     setShowKakao(false);
     setKakaoMessages([]);
+
+    if (replyData) {
+      // Apply affection change for the NPC we replied to
+      updateRelationship(replyData.repliedTo, replyData.affectionChange);
+      // Apply stat effects (e.g. money cost, stress relief)
+      if (replyData.statEffects) {
+        updateStats(replyData.statEffects);
+      }
+      // Ignored NPCs lose a small amount of affection
+      for (const npcId of replyData.ignoredNpcs) {
+        updateRelationship(npcId, -1);
+      }
+    }
+
     if (currentWeek >= 16) {
       router.push('/game/ending');
     } else {
       setShowWeeklyOverview(true);
     }
-  }, [currentWeek, router]);
+  }, [currentWeek, router, updateRelationship, updateStats]);
 
   // Handle week advance — NPC KakaoTalk reacts to player stats and events
   const handleWeekContinue = useCallback(() => {
@@ -272,7 +291,7 @@ export default function GameScreen() {
       if (charId === 'soyeon') {
         if (playerStats.stress > 75) return '요즘 너무 무리하는 것 같아... 괜찮아? 밥이라도 같이 먹자 😢';
         if (playerStats.health < 30) return '얼굴이 안 좋아 보여. 좀 쉬어야 하는 거 아니야?';
-        if (playerStats.gpa > 75) return '요즘 공부 열심히 하더라! 대단해 😊';
+        if (playerStats.knowledge > 75) return '요즘 공부 열심히 하더라! 대단해 😊';
         return '이번 주도 고생 많았어요! 다음에 같이 밥 먹어요 😊';
       }
       // Jaemin (roommate) — reacts to social and stress
@@ -284,8 +303,8 @@ export default function GameScreen() {
       }
       // Minji (rival) — reacts to GPA
       if (charId === 'minji') {
-        if (playerStats.gpa > 80) return '요즘 성적 좋더라... 기말에도 이 페이스 유지할 수 있을까? 😏';
-        if (playerStats.gpa < 40) return '수업 노트 필요하면 말해. 빌려줄 수 있어.';
+        if (playerStats.knowledge > 80) return '요즘 성적 좋더라... 기말에도 이 페이스 유지할 수 있을까? 😏';
+        if (playerStats.knowledge < 40) return '수업 노트 필요하면 말해. 빌려줄 수 있어.';
         return '이번 주 수업 노트 공유해줄 수 있어요?';
       }
       // Hyunwoo (club senior) — reacts to social and charm
@@ -525,7 +544,7 @@ export default function GameScreen() {
               <div className="flex-1 min-w-0">
                 <span className="text-sm font-medium text-txt-primary">{player?.name ?? '학생'}</span>
                 <span className="text-xs text-txt-secondary ml-2">
-                  {stats.stress >= 80 ? '지쳐 보인다...' : stats.health < 30 ? '컨디션이 안 좋다' : stats.gpa >= 70 ? '의욕이 넘친다!' : stats.social >= 60 ? '기분이 좋아 보인다' : '이번 주도 화이팅'}
+                  {stats.stress >= 80 ? '지쳐 보인다...' : stats.health < 30 ? '컨디션이 안 좋다' : stats.knowledge >= 70 ? '의욕이 넘친다!' : stats.social >= 60 ? '기분이 좋아 보인다' : '이번 주도 화이팅'}
                 </span>
               </div>
               <span className="text-[10px] text-txt-secondary/50">{currentWeek}주차</span>
@@ -547,7 +566,7 @@ export default function GameScreen() {
       {/* Activity vignettes (PM2-style action phase) */}
       {showActionPhase && (
         <ActionPhase
-          activities={actionActivities}
+          days={actionDays}
           currentStats={stats}
           onComplete={handleActionComplete}
         />

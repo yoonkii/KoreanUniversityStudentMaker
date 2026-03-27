@@ -3,7 +3,7 @@ import { calculateTension } from './tensionFormula';
 import type { PlayerStats, CharacterRelationship } from '@/store/types';
 
 const DEFAULT_STATS: PlayerStats = {
-  gpa: 50,
+  knowledge: 50,
   money: 500000,
   health: 70,
   social: 40,
@@ -71,7 +71,7 @@ describe('calculateTension', () => {
   it('should clamp tension to 100 max', () => {
     // Extreme stats to produce very high tension
     const extremeStats: PlayerStats = {
-      gpa: 0,    // distance from 70 = 70
+      knowledge: 0,    // distance from 70 = 70
       money: 0,
       health: 0, // distance from 70 = 70
       social: 0,

@@ -4,12 +4,12 @@ export type GamePhase = 'title' | 'creation' | 'planning' | 'simulation' | 'summ
 export type CharacterPosition = 'left' | 'center' | 'right';
 
 export interface PlayerStats {
-  gpa: number;      // 0-100 internally, displayed as 0.0-4.5
-  money: number;    // Won (₩), no upper bound
-  health: number;   // 0-100
-  social: number;   // 0-100
-  stress: number;   // 0-100
-  charm: number;    // 0-100
+  knowledge: number; // 0-100, 준비도 (exam preparedness). GPA derived at exams only.
+  money: number;     // Won (₩), no upper bound
+  health: number;    // 0-100
+  social: number;    // 0-100
+  stress: number;    // 0-100
+  charm: number;     // 0-100
 }
 
 export type DreamType = 'scholar' | 'social' | 'balance' | 'freedom';
@@ -31,6 +31,7 @@ export interface CharacterRelationship {
 export interface ActivitySlot {
   timeSlot: TimeSlot;
   activityId: string;
+  targetNpcId?: string; // For friends/date: which NPC to spend time with
 }
 
 export type DayKey = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
@@ -53,6 +54,7 @@ export interface Choice {
   text: string;
   statEffects: Partial<PlayerStats>;
   relationshipEffects?: { characterId: string; change: number }[];
+  requiredRelationship?: { characterId: string; minAffection: number }; // Gray out if not met
 }
 
 export interface Scene {
@@ -69,6 +71,14 @@ export interface StatChange {
   value: number;
 }
 
+export interface NpcActivityVariant {
+  npcId: string;
+  npcName: string;
+  statEffects: Partial<PlayerStats>;
+  description: string;
+  requiredTier: 'stranger' | 'acquaintance' | 'friend' | 'close_friend' | 'soulmate';
+}
+
 export interface ActivityDef {
   id: string;
   name: string;
@@ -76,6 +86,8 @@ export interface ActivityDef {
   color: string;
   statEffects: Partial<PlayerStats>;
   description: string;
+  requiresNpcTarget?: boolean; // If true, show NPC picker
+  npcVariants?: NpcActivityVariant[];
 }
 
 export interface CharacterDef {
@@ -86,4 +98,22 @@ export interface CharacterDef {
   expressions: string[];
   personality: string;
   color: string;
+}
+
+export interface ExamResults {
+  midtermGpa?: number;  // 0.0-4.5
+  finalsGpa?: number;   // 0.0-4.5
+  semesterGpa?: number; // weighted average
+}
+
+export interface KakaoReplyOption {
+  id: string;
+  text: string;
+  affectionChange: number;
+  statEffects?: Partial<PlayerStats>;
+}
+
+export interface KakaoReply {
+  npcId: string;
+  options: KakaoReplyOption[];
 }

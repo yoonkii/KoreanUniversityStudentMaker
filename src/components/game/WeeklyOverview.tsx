@@ -21,7 +21,7 @@ function getMoodEmoji(stress: number, health: number): { emoji: string; label: s
 interface EventEntry { week: number; summary: string; npcInvolved?: string; choiceMade?: string }
 
 /** Soyeon (caring senior) as our "Cube butler" — personalized weekly advice with memory */
-function getSoyeonAdvice(week: number, stress: number, gpa: number, social: number, health: number, events?: EventEntry[]): { text: string; expression: string } {
+function getSoyeonAdvice(week: number, stress: number, knowledge: number, social: number, health: number, events?: EventEntry[]): { text: string; expression: string } {
   // Sometimes reference a past event (memory callback)
   if (events && events.length > 0 && week > 5 && Math.random() < 0.3) {
     const recentEvent = events[events.length - 1];
@@ -40,13 +40,13 @@ function getSoyeonAdvice(week: number, stress: number, gpa: number, social: numb
   }
   if (stress > 80) return { text: '야, 너 요즘 얼굴이 많이 안 좋아 보여. 오늘은 좀 쉬어. 학점보다 건강이 먼저야.', expression: 'worried' };
   if (health < 25) return { text: '밥은 제대로 먹고 다니는 거지? 체력이 떨어지면 아무것도 못 해. 선배 말 들어.', expression: 'worried' };
-  if (gpa < 25) return { text: '학점이 좀 걱정돼... 다음 주는 도서관에서 좀 보자. 내가 노트 빌려줄게.', expression: 'sad' };
+  if (knowledge < 25) return { text: '공부 준비가 좀 걱정돼... 다음 주는 도서관에서 좀 보자. 내가 노트 빌려줄게.', expression: 'sad' };
   if (social < 20 && week > 4) return { text: '요즘 혼자 다니는 거 같던데... 밥이라도 같이 먹자. 혼밥은 선배가 허락 안 해.', expression: 'teasing' };
   if (week >= 14) return { text: '기말 화이팅! 여기까지 온 거 대단해. 끝까지 힘내자, 종강이 코앞이야!', expression: 'happy' };
   if (week >= 7 && week <= 8) return { text: '중간고사 기간이네. 긴장되지? 괜찮아, 준비한 만큼 나와. 선배가 응원할게.', expression: 'neutral' };
   if (week === 9) return { text: '축제다! 이번 축제는 같이 돌아다니자. 대학 축제는 1학년 때가 제일 재밌어!', expression: 'happy' };
   if (week === 4) return { text: 'MT 가기로 했지? 선배들이랑 친해질 좋은 기회야. 즐겁게 보내!', expression: 'teasing' };
-  if (gpa >= 75 && stress <= 30) return { text: '와, 요즘 진짜 잘하고 있다! 이 페이스 유지하면 장학금도 노려볼 만해.', expression: 'happy' };
+  if (knowledge >= 75 && stress <= 30) return { text: '와, 요즘 진짜 잘하고 있다! 이 페이스 유지하면 장학금도 노려볼 만해.', expression: 'happy' };
   if (week <= 3) return { text: '새 학기 잘 적응하고 있지? 모르는 거 있으면 언제든 물어봐. 선배가 다 알려줄게~', expression: 'happy' };
   return { text: '이번 주도 잘 해보자! 뭐 고민 있으면 언제든 카톡해.', expression: 'neutral' };
 }
@@ -60,14 +60,14 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
   const mood = getMoodEmoji(stats.stress, stats.health);
   const condition = getWeekCondition(nextWeek);
   const weather = getWeatherForWeek(nextWeek);
-  const soyeon = getSoyeonAdvice(nextWeek, stats.stress, stats.gpa, stats.social, stats.health, eventHistory);
+  const soyeon = getSoyeonAdvice(nextWeek, stats.stress, stats.knowledge, stats.social, stats.health, eventHistory);
 
   // Simple stat trend from recent events (last 3 entries)
   const recentEvents = eventHistory.slice(-3);
 
   // Find two most notable stats
   const statEntries: { label: string; value: number; icon: string; status: 'good' | 'warning' | 'danger' }[] = [
-    { label: '학점', value: stats.gpa, icon: '📖', status: stats.gpa >= 60 ? 'good' : stats.gpa >= 40 ? 'warning' : 'danger' },
+    { label: '준비도', value: stats.knowledge, icon: '📖', status: stats.knowledge >= 60 ? 'good' : stats.knowledge >= 40 ? 'warning' : 'danger' },
     { label: '체력', value: stats.health, icon: '💚', status: stats.health >= 50 ? 'good' : stats.health >= 30 ? 'warning' : 'danger' },
     { label: '스트레스', value: stats.stress, icon: '🔥', status: stats.stress <= 40 ? 'good' : stats.stress <= 65 ? 'warning' : 'danger' },
     { label: '인맥', value: stats.social, icon: '👥', status: stats.social >= 40 ? 'good' : stats.social >= 20 ? 'warning' : 'danger' },

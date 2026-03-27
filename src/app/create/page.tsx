@@ -186,19 +186,19 @@ export default function CreatePage() {
               <p className="text-xs text-white/40 mb-3">초기 능력치</p>
               {(() => {
                 const dreamBonus: Record<string, Record<string, number>> = {
-                  scholar: { gpa: 10 },
+                  scholar: { knowledge: 10 },
                   social: { social: 10, charm: 5 },
-                  balance: { health: 5, gpa: 3, social: 3 },
+                  balance: { health: 5, knowledge: 3, social: 3 },
                   freedom: { stress: -10, charm: 5 },
                 };
                 const bonus = dreamBonus[dream] ?? {};
-                const baseStats = { gpa: 50, health: 70, social: 40, stress: 20, charm: 40, money: 500000 };
+                const baseStats = { knowledge: 50, health: 70, social: 40, stress: 20, charm: 40, money: 500000 };
                 const preview = { ...baseStats };
                 for (const [k, v] of Object.entries(bonus)) {
                   if (k in preview) (preview as Record<string, number>)[k] += v;
                 }
                 const statDisplay = [
-                  { key: 'gpa', label: '학점', value: preview.gpa },
+                  { key: 'knowledge', label: '준비도', value: preview.knowledge },
                   { key: 'health', label: '체력', value: preview.health },
                   { key: 'social', label: '인맥', value: preview.social },
                   { key: 'stress', label: '스트레스', value: preview.stress },

@@ -1,5 +1,5 @@
 export interface PlayerStats {
-  gpa: number; // 학점 (0-100)
+  knowledge: number; // 준비도 (0-100). GPA derived at exams only.
   energy: number; // 체력 (0-100)
   social: number; // 사회성 (0-100)
   finances: number; // 재정 (0-100, normalized financial security)
@@ -10,7 +10,7 @@ export interface PlayerStats {
 export type StatKey = keyof PlayerStats;
 
 export const STAT_KEYS: StatKey[] = [
-  "gpa",
+  "knowledge",
   "energy",
   "social",
   "finances",
@@ -19,7 +19,7 @@ export const STAT_KEYS: StatKey[] = [
 ];
 
 export const STAT_LABELS: Record<StatKey, { ko: string; en: string }> = {
-  gpa: { ko: "학점", en: "GPA" },
+  knowledge: { ko: "준비도", en: "Knowledge" },
   energy: { ko: "체력", en: "Energy" },
   social: { ko: "사회성", en: "Social" },
   finances: { ko: "재정", en: "Finances" },
@@ -33,7 +33,7 @@ export const CRISIS_THRESHOLD = 10;
 export const GPA_PROBATION_THRESHOLD = 20;
 
 export const BASE_STATS: PlayerStats = {
-  gpa: 50,
+  knowledge: 50,
   energy: 80,
   social: 40,
   finances: 100,
@@ -52,9 +52,9 @@ export const MAJOR_LABELS: Record<MajorType, { ko: string; en: string }> = {
 
 // Major overrides — these REPLACE base stats for specified keys
 export const MAJOR_STAT_OVERRIDES: Record<MajorType, Partial<PlayerStats>> = {
-  engineering: { gpa: 45, career: 30, social: 30 },
-  business: { gpa: 55, social: 50, career: 25 },
-  humanities: { gpa: 60, mental: 60, finances: 90 },
+  engineering: { knowledge: 45, career: 30, social: 30 },
+  business: { knowledge: 55, social: 50, career: 25 },
+  humanities: { knowledge: 60, mental: 60, finances: 90 },
   arts: { social: 55, mental: 75, finances: 70 },
 };
 

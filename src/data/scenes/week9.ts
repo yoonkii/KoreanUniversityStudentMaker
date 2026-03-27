@@ -44,7 +44,7 @@ export const WEEK_9_SCENES: Scene[] = [
       {
         id: 'festival_concert',
         text: '공연 자리 먼저 잡자! 놓치면 후회해!',
-        statEffects: { stress: -8, charm: 3 },
+        statEffects: { stress: -8, charm: 3, money: -5000 },
         relationshipEffects: [
           { characterId: 'jaemin', change: 5 },
         ],
@@ -102,13 +102,13 @@ export const WEEK_9_SCENES: Scene[] = [
       {
         id: 'festival_minji_empathy',
         text: '나도 그래. 힘든 건 같이 얘기하면 좀 나아지더라.',
-        statEffects: { social: 3, charm: 2 },
+        statEffects: { social: 3, charm: 2, stress: 2 },
         relationshipEffects: [{ characterId: 'minji', change: 10 }],
       },
       {
         id: 'festival_minji_compete',
         text: '민지가 그런 말을 하다니. 이번 기말엔 나도 안 질 거야.',
-        statEffects: { gpa: 2 },
+        statEffects: { knowledge: 2, social: -2 },
         relationshipEffects: [{ characterId: 'minji', change: 3 }],
       },
       {
@@ -161,7 +161,7 @@ export const WEEK_9_SCENES: Scene[] = [
       {
         id: 'festival_end_determined',
         text: '후반전이 시작이야. 더 열심히 하자!',
-        statEffects: { gpa: 2, stress: 3 },
+        statEffects: { knowledge: 2, stress: 3 },
         relationshipEffects: [
           { characterId: 'soyeon', change: 3 },
           { characterId: 'jaemin', change: 3 },
@@ -170,7 +170,7 @@ export const WEEK_9_SCENES: Scene[] = [
       {
         id: 'festival_end_grateful',
         text: '좋은 사람들이랑 함께해서 다행이다.',
-        statEffects: { social: 5, stress: -5 },
+        statEffects: { social: 5, stress: -5, knowledge: -1 },
         relationshipEffects: [
           { characterId: 'soyeon', change: 5 },
           { characterId: 'jaemin', change: 5 },

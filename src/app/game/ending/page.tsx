@@ -10,7 +10,7 @@ import { ACHIEVEMENTS } from "@/lib/achievements";
 /** Determine the player archetype from final stats */
 function determineArchetype(stats: PlayerStats): string {
   const normalized: Record<string, number> = {
-    scholar: stats.gpa,
+    scholar: stats.knowledge,
     social: stats.social,
     hustler: stats.money > 0 ? Math.min(100, stats.money / 10000) : 0,
     wellness: stats.health,
@@ -29,7 +29,7 @@ function determineArchetype(stats: PlayerStats): string {
   }
 
   // Check for balanced (all stats within 20 of each other)
-  const vals = [stats.gpa, stats.health, stats.social, stats.charm];
+  const vals = [stats.knowledge, stats.health, stats.social, stats.charm];
   const range = Math.max(...vals) - Math.min(...vals);
   if (range < 20 && stats.stress < 50) return "balanced";
 
@@ -147,7 +147,7 @@ function getStressGrade(stress: number): string {
 }
 
 const STAT_DISPLAY = [
-  { key: "gpa" as const, label: "학점", icon: "📖" },
+  { key: "knowledge" as const, label: "준비도", icon: "📖" },
   { key: "health" as const, label: "체력", icon: "💚" },
   { key: "social" as const, label: "인맥", icon: "👥" },
   { key: "money" as const, label: "재정", icon: "💰", isMoney: true },
@@ -163,6 +163,7 @@ export default function EndingPage() {
   const relationships = useGameStore((s) => s.relationships);
   const eventHistory = useGameStore((s) => s.eventHistory);
   const unlockedAchievements = useGameStore((s) => s.unlockedAchievements);
+  const examResults = useGameStore((s) => s.examResults);
   const resetGame = useGameStore((s) => s.resetGame);
   const resetNewStore = useNewStore((s) => s.resetGame);
 
@@ -247,8 +248,12 @@ export default function EndingPage() {
   const highlights: { emoji: string; text: string }[] = [];
 
   // Stat-based highlights
-  if (stats.gpa >= 80) highlights.push({ emoji: '🏆', text: '장학금 후보에 오를 만큼 뛰어난 학점을 받았다.' });
-  else if (stats.gpa <= 30) highlights.push({ emoji: '😰', text: '학사경고의 그림자가 드리웠던 학기였다.' });
+  // Use exam GPA if available for highlights
+  const semGpa = examResults?.semesterGpa;
+  if (semGpa && semGpa >= 3.5) highlights.push({ emoji: '🏆', text: `학기 GPA ${semGpa.toFixed(2)} — 장학금 후보에 오를 만큼 뛰어난 성적을 받았다.` });
+  else if (semGpa && semGpa < 2.0) highlights.push({ emoji: '😰', text: `학기 GPA ${semGpa.toFixed(2)} — 학사경고의 그림자가 드리웠던 학기였다.` });
+  else if (stats.knowledge >= 80) highlights.push({ emoji: '🏆', text: '꾸준한 공부로 시험 준비가 완벽했다.' });
+  else if (stats.knowledge <= 30) highlights.push({ emoji: '😰', text: '시험 준비가 부족했던 학기였다.' });
 
   if (stats.social >= 70) highlights.push({ emoji: '🎭', text: '캠퍼스 곳곳에서 인사하는 사람이 생겼다.' });
   else if (stats.social <= 20) highlights.push({ emoji: '🌙', text: '혼자만의 시간이 많았던 조용한 학기였다.' });
@@ -380,6 +385,19 @@ export default function EndingPage() {
           }`}
         >
           <h3 className="text-sm font-bold text-white/60 mb-4">최종 성적표</h3>
+          {/* Semester GPA from exam results */}
+          {examResults?.semesterGpa && (
+            <div className="flex items-center justify-center gap-3 mb-4 p-3 bg-gold/10 rounded-xl border border-gold/20">
+              <span className="text-gold text-sm font-medium">학기 GPA</span>
+              <span className="text-2xl font-bold text-gold">{examResults.semesterGpa.toFixed(2)}</span>
+              <span className="text-white/40 text-sm">/ 4.50</span>
+              {examResults.midtermGpa && (
+                <span className="text-xs text-white/30 ml-2">
+                  (중간 {examResults.midtermGpa.toFixed(2)}{examResults.finalsGpa ? ` · 기말 ${examResults.finalsGpa.toFixed(2)}` : ''})
+                </span>
+              )}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             {STAT_DISPLAY.map(({ key, label, icon, isMoney, isStress }) => {
               const grade = isStress
@@ -428,9 +446,7 @@ export default function EndingPage() {
                 <span className="text-sm text-white/80 w-16 text-right font-mono">
                   {isMoney
                     ? `₩${stats[key].toLocaleString("ko-KR")}`
-                    : key === "gpa"
-                      ? `${((stats[key] / 100) * 4.5).toFixed(1)}`
-                      : stats[key]}
+                    : stats[key]}
                 </span>
               </div>
             ))}

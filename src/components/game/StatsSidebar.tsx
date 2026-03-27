@@ -4,8 +4,8 @@ import { useGameStore } from '@/store/gameStore';
 import ProgressBar from '@/components/ui/ProgressBar';
 import GlassPanel from '@/components/ui/GlassPanel';
 
-function formatGpa(value: number): string {
-  return ((value / 100) * 4.5).toFixed(1);
+function formatKnowledge(value: number): string {
+  return `${value}`;
 }
 
 function formatMoney(value: number): string {
@@ -40,12 +40,12 @@ export default function StatsSidebar() {
           능력치
         </h2>
 
-        {/* GPA */}
-        <StatRow icon="solar:star-bold" label="학점">
+        {/* Knowledge */}
+        <StatRow icon="solar:star-bold" label="준비도">
           <div className="flex items-center justify-between">
-            <ProgressBar value={stats.gpa} color="gold" size="sm" />
+            <ProgressBar value={stats.knowledge} color="gold" size="sm" />
             <span className="ml-3 text-sm text-gold font-medium whitespace-nowrap">
-              {formatGpa(stats.gpa)} / 4.5
+              {formatKnowledge(stats.knowledge)} / 100
             </span>
           </div>
         </StatRow>

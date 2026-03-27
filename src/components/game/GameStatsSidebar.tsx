@@ -18,7 +18,7 @@ const STAT_CONFIG: Array<{
   color: string;
   isMoney?: boolean;
 }> = [
-  { key: 'gpa', label: '학점', icon: '📚', color: 'blue' },
+  { key: 'knowledge', label: '준비도', icon: '📚', color: 'blue' },
   { key: 'health', label: '체력', icon: '💪', color: 'emerald' },
   { key: 'social', label: '사회성', icon: '👥', color: 'orange' },
   { key: 'money', label: '재정', icon: '💰', color: 'amber', isMoney: true },

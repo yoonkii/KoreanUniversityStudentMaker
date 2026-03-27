@@ -11,10 +11,10 @@ describe('gameStore', () => {
     it('should apply positive and negative stat changes', () => {
       const { updateStats } = useGameStore.getState();
 
-      updateStats({ gpa: 10, stress: 5, health: -10 });
+      updateStats({ knowledge: 10, stress: 5, health: -10 });
 
       const { stats } = useGameStore.getState();
-      expect(stats.gpa).toBe(60);      // 50 + 10
+      expect(stats.knowledge).toBe(30);      // 20 + 10
       expect(stats.stress).toBe(25);    // 20 + 5
       expect(stats.health).toBe(60);    // 70 - 10
     });
@@ -22,9 +22,9 @@ describe('gameStore', () => {
     it('should clamp stats to [0, 100]', () => {
       const { updateStats } = useGameStore.getState();
 
-      // Push gpa beyond 100
-      updateStats({ gpa: 200 });
-      expect(useGameStore.getState().stats.gpa).toBe(100);
+      // Push knowledge beyond 100
+      updateStats({ knowledge: 200 });
+      expect(useGameStore.getState().stats.knowledge).toBe(100);
 
       // Push health below 0
       useGameStore.getState().resetGame();
@@ -36,7 +36,7 @@ describe('gameStore', () => {
       const { updateStats } = useGameStore.getState();
 
       updateStats({ money: 1000000 });
-      expect(useGameStore.getState().stats.money).toBe(1500000); // 500000 + 1000000
+      expect(useGameStore.getState().stats.money).toBe(1300000); // 300000 + 1000000
     });
 
     it('should clamp money to 0 minimum', () => {
@@ -92,8 +92,8 @@ describe('gameStore', () => {
 
       const { stats, player, phase } = useGameStore.getState();
       expect(player?.name).toBe('테스트');
-      expect(stats.gpa).toBe(50);
-      expect(stats.money).toBe(500000);
+      expect(stats.knowledge).toBe(20);
+      expect(stats.money).toBe(300000);
       expect(stats.health).toBe(70);
       expect(phase).toBe('planning');
     });
@@ -103,7 +103,7 @@ describe('gameStore', () => {
       createPlayer({ name: '학자', gender: 'male', major: 'engineering', dream: 'scholar' });
 
       const { stats } = useGameStore.getState();
-      expect(stats.gpa).toBe(60); // 50 + 10 (scholar bonus)
+      expect(stats.knowledge).toBe(30); // 20 + 10 (scholar bonus)
     });
 
     it('should apply dream bonus for social dream', () => {
@@ -140,12 +140,12 @@ describe('gameStore', () => {
     it('should generate goal warnings for critical stats', () => {
       const store = useGameStore.getState();
       store.createPlayer({ name: '위기', gender: 'male', major: 'engineering' });
-      store.updateStats({ gpa: -40, stress: 70 }); // gpa=10, stress=90
+      store.updateStats({ knowledge: -10, stress: 70 }); // knowledge=10, stress=90
 
       store.advanceWeek();
       const { goalWarnings } = useGameStore.getState();
       expect(goalWarnings.length).toBeGreaterThan(0);
-      expect(goalWarnings.some(w => w.includes('학점'))).toBe(true);
+      expect(goalWarnings.some(w => w.includes('준비도'))).toBe(true);
       expect(goalWarnings.some(w => w.includes('스트레스'))).toBe(true);
     });
   });

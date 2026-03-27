@@ -70,7 +70,7 @@ ${body.rollingSummary || "다양한 경험을 하며 한 학기를 보냈다."}
     console.error("Ending generation error:", error);
     return NextResponse.json({
       ending: "한 학기가 끝났다. 많은 일이 있었고, 성장했다.",
-      archetype: "gpa",
+      archetype: "knowledge",
       sacrifice: "social",
       grades: {},
     });

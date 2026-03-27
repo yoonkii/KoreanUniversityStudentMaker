@@ -56,7 +56,7 @@ const MT_CHOICES: MTChoice[] = [
     title: 'MT 불참',
     emoji: '📚',
     description: '₩30,000 아끼고 주말에 공부한다. 외로울 수 있다.',
-    statEffects: { gpa: 5, money: 0, stress: 3, social: -8 },
+    statEffects: { knowledge: 5, money: 0, stress: 3, social: -8 },
     npcEncounter: 'minji',
     npcLine: '너도 안 갔구나? ...같이 도서관이라도 갈래?',
     memory: 'MT 대신 도서관에서 민지와 공부했다.',
@@ -123,7 +123,7 @@ export default function MTEvent({ onComplete }: MTEventProps) {
                     <div className="text-xs text-txt-secondary mt-0.5">{choice.description}</div>
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {Object.entries(choice.statEffects).filter(([,v]) => v !== 0).map(([k, v]) => {
-                        const labels: Record<string, string> = { gpa: '학점', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력' };
+                        const labels: Record<string, string> = { knowledge: '준비도', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력' };
                         const isGood = k === 'stress' ? v < 0 : v > 0;
                         return (
                           <span key={k} className={`text-[10px] px-1.5 py-0.5 rounded ${isGood ? 'bg-teal/10 text-teal' : 'bg-coral/10 text-coral'}`}>
@@ -159,7 +159,7 @@ export default function MTEvent({ onComplete }: MTEventProps) {
 
             <div className="flex flex-wrap justify-center gap-2 mb-5">
               {Object.entries(selectedChoice.statEffects).filter(([,v]) => v !== 0).map(([k, v]) => {
-                const labels: Record<string, string> = { gpa: '학점', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력' };
+                const labels: Record<string, string> = { knowledge: '준비도', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력' };
                 const isGood = k === 'stress' ? v < 0 : v > 0;
                 return (
                   <span key={k} className={`px-3 py-1 rounded-full text-xs font-bold ${isGood ? 'bg-teal/15 text-teal' : 'bg-coral/15 text-coral'}`}>

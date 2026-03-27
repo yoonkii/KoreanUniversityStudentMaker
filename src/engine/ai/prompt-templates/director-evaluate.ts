@@ -43,7 +43,7 @@ export function buildDirectorEvaluationPrompt(
   parts.push(`- 마지막 위기 후: ${director.daysSinceLastCrisis}일`);
 
   parts.push(`\n플레이어 스탯:`);
-  parts.push(`- 학점: ${playerStats.gpa}, 체력: ${playerStats.energy}, 사회성: ${playerStats.social}`);
+  parts.push(`- 준비도: ${playerStats.knowledge}, 체력: ${playerStats.energy}, 사회성: ${playerStats.social}`);
   parts.push(`- 재정: ${playerStats.finances}, 스펙: ${playerStats.career}, 멘탈: ${playerStats.mental}`);
   parts.push(`- 오늘 활동: ${playerActivities}`);
 

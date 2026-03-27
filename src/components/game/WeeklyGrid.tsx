@@ -34,15 +34,15 @@ function cellKey(day: DayIndex, slot: TimeSlot): string {
 /** Calculate projected stat changes from selected activities */
 function projectStats(cells: Map<string, string>): Partial<PlayerStats> {
   const EFFECTS: Record<string, Partial<PlayerStats>> = {
-    class:    { gpa: 3, stress: 2, health: -2 },
-    study:    { gpa: 5, stress: 3, health: -3 },
+    class:    { knowledge: 3, stress: 2, health: -2 },
+    study:    { knowledge: 5, stress: 3, health: -3 },
     work:     { money: 45000, stress: 3, health: -5, social: 2 },
     club:     { social: 8, charm: 3, stress: -2, health: -2, money: -10000 },
     date:     { social: 5, charm: 5, stress: -3, money: -30000 },
     exercise: { health: 10, stress: -5 },
     rest:     { health: 10, stress: -8 },
     social:   { social: 6, charm: 2, stress: -2, money: -15000 },
-    career:   { gpa: 2, charm: 2, stress: 2, health: -3 },
+    career:   { knowledge: 2, charm: 2, stress: 2, health: -3 },
   };
 
   const totals: Partial<PlayerStats> = {};
@@ -301,7 +301,7 @@ export default function WeeklyGrid({ lockedCells, stats, onConfirm }: WeeklyGrid
               .sort(([, a], [, b]) => Math.abs(b as number) - Math.abs(a as number))
               .map(([key, value]) => {
                 const labels: Record<string, string> = {
-                  gpa: '학점', money: '재정', health: '체력',
+                  knowledge: '준비도', money: '재정', health: '체력',
                   social: '사회성', stress: '스트레스', charm: '매력',
                 };
                 const v = value as number;

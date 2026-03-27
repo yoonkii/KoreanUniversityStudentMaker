@@ -7,7 +7,7 @@ export const NPCBrainResponseSchema = z.object({
     intensity: z.number().min(1).max(10),
   }),
   statModifiers: z.object({
-    gpa: z.number().min(-5).max(5).optional(),
+    knowledge: z.number().min(-5).max(5).optional(),
     energy: z.number().min(-5).max(5).optional(),
     social: z.number().min(-5).max(5).optional(),
     finances: z.number().min(-5).max(5).optional(),

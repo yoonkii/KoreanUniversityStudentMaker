@@ -37,13 +37,13 @@ export const WEEK_10_VARIANT_B: Scene[] = [
       {
         id: 'discover_writing',
         text: '글 쓰기에 관심이 생겼어요. 블로그라도 시작해볼까...',
-        statEffects: { charm: 5, stress: -5, gpa: 2 },
+        statEffects: { charm: 5, stress: -5, knowledge: 2, money: -5000 },
         relationshipEffects: [{ characterId: 'soyeon', change: 8 }],
       },
       {
         id: 'discover_exercise',
         text: '요즘 운동을 시작했는데, 생각보다 재밌어요!',
-        statEffects: { health: 8, charm: 3, stress: -5 },
+        statEffects: { health: 8, charm: 3, stress: -5, money: -10000 },
         relationshipEffects: [{ characterId: 'soyeon', change: 5 }],
       },
       {
@@ -102,7 +102,7 @@ export const WEEK_10_SCENES: Scene[] = [
       {
         id: 'slump_plan',
         text: '기말고사까지 계획표를 다시 짜보자. 목표가 있으면 괜찮아져.',
-        statEffects: { gpa: 3, stress: -3 },
+        statEffects: { knowledge: 3, stress: -3 },
         relationshipEffects: [
           { characterId: 'jaemin', change: 3 },
         ],
@@ -110,7 +110,7 @@ export const WEEK_10_SCENES: Scene[] = [
       {
         id: 'slump_wallow',
         text: '좀 쉬자... 오늘은 넷플릭스나 보면서 충전하는 날로.',
-        statEffects: { stress: -12, health: 3, gpa: -2 },
+        statEffects: { stress: -12, health: 3, knowledge: -2 },
         relationshipEffects: [
           { characterId: 'jaemin', change: 2 },
         ],
@@ -155,7 +155,7 @@ export const WEEK_10_SCENES: Scene[] = [
       {
         id: 'advice_career',
         text: '선배, 진로 고민 좀 들어주세요. 요즘 많이 생각하고 있어요.',
-        statEffects: { gpa: 2, stress: -5, charm: 2 },
+        statEffects: { knowledge: 2, stress: -5, charm: 2, money: -4000 },
         relationshipEffects: [
           { characterId: 'soyeon', change: 8 },
         ],
@@ -163,7 +163,7 @@ export const WEEK_10_SCENES: Scene[] = [
       {
         id: 'advice_life',
         text: '학교 생활 꿀팁 좀 알려주세요! 선배는 어떻게 다 잘하셨어요?',
-        statEffects: { social: 4, charm: 3, stress: -3 },
+        statEffects: { social: 4, charm: 3, stress: -3, knowledge: -1 },
         relationshipEffects: [
           { characterId: 'soyeon', change: 6 },
         ],
@@ -171,7 +171,7 @@ export const WEEK_10_SCENES: Scene[] = [
       {
         id: 'advice_independent',
         text: '감사해요, 근데 스스로 답을 찾아보고 싶어요.',
-        statEffects: { gpa: 1, stress: 3, charm: -1 },
+        statEffects: { knowledge: 1, stress: 3, charm: -1 },
         relationshipEffects: [
           { characterId: 'soyeon', change: -2 },
         ],

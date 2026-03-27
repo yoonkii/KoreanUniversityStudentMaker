@@ -2,6 +2,7 @@
 
 import { useGameStore } from '@/store/gameStore';
 import { getWeatherForWeek } from '@/lib/gameEngine';
+import type { ExamResults } from '@/store/types';
 
 const SEMESTER_WEEKS = 16;
 
@@ -40,6 +41,8 @@ function getStressColor(stress: number): string {
 export default function HUDBar() {
   const currentWeek = useGameStore((state) => state.currentWeek);
   const stats = useGameStore((state) => state.stats);
+  const examResults = useGameStore((state) => state.examResults);
+  const knowledge = stats?.knowledge ?? 50;
   const stress = stats?.stress ?? 0;
   const health = stats?.health ?? 100;
   const money = stats?.money ?? 0;
@@ -83,6 +86,13 @@ export default function HUDBar() {
 
           {/* Right: Quick-glance mini stats (mobile only — sidebar hidden on mobile) */}
           <div className="flex items-center gap-3 text-xs text-txt-secondary lg:hidden">
+            <div className="flex items-center gap-1" title="준비도">
+              <span style={{ color: '#FFD166' }}>📚</span>
+              <span className={`font-mono ${knowledge < 30 ? 'text-coral' : ''}`}>{knowledge}</span>
+              {examResults?.midtermGpa && (
+                <span className="text-[9px] text-gold/60 ml-0.5">중간:{examResults.midtermGpa.toFixed(1)}</span>
+              )}
+            </div>
             <div className="flex items-center gap-1" title="체력">
               <span style={{ color: health < 30 ? '#FF6B6B' : '#4ECDC4' }}>♥</span>
               <span className={`font-mono ${health < 30 ? 'text-coral' : ''}`}>{health}</span>

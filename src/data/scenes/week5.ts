@@ -44,7 +44,7 @@ export const WEEK_5_SCENES: Scene[] = [
       {
         id: 'course_keep',
         text: '지금 수업 유지할게. 힘들어도 끝까지 해보는 게 맞아.',
-        statEffects: { gpa: 3, stress: 5 },
+        statEffects: { knowledge: 3, stress: 5 },
         relationshipEffects: [
           { characterId: 'soyeon', change: 5 },
           { characterId: 'jaemin', change: 2 },
@@ -53,7 +53,7 @@ export const WEEK_5_SCENES: Scene[] = [
       {
         id: 'course_swap',
         text: '하나만 바꿔볼까. 교양으로 여유 좀 만들자.',
-        statEffects: { stress: -8, gpa: -2, charm: 2 },
+        statEffects: { stress: -8, knowledge: -2, charm: 2 },
         relationshipEffects: [
           { characterId: 'soyeon', change: 1 },
           { characterId: 'jaemin', change: 4 },
@@ -62,7 +62,7 @@ export const WEEK_5_SCENES: Scene[] = [
       {
         id: 'course_help_jaemin',
         text: '재민아, 내가 경제학 노트 공유해줄게. 같이 버텨보자.',
-        statEffects: { social: 4, gpa: 1, stress: 3 },
+        statEffects: { social: 4, knowledge: 1, stress: 3 },
         relationshipEffects: [
           { characterId: 'jaemin', change: 8 },
           { characterId: 'soyeon', change: 3 },

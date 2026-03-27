@@ -12,7 +12,7 @@ function makeEmptySchedule(): WeekSchedule {
 }
 
 const DEFAULT_STATS: PlayerStats = {
-  gpa: 50,
+  knowledge: 50,
   money: 500000,
   health: 70,
   social: 40,
@@ -21,50 +21,55 @@ const DEFAULT_STATS: PlayerStats = {
 };
 
 describe('simulateWeek', () => {
-  it('should return correct stat deltas for a simple schedule', () => {
+  it('should return correct stat deltas for a simple schedule (including baseline drains)', () => {
     const schedule = makeEmptySchedule();
-    // Schedule one "study" slot on Monday (gpa: 5, stress: 8, health: -3)
+    // Schedule one "study" slot on Monday (knowledge: 5, stress: 10, health: -5, social: -2)
     schedule.monday = [{ timeSlot: 'morning', activityId: 'study' }];
 
     const { statDeltas } = simulateWeek(schedule, 4, DEFAULT_STATS, { disableRandomEvents: true });
 
-    expect(statDeltas.gpa).toBe(5);
-    expect(statDeltas.stress).toBe(8);
-    expect(statDeltas.health).toBe(-3);
-    // Unaffected stats should not be present (trimmed)
-    expect(statDeltas.money).toBeUndefined();
-    expect(statDeltas.social).toBeUndefined();
-    expect(statDeltas.charm).toBeUndefined();
+    // knowledge: 5 (study)
+    expect(statDeltas.knowledge).toBe(5);
+    // stress: 10 (study) + 5 (baseline) = 15
+    expect(statDeltas.stress).toBe(15);
+    // health: -5 (study) + -3 (baseline) = -8
+    expect(statDeltas.health).toBe(-8);
+    // money: -30000 (baseline)
+    expect(statDeltas.money).toBe(-30000);
+    // social: -2 (study isolation)
+    expect(statDeltas.social).toBe(-2);
   });
 
   it('should halve positive gains (except money) when stress > 70', () => {
     const highStressStats: PlayerStats = { ...DEFAULT_STATS, stress: 80 };
     const schedule = makeEmptySchedule();
-    // "club" gives: gpa: 1, money: -10000, social: 8, stress: -3, charm: 3
+    // "club" gives: money: -15000, social: 7, stress: -2, charm: 3
     schedule.monday = [{ timeSlot: 'morning', activityId: 'club' }];
 
     const { statDeltas } = simulateWeek(schedule, 4, highStressStats, { disableRandomEvents: true });
 
     // Positive gains halved AFTER stat interactions apply.
-    // Charm=40 → charmBonus=0.4 → social: round(8*1.4)=11 → halved: round(11*0.5)=6
-    expect(statDeltas.gpa).toBe(Math.round(1 * 0.5)); // 1 -> 1 (rounded from 0.5)
-    expect(statDeltas.social).toBe(6); // 8 → 11 (charm boost) → 6 (stress halved)
+    // Charm=40 → charmBonus=0.4 → social: round(7*1.4)=10 → halved: round(10*0.5)=5
+    expect(statDeltas.social).toBe(5);
     expect(statDeltas.charm).toBe(Math.round(3 * 0.5)); // 3 -> 2
 
-    // Money is exempt from halving
-    expect(statDeltas.money).toBe(-10000);
+    // Money: -15000 (club) + -30000 (baseline) = -45000, then social>60 discount doesn't apply
+    expect(statDeltas.money).toBe(-45000);
 
-    // Negative values (stress: -3) stay as-is
-    expect(statDeltas.stress).toBe(-3);
+    // stress: -2 (club) + 5 (baseline) + knowledge decay(-2 for stress>=70) = stress 3, knowledge -2
+    // But stress is net positive (3), so it gets halved: round(3*0.5)=2
+    expect(statDeltas.stress).toBe(2);
   });
 
-  it('should return zero deltas for an empty schedule', () => {
+  it('should apply baseline drains even for an empty schedule', () => {
     const schedule = makeEmptySchedule();
 
     const { statDeltas } = simulateWeek(schedule, 1, DEFAULT_STATS, { disableRandomEvents: true });
 
-    // All deltas should be trimmed (no non-zero entries)
-    expect(Object.keys(statDeltas)).toHaveLength(0);
+    // Baseline drains: money -30000, health -3, stress +5
+    expect(statDeltas.money).toBe(-30000);
+    expect(statDeltas.health).toBe(-3);
+    expect(statDeltas.stress).toBe(5);
   });
 
   it('should return week 1 scenes for week 1', () => {
@@ -97,35 +102,35 @@ describe('simulateWeek', () => {
     expect(scenes[0].id).toBe('mt_announcement');
   });
 
-  it('should double GPA gains and add stress during exam weeks (7, 8, 14, 15)', () => {
+  it('should double knowledge gains and add stress during exam weeks (7, 8, 14, 15)', () => {
     const schedule = makeEmptySchedule();
-    // "study" gives gpa: 5 normally
+    // "study" gives knowledge: 5 normally
     schedule.monday = [{ timeSlot: 'morning', activityId: 'study' }];
 
-    // Week 4 (normal): gpa should be 5
+    // Week 4 (normal): knowledge should be 5
     const normal = simulateWeek(schedule, 4, DEFAULT_STATS, { disableRandomEvents: true });
-    expect(normal.statDeltas.gpa).toBe(5);
+    expect(normal.statDeltas.knowledge).toBe(5);
 
-    // Week 7 (midterms): gpa should be doubled → 10, stress gets +5 exam anxiety
+    // Week 7 (midterms): knowledge should be doubled → 10, stress gets +5 exam anxiety
     const midterm = simulateWeek(schedule, 7, DEFAULT_STATS, { disableRandomEvents: true });
-    expect(midterm.statDeltas.gpa).toBe(10);
-    // stress: 8 (study) + 5 (exam) = 13
-    expect(midterm.statDeltas.stress).toBe(13);
+    expect(midterm.statDeltas.knowledge).toBe(10);
+    // stress: 10 (study) + 5 (baseline) + 5 (exam) = 20
+    expect(midterm.statDeltas.stress).toBe(20);
   });
 
   it('should boost social and charm during festival week (9)', () => {
     const schedule = makeEmptySchedule();
-    // "club" gives social: 8, charm: 3
+    // "club" gives social: 7, charm: 3, stress: -2, money: -15000
     schedule.monday = [{ timeSlot: 'morning', activityId: 'club' }];
 
     // Week 9 (festival): social ×1.5, charm ×1.5, stress -3
     const festival = simulateWeek(schedule, 9, DEFAULT_STATS, { disableRandomEvents: true });
-    // social: 8 → charm-boosted to round(8*1.4)=11 → festival: round(11*1.5)=17
-    expect(festival.statDeltas.social).toBe(17);
+    // social: 7 → charm-boosted to round(7*1.4)=10 → festival: round(10*1.5)=15
+    expect(festival.statDeltas.social).toBe(15);
     // charm: 3 → festival: round(3*1.5)=5
     expect(festival.statDeltas.charm).toBe(5);
-    // stress: -3 (club) -3 (festival) = -6
-    expect(festival.statDeltas.stress).toBe(-6);
+    // stress: -2 (club) + 5 (baseline) -3 (festival) = 0 → trimmed
+    expect(festival.statDeltas.stress).toBeUndefined(); // stress is 0, trimmed
   });
 
   it('should give combo bonus when study + lecture are in the same week', () => {
@@ -134,8 +139,8 @@ describe('simulateWeek', () => {
     schedule.tuesday = [{ timeSlot: 'morning', activityId: 'lecture' }];
 
     const { statDeltas } = simulateWeek(schedule, 3, DEFAULT_STATS, { disableRandomEvents: true });
-    // study gpa(5) + lecture gpa(3) + combo(2) = 10
-    expect(statDeltas.gpa).toBe(10);
+    // study knowledge(5) + lecture knowledge(3) + combo(2) = 10. Lecture also gives knowledge:3.
+    expect(statDeltas.knowledge).toBe(10); // 5+3+2
   });
 
   it('should give exercise + rest combo health bonus', () => {
@@ -144,8 +149,8 @@ describe('simulateWeek', () => {
     schedule.tuesday = [{ timeSlot: 'morning', activityId: 'rest' }];
 
     const { statDeltas } = simulateWeek(schedule, 3, DEFAULT_STATS, { disableRandomEvents: true });
-    // exercise health(10) + rest health(10) + combo(5) = 25
-    expect(statDeltas.health).toBe(25);
+    // exercise health(8) + rest health(8) + combo(5) + baseline(-3) = 18
+    expect(statDeltas.health).toBe(18);
   });
 
   it('should apply diminishing returns on 4+ repeated activities', () => {
@@ -157,10 +162,10 @@ describe('simulateWeek', () => {
     schedule.thursday = [{ timeSlot: 'morning', activityId: 'study' }];
 
     const { statDeltas } = simulateWeek(schedule, 3, DEFAULT_STATS, { disableRandomEvents: true });
-    // study gpa: 5+5+5+round(5*0.5)=3 = 18
-    // + cramming penalty stress: 8+8+8+round(8*0.5)=4 = 28 + 5 (벼락치기) = 33
-    expect(statDeltas.gpa).toBe(18);
-    expect(statDeltas.stress).toBe(33);
+    // study knowledge: 5+5+5+round(5*0.5)=3 = 18
+    // stress: 10+10+10+round(10*0.5)=5 = 35 + 5 (벼락치기) + 5 (baseline) = 45
+    expect(statDeltas.knowledge).toBe(18);
+    expect(statDeltas.stress).toBe(45);
   });
 
   it('should give parttime + study combo bonus', () => {

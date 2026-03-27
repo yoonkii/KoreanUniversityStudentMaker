@@ -58,7 +58,7 @@ export async function POST(request: Request) {
 ${charContext}
 
 ### 플레이어 상태
-- 학점: ${playerStats.gpa}, 체력: ${playerStats.health}, 인맥: ${playerStats.social}
+- 준비도: ${playerStats.knowledge}, 체력: ${playerStats.health}, 인맥: ${playerStats.social}
 - 스트레스: ${playerStats.stress}, 매력: ${playerStats.charm}
 
 ### 원본 대사

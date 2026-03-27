@@ -1,4 +1,4 @@
-import type { WeekSchedule, Scene, PlayerStats, DayKey } from '@/store/types';
+import type { WeekSchedule, Scene, PlayerStats, DayKey, CharacterRelationship } from '@/store/types';
 import { ACTIVITIES } from '@/data/activities';
 import { WEEK_1_SCENES } from '@/data/scenes/week1';
 import { WEEK_2_SCENES } from '@/data/scenes/week2';
@@ -19,9 +19,15 @@ import { WEEK_15_SCENES } from '@/data/scenes/week15';
 const STRESS_PENALTY_THRESHOLD = 70;
 const STRESS_GAIN_MULTIPLIER = 0.5;
 
+// ─── Weekly Baseline Drains ───
+// Life costs money, health decays, academic pressure builds
+const WEEKLY_DRAINS: Partial<PlayerStats> = {
+  money: -30000,  // food + transport + basics
+  health: -3,     // natural fatigue
+  stress: 5,      // academic pressure
+};
+
 // ─── Random Weekly Events ───
-// Each event has a trigger condition, probability, stat effects, and flavor text.
-// 0-1 events fire per week, adding unpredictability to the simulation.
 
 export interface WeeklyEvent {
   id: string;
@@ -35,8 +41,7 @@ interface WeeklyEventDef {
   name: string;
   description: string;
   effects: Partial<PlayerStats>;
-  probability: number; // 0-1 chance per week
-  /** Optional: only triggers when condition is met */
+  probability: number;
   condition?: (stats: PlayerStats, week: number) => boolean;
 }
 
@@ -45,7 +50,7 @@ const WEEKLY_EVENT_POOL: WeeklyEventDef[] = [
     id: 'surprise_quiz',
     name: '깜짝 퀴즈',
     description: '교수님이 예고 없이 퀴즈를 냈다!',
-    effects: { stress: 8, gpa: -3 },
+    effects: { stress: 8, knowledge: -3 },
     probability: 0.15,
     condition: (_, w) => w >= 3 && w <= 14,
   },
@@ -68,9 +73,9 @@ const WEEKLY_EVENT_POOL: WeeklyEventDef[] = [
     id: 'professor_praise',
     name: '교수님 칭찬',
     description: '교수님이 수업 태도를 칭찬해주셨다!',
-    effects: { gpa: 5, charm: 3, stress: -2 },
+    effects: { knowledge: 5, charm: 3, stress: -2 },
     probability: 0.1,
-    condition: (stats) => stats.gpa > 60,
+    condition: (stats) => stats.knowledge > 60,
   },
   {
     id: 'group_project_drama',
@@ -91,7 +96,7 @@ const WEEKLY_EVENT_POOL: WeeklyEventDef[] = [
     id: 'all_nighter_recovery',
     name: '밤샘 후유증',
     description: '밤새 과제하다 쓰러졌다... 다음 날 수업 결석',
-    effects: { health: -8, gpa: -2, stress: 5 },
+    effects: { health: -8, knowledge: -2, stress: 5 },
     probability: 0.1,
     condition: (stats) => stats.stress > 60,
   },
@@ -114,9 +119,9 @@ const WEEKLY_EVENT_POOL: WeeklyEventDef[] = [
     id: 'scholarship_notice',
     name: '장학금 안내',
     description: '성적 장학금 대상자로 선정됐다! 🎓',
-    effects: { money: 500000, stress: -10, gpa: 3 },
+    effects: { money: 500000, stress: -10, knowledge: 3 },
     probability: 0.08,
-    condition: (stats, w) => stats.gpa > 75 && w >= 8,
+    condition: (stats, w) => stats.knowledge > 75 && w >= 8,
   },
   {
     id: 'phone_broken',
@@ -129,13 +134,12 @@ const WEEKLY_EVENT_POOL: WeeklyEventDef[] = [
     id: 'cafe_study_buddy',
     name: '카페 스터디',
     description: '카페에서 우연히 같은 과 친구를 만나 같이 공부했다 ☕',
-    effects: { gpa: 3, social: 3, money: -5000 },
+    effects: { knowledge: 3, social: 3, money: -5000 },
     probability: 0.1,
   },
 ];
 
 // ─── Weather System ───
-// Each week gets a weather condition that slightly modifies activity effects.
 
 export interface WeatherCondition {
   type: 'sunny' | 'rainy' | 'cold' | 'hot' | 'normal';
@@ -153,20 +157,12 @@ const WEATHER_POOL: WeatherCondition[] = [
 ];
 
 export function getWeatherForWeek(week: number): WeatherCondition {
-  // Deterministic pseudo-random per week (so same week always gets same weather)
   const hash = ((week * 2654435761) >>> 0) % WEATHER_POOL.length;
   return WEATHER_POOL[hash];
 }
 
-/**
- * Roll for a random weekly event. Returns at most one event.
- * Uses a simple linear scan — first event whose condition passes AND
- * probability check succeeds wins (shuffled to avoid positional bias).
- */
 function rollWeeklyEvent(stats: PlayerStats, week: number): WeeklyEvent | null {
-  // Shuffle pool to avoid positional bias
   const shuffled = [...WEEKLY_EVENT_POOL].sort(() => Math.random() - 0.5);
-
   for (const def of shuffled) {
     if (def.condition && !def.condition(stats, week)) continue;
     if (Math.random() < def.probability) {
@@ -176,10 +172,10 @@ function rollWeeklyEvent(stats: PlayerStats, week: number): WeeklyEvent | null {
   return null;
 }
 
-// Exam week definitions (Korean university calendar)
-const MIDTERM_WEEKS = [7, 8];      // 중간고사
-const FINALS_WEEKS = [14, 15];     // 기말고사
-const FESTIVAL_WEEK = 9;           // 축제 주간
+// Exam week definitions
+const MIDTERM_WEEKS = [7, 8];
+const FINALS_WEEKS = [14, 15];
+const FESTIVAL_WEEK = 9;
 
 function isExamWeek(week: number): boolean {
   return MIDTERM_WEEKS.includes(week) || FINALS_WEEKS.includes(week);
@@ -189,7 +185,6 @@ function isFestivalWeek(week: number): boolean {
   return week === FESTIVAL_WEEK;
 }
 
-/** Public: returns the week's special condition for display in the planner */
 export interface WeekCondition {
   type: 'midterm' | 'finals' | 'festival' | 'normal';
   label: string;
@@ -214,72 +209,166 @@ const DAY_KEYS: DayKey[] = [
   'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
 ];
 
-/** Map week number to hardcoded scene arrays. */
 function getScenesForWeek(week: number): Scene[] {
   switch (week) {
-    case 1:
-      return [...WEEK_1_SCENES];
-    case 2:
-      return [...WEEK_2_SCENES];
-    case 3:
-      return Math.random() < 0.5 ? [...WEEK_3_SCENES] : [...WEEK_3_VARIANT_B];
-    case 4:
-      return [...WEEK_4_SCENES];
-    case 5:
-      return [...WEEK_5_SCENES];
-    case 6:
-      return [...WEEK_6_SCENES];
-    case 7:
-      return [...WEEK_7_SCENES];
-    case 8:
-      return [...WEEK_8_SCENES];
-    case 9:
-      return [...WEEK_9_SCENES];
-    case 10:
-      return Math.random() < 0.5 ? [...WEEK_10_SCENES] : [...WEEK_10_VARIANT_B];
-    case 11:
-      return Math.random() < 0.5 ? [...WEEK_11_SCENES] : [...WEEK_11_VARIANT_B];
-    case 12:
-      return [...WEEK_12_SCENES];
-    case 13:
-      return [...WEEK_13_SCENES];
-    case 14:
-      return [...WEEK_14_SCENES];
-    case 15:
-      return [...WEEK_15_SCENES];
-    default:
-      return [];
+    case 1: return [...WEEK_1_SCENES];
+    case 2: return [...WEEK_2_SCENES];
+    case 3: return Math.random() < 0.5 ? [...WEEK_3_SCENES] : [...WEEK_3_VARIANT_B];
+    case 4: return [...WEEK_4_SCENES];
+    case 5: return [...WEEK_5_SCENES];
+    case 6: return [...WEEK_6_SCENES];
+    case 7: return [...WEEK_7_SCENES];
+    case 8: return [...WEEK_8_SCENES];
+    case 9: return [...WEEK_9_SCENES];
+    case 10: return Math.random() < 0.5 ? [...WEEK_10_SCENES] : [...WEEK_10_VARIANT_B];
+    case 11: return Math.random() < 0.5 ? [...WEEK_11_SCENES] : [...WEEK_11_VARIANT_B];
+    case 12: return [...WEEK_12_SCENES];
+    case 13: return [...WEEK_13_SCENES];
+    case 14: return [...WEEK_14_SCENES];
+    case 15: return [...WEEK_15_SCENES];
+    default: return [];
   }
 }
 
-/**
- * Simulate a full week of scheduled activities and return the cumulative
- * stat deltas along with any narrative scenes triggered by the week.
- *
- * Stress penalty: when the player's current stress exceeds 70, all
- * *positive* stat gains (except money) are halved for that week, modeling
- * burnout and diminishing returns.
- */
+// ─── Relationship Tier Bonuses ───
+// Applied as multipliers/additions to stat deltas during simulateWeek
+
+interface RelationshipBonus {
+  npcId: string;
+  friendBonus: (deltas: Record<keyof PlayerStats, number>) => void;
+  closeFriendBonus: (deltas: Record<keyof PlayerStats, number>) => void;
+  soulmateBonus: (deltas: Record<keyof PlayerStats, number>) => void;
+}
+
+const RELATIONSHIP_BONUSES: RelationshipBonus[] = [
+  {
+    npcId: 'minji',
+    friendBonus: (d) => { if (d.knowledge > 0) d.knowledge = Math.round(d.knowledge * 1.1); },
+    closeFriendBonus: (d) => { if (d.knowledge > 0) d.knowledge = Math.round(d.knowledge * 1.2); },
+    soulmateBonus: () => {}, // Exam GPA bonus handled in ExamEvent
+  },
+  {
+    npcId: 'jaemin',
+    friendBonus: (d) => { d.stress -= 2; },
+    closeFriendBonus: (d) => { d.stress -= 5; d.money += 15000; },
+    soulmateBonus: () => {}, // Burnout threshold handled in stress check
+  },
+  {
+    npcId: 'soyeon',
+    friendBonus: (d) => { if (d.social > 0) d.social = Math.round(d.social * 1.1); },
+    closeFriendBonus: (d) => { if (d.social > 0) d.social = Math.round(d.social * 1.15); },
+    soulmateBonus: (d) => { if (d.charm > 0) d.charm = Math.round(d.charm * 1.15); },
+  },
+  {
+    npcId: 'hyunwoo',
+    friendBonus: (d) => { if (d.charm > 0) d.charm = Math.round(d.charm * 1.1); },
+    closeFriendBonus: (d) => { /* club costs reduced — handled in activity processing */ },
+    soulmateBonus: () => {}, // Festival bonus handled in festival check
+  },
+];
+
+function applyRelationshipBonuses(
+  deltas: Record<keyof PlayerStats, number>,
+  relationships: Record<string, CharacterRelationship>,
+): void {
+  for (const bonus of RELATIONSHIP_BONUSES) {
+    const rel = relationships[bonus.npcId];
+    if (!rel) continue;
+    const aff = rel.affection;
+    if (aff >= 90) {
+      bonus.friendBonus(deltas);
+      bonus.closeFriendBonus(deltas);
+      bonus.soulmateBonus(deltas);
+    } else if (aff >= 70) {
+      bonus.friendBonus(deltas);
+      bonus.closeFriendBonus(deltas);
+    } else if (aff >= 50) {
+      bonus.friendBonus(deltas);
+    }
+  }
+}
+
+// ─── Stress Micro-Penalties ───
+
+function applyStressPenalties(
+  deltas: Record<keyof PlayerStats, number>,
+  schedule: WeekSchedule,
+  currentStress: number,
+  jaeminSoulmate: boolean,
+): { skippedActivities: string[] } {
+  const burnoutThreshold = jaeminSoulmate ? 100 : 90;
+  const skippedActivities: string[] = [];
+
+  // Stress 50+: 10% chance to skip a scheduled activity
+  if (currentStress >= 50) {
+    for (const day of DAY_KEYS) {
+      const slots = schedule[day];
+      if (!slots) continue;
+      for (const slot of slots) {
+        if (Math.random() < 0.10) {
+          skippedActivities.push(slot.activityId);
+          // Reverse this activity's effects (already accumulated)
+          const activity = ACTIVITIES[slot.activityId];
+          if (activity) {
+            for (const [stat, value] of Object.entries(activity.statEffects)) {
+              if (value !== undefined) {
+                deltas[stat as keyof PlayerStats] -= value;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Stress 70+: knowledge decay
+  if (currentStress >= 70) {
+    deltas.knowledge -= 2;
+  }
+
+  // Stress at burnout: forced rest (stress reduction but nothing else)
+  if (currentStress >= burnoutThreshold) {
+    deltas.stress -= 10;
+    deltas.health += 5;
+  }
+
+  return { skippedActivities };
+}
+
 export interface ActiveCombo {
   name: string;
   description: string;
   effect: string;
 }
 
+/**
+ * Simulate a full week of scheduled activities.
+ * Now includes weekly baseline drains, relationship bonuses, and stress penalties.
+ */
 export function simulateWeek(
   schedule: WeekSchedule,
   currentWeek: number,
   currentStats: PlayerStats,
-  options?: { disableRandomEvents?: boolean },
-): { statDeltas: Partial<PlayerStats>; scenes: Scene[]; combos: ActiveCombo[]; weeklyEvent: WeeklyEvent | null } {
+  options?: {
+    disableRandomEvents?: boolean;
+    relationships?: Record<string, CharacterRelationship>;
+  },
+): { statDeltas: Partial<PlayerStats>; scenes: Scene[]; combos: ActiveCombo[]; weeklyEvent: WeeklyEvent | null; skippedActivities?: string[] } {
   const deltas: Record<keyof PlayerStats, number> = {
-    gpa: 0,
+    knowledge: 0,
     money: 0,
     health: 0,
     social: 0,
     stress: 0,
     charm: 0,
   };
+
+  // ─── Weekly Baseline Drains ───
+  for (const [stat, value] of Object.entries(WEEKLY_DRAINS)) {
+    if (value !== undefined) {
+      deltas[stat as keyof PlayerStats] += value;
+    }
+  }
 
   // Count activity occurrences for combo detection
   const activityCounts: Record<string, number> = {};
@@ -291,24 +380,40 @@ export function simulateWeek(
     }
   }
 
-  // Accumulate raw stat changes, applying diminishing returns for 4+ repeats
+  // Accumulate raw stat changes with diminishing returns for 4+ repeats
   const activitySeen: Record<string, number> = {};
   for (const day of DAY_KEYS) {
     const slots = schedule[day];
     if (!slots) continue;
 
     for (const slot of slots) {
+      // Use NPC-specific effects if targeting an NPC
+      let effects: Partial<PlayerStats>;
       const activity = ACTIVITIES[slot.activityId];
       if (!activity) continue;
 
+      if (slot.targetNpcId && activity.npcVariants) {
+        const variant = activity.npcVariants.find(v => v.npcId === slot.targetNpcId);
+        effects = variant?.statEffects ?? activity.statEffects;
+      } else {
+        effects = activity.statEffects;
+      }
+
       activitySeen[slot.activityId] = (activitySeen[slot.activityId] || 0) + 1;
       const count = activitySeen[slot.activityId];
-      // 4th+ slot of same activity → 50% effectiveness (diminishing returns)
       const diminish = count >= 4 ? 0.5 : 1;
 
-      for (const [stat, value] of Object.entries(activity.statEffects)) {
+      // Hyunwoo close friend: club costs reduced 50%
+      const hyunwooRel = options?.relationships?.['hyunwoo'];
+      const clubDiscount = slot.activityId === 'club' && hyunwooRel && hyunwooRel.affection >= 70;
+
+      for (const [stat, value] of Object.entries(effects)) {
         if (value !== undefined) {
-          deltas[stat as keyof PlayerStats] += Math.round(value * diminish);
+          let finalValue = Math.round(value * diminish);
+          if (clubDiscount && stat === 'money' && finalValue < 0) {
+            finalValue = Math.round(finalValue * 0.5);
+          }
+          deltas[stat as keyof PlayerStats] += finalValue;
         }
       }
     }
@@ -317,38 +422,31 @@ export function simulateWeek(
   // ─── Activity Combo Bonuses ───
   const combos: ActiveCombo[] = [];
 
-  // Study + Lecture in same week → synergy GPA boost
   if (activityCounts['study'] && activityCounts['lecture']) {
-    deltas.gpa += 2;
-    combos.push({ name: '효율적 학습', description: '수업 + 공부 시너지', effect: '학점 +2' });
+    deltas.knowledge += 2;
+    combos.push({ name: '효율적 학습', description: '수업 + 공부 시너지', effect: '준비도 +2' });
   }
-  // Exercise + Rest → recovery synergy
   if (activityCounts['exercise'] && activityCounts['rest']) {
     deltas.health += 5;
     combos.push({ name: '균형 잡힌 생활', description: '운동 + 휴식 시너지', effect: '체력 +5' });
   }
-  // Club + Friends → social network effect
   if (activityCounts['club'] && activityCounts['friends']) {
     deltas.social += 3;
     combos.push({ name: '인맥 왕', description: '동아리 + 친구 시너지', effect: '인맥 +3' });
   }
-  // Part-time + Study → hardworking student
   if (activityCounts['parttime'] && activityCounts['study']) {
-    deltas.gpa += 1;
+    deltas.knowledge += 1;
     deltas.money += 10000;
-    combos.push({ name: '고학생', description: '알바 + 공부 병행', effect: '학점 +1, 돈 +₩10,000' });
+    combos.push({ name: '고학생', description: '알바 + 공부 병행', effect: '준비도 +1, 돈 +₩10,000' });
   }
-  // Date + Exercise → campus couple fitness
   if (activityCounts['date'] && activityCounts['exercise']) {
     deltas.charm += 4;
     combos.push({ name: '캠퍼스 커플', description: '데이트 + 운동 시너지', effect: '매력 +4' });
   }
-  // Cramming penalty: study 4+ times → extra stress
   if ((activityCounts['study'] || 0) >= 4) {
     deltas.stress += 5;
     combos.push({ name: '벼락치기', description: '공부 4회 이상 반복', effect: '스트레스 +5' });
   }
-  // Part-time overwork: 3+ part-time slots → health penalty
   if ((activityCounts['parttime'] || 0) >= 3) {
     deltas.health -= 5;
     combos.push({ name: '알바 중독', description: '알바 3회 이상 반복', effect: '체력 -5' });
@@ -357,57 +455,46 @@ export function simulateWeek(
   // ─── Weather Effects ───
   const weather = options?.disableRandomEvents ? { type: 'normal' as const } : getWeatherForWeek(currentWeek);
   if (weather.type === 'sunny') {
-    // Outdoor activities boosted: exercise, club, friends
-    if (activityCounts['exercise']) deltas.health += Math.round((activityCounts['exercise']) * 2);
-    if (activityCounts['friends']) deltas.social += Math.round((activityCounts['friends']) * 1);
+    if (activityCounts['exercise']) deltas.health += Math.round(activityCounts['exercise'] * 2);
+    if (activityCounts['friends']) deltas.social += Math.round(activityCounts['friends'] * 1);
   } else if (weather.type === 'rainy') {
-    // Indoor activities boosted: study, lecture, rest
-    if (activityCounts['study']) deltas.gpa += Math.round((activityCounts['study']) * 1);
-    if (activityCounts['rest']) deltas.health += Math.round((activityCounts['rest']) * 2);
-    deltas.stress += 2; // gloomy weather
+    if (activityCounts['study']) deltas.knowledge += Math.round(activityCounts['study'] * 1);
+    if (activityCounts['rest']) deltas.health += Math.round(activityCounts['rest'] * 2);
+    deltas.stress += 2;
   } else if (weather.type === 'cold') {
-    // Health drain, rest boosted
     deltas.health -= 2;
-    if (activityCounts['rest']) deltas.health += Math.round((activityCounts['rest']) * 2);
+    if (activityCounts['rest']) deltas.health += Math.round(activityCounts['rest'] * 2);
   } else if (weather.type === 'hot') {
-    // Stress increase, small money drain (ice coffee)
     deltas.stress += 2;
     deltas.money -= 3000;
   }
 
   // ─── Stat Interactions ───
-  // 1. Charm boosts social gains (+10% per 10 charm points, max +50%)
   const charmBonus = Math.min(0.5, Math.floor(currentStats.charm / 10) * 0.1);
   if (deltas.social > 0) {
     deltas.social = Math.round(deltas.social * (1 + charmBonus));
   }
 
-  // 2. High GPA reduces study stress (study stress penalty halved if GPA > 70)
-  if (currentStats.gpa > 70 && deltas.stress > 0) {
-    // Only reduce stress from academic activities
+  if (currentStats.knowledge > 70 && deltas.stress > 0) {
     deltas.stress = Math.round(deltas.stress * 0.75);
   }
 
-  // 3. High social makes club/date cheaper
   if (currentStats.social > 60 && deltas.money < 0) {
-    deltas.money = Math.round(deltas.money * 0.8); // 20% discount
+    deltas.money = Math.round(deltas.money * 0.8);
   }
 
-  // 4. Low health amplifies stress gains
   if (currentStats.health < 30 && deltas.stress > 0) {
     deltas.stress = Math.round(deltas.stress * 1.3);
   }
 
   // ─── Semester Calendar Effects ───
-  // 5. Exam weeks: study/lecture GPA gains ×2, +5 passive stress
   if (isExamWeek(currentWeek)) {
-    if (deltas.gpa > 0) {
-      deltas.gpa = Math.round(deltas.gpa * 2);
+    if (deltas.knowledge > 0) {
+      deltas.knowledge = Math.round(deltas.knowledge * 2);
     }
-    deltas.stress += 5; // exam anxiety baseline
+    deltas.stress += 5;
   }
 
-  // 6. Festival week: social gains ×1.5, stress reduced, charm boosted
   if (isFestivalWeek(currentWeek)) {
     if (deltas.social > 0) {
       deltas.social = Math.round(deltas.social * 1.5);
@@ -415,10 +502,22 @@ export function simulateWeek(
     if (deltas.charm > 0) {
       deltas.charm = Math.round(deltas.charm * 1.5);
     }
-    deltas.stress -= 3; // festival vibes reduce stress
+    deltas.stress -= 3;
+    // Hyunwoo soulmate: festival bonus doubled
+    const hyunwooRel = options?.relationships?.['hyunwoo'];
+    if (hyunwooRel && hyunwooRel.affection >= 90) {
+      if (deltas.social > 0) deltas.social = Math.round(deltas.social * 1.5);
+      if (deltas.charm > 0) deltas.charm = Math.round(deltas.charm * 1.5);
+    }
   }
 
-  // Apply stress penalty: if current stress is high, halve positive gains
+  // ─── Relationship Bonuses ───
+  if (options?.relationships) {
+    applyRelationshipBonuses(deltas, options.relationships);
+  }
+
+  // ─── Stress Penalty ───
+  const jaeminSoulmate = (options?.relationships?.['jaemin']?.affection ?? 0) >= 90;
   const isOverstressed = currentStats.stress > STRESS_PENALTY_THRESHOLD;
   if (isOverstressed) {
     for (const key of Object.keys(deltas) as (keyof PlayerStats)[]) {
@@ -428,6 +527,11 @@ export function simulateWeek(
       }
     }
   }
+
+  // ─── Stress Micro-Penalties ───
+  const { skippedActivities } = options?.disableRandomEvents
+    ? { skippedActivities: [] }
+    : applyStressPenalties(deltas, schedule, currentStats.stress, jaeminSoulmate);
 
   // ─── Random Weekly Event ───
   const weeklyEvent = options?.disableRandomEvents ? null : rollWeeklyEvent(currentStats, currentWeek);
@@ -439,7 +543,7 @@ export function simulateWeek(
     }
   }
 
-  // Convert to Partial — strip zero entries to keep it clean
+  // Convert to Partial — strip zero entries
   const trimmedDeltas: Partial<PlayerStats> = {};
   for (const [key, value] of Object.entries(deltas)) {
     if (value !== 0) {
@@ -449,5 +553,19 @@ export function simulateWeek(
 
   const scenes = getScenesForWeek(currentWeek);
 
-  return { statDeltas: trimmedDeltas, scenes, combos, weeklyEvent };
+  return { statDeltas: trimmedDeltas, scenes, combos, weeklyEvent, skippedActivities };
+}
+
+/**
+ * Calculate GPA from knowledge + strategy multiplier + randomness.
+ * Used by ExamEvent component.
+ */
+export function calculateExamGpa(
+  knowledge: number,
+  strategyMultiplier: number,
+  bonusGpa: number = 0,
+): number {
+  const noise = (Math.random() - 0.5) * 0.3; // ±0.15 random variation
+  const raw = (knowledge / 100) * 4.5 * strategyMultiplier + noise + bonusGpa;
+  return Math.round(Math.max(0, Math.min(4.5, raw)) * 100) / 100; // 2 decimal places, clamped
 }

@@ -15,9 +15,9 @@ const STAT_CONFIG: {
   icon: string;
   color: 'teal' | 'gold' | 'pink' | 'coral' | 'lavender';
   isMoney?: boolean;
-  isGpa?: boolean;
+  isKnowledge?: boolean;
 }[] = [
-  { key: 'gpa', label: '학점', icon: 'solar:star-bold', color: 'gold', isGpa: true },
+  { key: 'knowledge', label: '준비도', icon: 'solar:star-bold', color: 'gold', isKnowledge: true },
   { key: 'health', label: '체력', icon: 'solar:heart-pulse-bold', color: 'teal' },
   { key: 'social', label: '인맥', icon: 'solar:users-group-rounded-bold', color: 'pink' },
   { key: 'money', label: '돈', icon: 'solar:wallet-bold', color: 'teal', isMoney: true },
@@ -30,10 +30,9 @@ function formatDelta(key: keyof PlayerStats, delta: number): string {
     const prefix = delta >= 0 ? '+' : '';
     return `${prefix}${delta.toLocaleString('ko-KR')}원`;
   }
-  if (key === 'gpa') {
-    const gpaDelta = (delta / 100) * 4.5;
-    const prefix = gpaDelta >= 0 ? '+' : '';
-    return `${prefix}${gpaDelta.toFixed(1)}`;
+  if (key === 'knowledge') {
+    const prefix = delta > 0 ? '+' : '';
+    return `${prefix}${delta}`;
   }
   const prefix = delta > 0 ? '+' : '';
   return `${prefix}${delta}`;
@@ -43,20 +42,20 @@ function formatStatDisplay(key: keyof PlayerStats, value: number): string {
   if (key === 'money') {
     return `\u20A9${value.toLocaleString('ko-KR')}`;
   }
-  if (key === 'gpa') {
-    return `${((value / 100) * 4.5).toFixed(1)} / 4.5`;
+  if (key === 'knowledge') {
+    return `${value} / 100`;
   }
   return `${value} / 100`;
 }
 
 function getWeekComment(deltas: Partial<PlayerStats>): string {
   const stress = deltas.stress ?? 0;
-  const gpa = deltas.gpa ?? 0;
+  const knowledge = deltas.knowledge ?? 0;
   const social = deltas.social ?? 0;
   const health = deltas.health ?? 0;
   if (stress > 20) return '힘든 한 주였어요... 다음 주는 좀 쉬어가요 😥';
-  if (gpa > 15 && social > 10) return '학점도 인맥도 챙긴 갓생러! ✨';
-  if (gpa > 15) return '공부 열심히 한 보람이 있네요! 📚';
+  if (knowledge > 15 && social > 10) return '준비도도 인맥도 챙긴 갓생러! ✨';
+  if (knowledge > 15) return '공부 열심히 한 보람이 있네요! 📚';
   if (social > 15) return '이번 주 인싸 활동 대성공! 🎉';
   if (health > 15) return '건강한 한 주! 체력 관리 잘했어요 💪';
   if (stress < -10) return '여유로운 한 주, 리프레시 완료! 🌿';
@@ -66,7 +65,7 @@ function getWeekComment(deltas: Partial<PlayerStats>): string {
 /** Character diary — personal reflection on the week */
 function getDiaryEntry(week: number, deltas: Partial<PlayerStats>, stats: PlayerStats): string {
   const stress = deltas.stress ?? 0;
-  const gpa = deltas.gpa ?? 0;
+  const knowledge = deltas.knowledge ?? 0;
   const social = deltas.social ?? 0;
 
   // Week-specific entries
@@ -78,7 +77,7 @@ function getDiaryEntry(week: number, deltas: Partial<PlayerStats>, stats: Player
 
   // Stat-reactive entries
   if (stress > 15 && stats.stress > 70) return '너무 무리했나. 머리가 멍하고 몸이 무겁다. 내일은 좀 쉬어야겠다.';
-  if (gpa > 12) return '열심히 공부한 보람이 느껴진다. 이 페이스 유지하면 좋은 결과가 있을 거야.';
+  if (knowledge > 12) return '열심히 공부한 보람이 느껴진다. 이 페이스 유지하면 좋은 결과가 있을 거야.';
   if (social > 12) return '이번 주는 사람들이랑 많이 어울렸다. 혼자일 때보다 에너지가 생기는 느낌.';
   if (stress < -8) return '여유로운 한 주였다. 가끔은 이렇게 쉬어가는 것도 중요하다는 걸 배웠다.';
   if (stats.money < 50000) return '통장 잔고가 너무 줄었다... 다음 주엔 알바를 더 넣어야 할 것 같다.';
@@ -115,7 +114,7 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
 
         {/* Stat changes */}
         <div className="flex flex-col gap-4 mb-6">
-          {STAT_CONFIG.map(({ key, label, icon, color, isMoney, isGpa }, index) => {
+          {STAT_CONFIG.map(({ key, label, icon, color, isMoney, isKnowledge }, index) => {
             const delta = weekStatDeltas[key];
 
             return (
@@ -149,7 +148,7 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
                 </div>
                 {!isMoney && (
                   <ProgressBar
-                    value={isGpa ? stats.gpa : stats[key]}
+                    value={isKnowledge ? stats.knowledge : stats[key]}
                     color={color}
                     size="sm"
                   />

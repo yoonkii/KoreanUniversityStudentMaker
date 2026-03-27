@@ -7,12 +7,13 @@ import type {
   Scene,
   CharacterRelationship,
   GamePhase,
+  ExamResults,
 } from './types';
 import type { ActiveCombo, WeeklyEvent } from '@/lib/gameEngine';
 
 const INITIAL_STATS: PlayerStats = {
-  gpa: 50,
-  money: 500000,
+  knowledge: 20, // Low — you know nothing on day 1
+  money: 300000, // Tight budget forces trade-offs
   health: 70,
   social: 40,
   stress: 20,
@@ -29,7 +30,7 @@ function clampStat(key: keyof PlayerStats, value: number): number {
 
 function clampAllStats(stats: PlayerStats): PlayerStats {
   return {
-    gpa: clampStat('gpa', stats.gpa),
+    knowledge: clampStat('knowledge', stats.knowledge),
     money: clampStat('money', stats.money),
     health: clampStat('health', stats.health),
     social: clampStat('social', stats.social),
@@ -39,8 +40,8 @@ function clampAllStats(stats: PlayerStats): PlayerStats {
 }
 
 /** Relationship tiers with thresholds */
-type RelationshipTier = 'stranger' | 'acquaintance' | 'friend' | 'close_friend' | 'soulmate';
-function getRelationshipTier(affection: number): RelationshipTier {
+export type RelationshipTier = 'stranger' | 'acquaintance' | 'friend' | 'close_friend' | 'soulmate';
+export function getRelationshipTier(affection: number): RelationshipTier {
   if (affection >= 90) return 'soulmate';
   if (affection >= 70) return 'close_friend';
   if (affection >= 50) return 'friend';
@@ -78,6 +79,7 @@ interface GameStore {
   goalWarnings: string[];
   unlockedAchievements: string[];
   newAchievements: { id: string; title: string; emoji: string }[];
+  examResults: ExamResults;
 
   // --- Actions ---
   setHasHydrated: (v: boolean) => void;
@@ -99,6 +101,7 @@ interface GameStore {
   setWeekStatDeltas: (deltas: Partial<PlayerStats>) => void;
   setWeekCombos: (combos: ActiveCombo[]) => void;
   setWeeklyEvent: (event: WeeklyEvent | null) => void;
+  setExamResults: (results: Partial<ExamResults>) => void;
   resetGame: () => void;
 }
 
@@ -125,6 +128,7 @@ export const useGameStore = create<GameStore>()(
       goalWarnings: [],
       unlockedAchievements: [],
       newAchievements: [],
+      examResults: {},
 
       // --- Actions ---
 
@@ -139,9 +143,9 @@ export const useGameStore = create<GameStore>()(
       createPlayer(profile) {
         // Dream affects starting stats
         const dreamBonus: Record<string, Partial<PlayerStats>> = {
-          scholar: { gpa: 10 },
+          scholar: { knowledge: 10 },
           social: { social: 10, charm: 5 },
-          balance: { health: 5, gpa: 3, social: 3 },
+          balance: { health: 5, knowledge: 3, social: 3 },
           freedom: { stress: -10, charm: 5 },
         };
         const bonus = profile.dream ? dreamBonus[profile.dream] ?? {} : {};
@@ -149,11 +153,11 @@ export const useGameStore = create<GameStore>()(
         for (const [key, val] of Object.entries(bonus)) {
           if (val !== undefined) startStats[key as keyof PlayerStats] += val;
         }
-        // New Game+ bonus: +3 to all stats per completion (max +15)
+        // New Game+ bonus: +3 to relevant stats per completion (max +15)
         if (typeof window !== 'undefined') {
           const ngPlus = Math.min(5, parseInt(localStorage.getItem('kusm-completions') ?? '0', 10));
           if (ngPlus > 0) {
-            startStats.gpa += ngPlus * 3;
+            startStats.knowledge += ngPlus * 3;
             startStats.health += ngPlus * 3;
             startStats.social += ngPlus * 3;
             startStats.charm += ngPlus * 3;
@@ -161,7 +165,7 @@ export const useGameStore = create<GameStore>()(
         }
         set({
           player: profile,
-          stats: startStats,
+          stats: clampAllStats(startStats),
           currentWeek: 1,
           currentSceneIndex: 0,
           relationships: {},
@@ -173,6 +177,7 @@ export const useGameStore = create<GameStore>()(
           weeklyEvent: null,
           gameStarted: true,
           phase: 'planning',
+          examResults: {},
         });
       },
 
@@ -214,15 +219,29 @@ export const useGameStore = create<GameStore>()(
       },
 
       advanceWeek() {
-        const { stats, currentWeek } = get();
+        const { stats, currentWeek, relationships } = get();
+
+        // Relationship decay: -2 affection for NPCs not interacted with for 3+ weeks
+        const decayedRelationships = { ...relationships };
+        for (const [charId, rel] of Object.entries(decayedRelationships)) {
+          const weeksSinceInteraction = rel.lastInteraction ? currentWeek - rel.lastInteraction : currentWeek;
+          if (weeksSinceInteraction >= 3) {
+            const decayAmount = getRelationshipTier(rel.affection) === 'soulmate' ? 1 : 2;
+            decayedRelationships[charId] = {
+              ...rel,
+              affection: Math.max(0, rel.affection - decayAmount),
+            };
+          }
+        }
+
         // Generate goal warnings based on current stats
         const warnings: string[] = [];
-        if (stats.gpa < 30) warnings.push('⚠️ 학점이 위험합니다! 장학금을 잃을 수 있어요.');
+        if (stats.knowledge < 30) warnings.push('⚠️ 준비도가 위험합니다! 시험에 대비하세요.');
         if (stats.stress > 80) warnings.push('🔴 스트레스가 극심합니다. 번아웃 직전!');
         if (stats.health < 25) warnings.push('💔 체력이 바닥입니다. 쓰러질 수 있어요.');
         if (stats.money < 50000) warnings.push('💸 잔고가 부족합니다. 알바를 늘려야 해요.');
         if (stats.social < 20 && currentWeek > 4) warnings.push('😔 외톨이가 되어가고 있어요...');
-        if (currentWeek >= 7 && currentWeek <= 8) warnings.push('📝 중간고사 기간입니다! 학점에 주의하세요.');
+        if (currentWeek >= 7 && currentWeek <= 8) warnings.push('📝 중간고사 기간입니다! 준비도에 주의하세요.');
         if (currentWeek >= 15) warnings.push('📝 기말고사가 코앞입니다!');
 
         set((state) => ({
@@ -237,6 +256,7 @@ export const useGameStore = create<GameStore>()(
           phase: 'planning',
           goalWarnings: warnings,
           tierNotification: null,
+          relationships: decayedRelationships,
         }));
       },
 
@@ -301,6 +321,12 @@ export const useGameStore = create<GameStore>()(
         set({ weeklyEvent: event });
       },
 
+      setExamResults(results) {
+        set((state) => ({
+          examResults: { ...state.examResults, ...results },
+        }));
+      },
+
       resetGame() {
         set({
           phase: 'title',
@@ -321,16 +347,26 @@ export const useGameStore = create<GameStore>()(
           goalWarnings: [],
           unlockedAchievements: [],
           newAchievements: [],
+          examResults: {},
         });
       },
     }),
     {
       name: 'kusm-save',
-      version: 2,
+      version: 3,
       migrate(persisted: unknown, version: number) {
         const state = persisted as Record<string, unknown>;
         if (version < 2) {
-          return { ...state, currentSceneIndex: 0 } as unknown as GameStore;
+          return { ...state, currentSceneIndex: 0, examResults: {} } as unknown as GameStore;
+        }
+        if (version < 3) {
+          // Migrate gpa → knowledge
+          const stats = state.stats as Record<string, number> | undefined;
+          if (stats && 'gpa' in stats) {
+            stats.knowledge = stats.gpa;
+            delete stats.gpa;
+          }
+          return { ...state, stats, examResults: {} } as unknown as GameStore;
         }
         return persisted as GameStore;
       },

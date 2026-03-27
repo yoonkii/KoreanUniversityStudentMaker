@@ -38,19 +38,19 @@ export const WEEK_1_SCENES: Scene[] = [
       {
         id: 'orientation_friendly',
         text: '반가워! 나도 빨리 정리하고 같이 학교 구경 가자.',
-        statEffects: { social: 3, stress: -2 },
+        statEffects: { social: 3, stress: -2, knowledge: -1 },
         relationshipEffects: [{ characterId: 'jaemin', change: 5 }],
       },
       {
         id: 'orientation_reserved',
         text: '아, 반가워. 나 먼저 짐 정리 좀 할게.',
-        statEffects: { stress: -1 },
+        statEffects: { stress: -1, social: -1 },
         relationshipEffects: [{ characterId: 'jaemin', change: 1 }],
       },
       {
         id: 'orientation_joke',
         text: '라면 박스는 뭐야 ㅋㅋ 혹시 라면으로 학기 버틸 생각이야?',
-        statEffects: { social: 5, charm: 2 },
+        statEffects: { social: 5, charm: 2, stress: 1 },
         relationshipEffects: [{ characterId: 'jaemin', change: 8 }],
       },
     ],
@@ -88,7 +88,7 @@ export const WEEK_1_SCENES: Scene[] = [
       {
         id: 'class_front',
         text: '앞자리로 가서 필기 준비를 한다.',
-        statEffects: { gpa: 3, stress: 2 },
+        statEffects: { knowledge: 3, stress: 2 },
         relationshipEffects: [{ characterId: 'prof-kim', change: 3 }],
       },
       {
@@ -100,7 +100,7 @@ export const WEEK_1_SCENES: Scene[] = [
       {
         id: 'class_question',
         text: '수업 후 교수님께 질문을 하러 간다.',
-        statEffects: { gpa: 5, charm: 2, stress: 3 },
+        statEffects: { knowledge: 5, charm: 2, stress: 3 },
         relationshipEffects: [{ characterId: 'prof-kim', change: 7 }],
       },
     ],
@@ -139,19 +139,19 @@ export const WEEK_1_SCENES: Scene[] = [
       {
         id: 'library_accept',
         text: '감사합니다 선배! 이 부분이 진짜 이해가 안 돼서요...',
-        statEffects: { gpa: 4, social: 3, stress: -3 },
+        statEffects: { knowledge: 4, social: 3, stress: -3, money: -3000 },
         relationshipEffects: [{ characterId: 'soyeon', change: 8 }],
       },
       {
         id: 'library_decline',
         text: '아, 괜찮아요. 좀 더 혼자 해볼게요.',
-        statEffects: { gpa: 1, stress: 2 },
+        statEffects: { knowledge: 1, stress: 2 },
         relationshipEffects: [{ characterId: 'soyeon', change: -2 }],
       },
       {
         id: 'library_chat',
         text: '선배는 이 시간에 도서관 자주 와요?',
-        statEffects: { social: 5, charm: 2 },
+        statEffects: { social: 5, charm: 2, knowledge: -1 },
         relationshipEffects: [{ characterId: 'soyeon', change: 5 }],
       },
     ],
@@ -205,13 +205,13 @@ export const WEEK_1_SCENES: Scene[] = [
       {
         id: 'cafe_study',
         text: '커피 사서 바로 과제하러 도서관에 간다.',
-        statEffects: { gpa: 2, money: -2000, stress: 2 },
+        statEffects: { knowledge: 2, money: -2000, stress: 2 },
         relationshipEffects: [{ characterId: 'jaemin', change: -1 }],
       },
       {
         id: 'cafe_parttime',
         text: '사장님, 혹시 여기 알바 자리 있어요?',
-        statEffects: { social: 2, charm: 3 },
+        statEffects: { social: 2, charm: 3, stress: 2 },
         relationshipEffects: [{ characterId: 'boss', change: 6 }],
       },
     ],

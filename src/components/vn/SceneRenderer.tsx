@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Scene, Choice, SceneCharacter } from '@/store/types';
 import { ACTIVITY_COLORS, type ActivityColorKey } from '@/data/activity-colors';
 import { useAIDialogue } from '@/hooks/useAIDialogue';
+import { useGameStore } from '@/store/gameStore';
 import BackgroundLayer from './BackgroundLayer';
 import StatChangePopup from './StatChangePopup';
 import CharacterPortrait from './CharacterPortrait';
@@ -60,6 +61,7 @@ export default function SceneRenderer({ scene, onSceneEnd, activityId, timeLabel
     return () => clearTimeout(t);
   }, [scene.id]);
 
+  const relationships = useGameStore((s) => s.relationships);
   const { dialogue: aiDialogue, isLoading: isAILoading } = useAIDialogue(scene, enableAIDialogue);
   const { choices, characters, location, backgroundVariant } = scene;
   const dialogue = aiDialogue;
@@ -184,7 +186,7 @@ export default function SceneRenderer({ scene, onSceneEnd, activityId, timeLabel
           /* Hide dialogue while stat popup is showing to prevent click-through */
           null
         ) : showChoices && choices && choices.length > 0 ? (
-          <ChoiceList choices={choices} onChoose={handleChoose} />
+          <ChoiceList choices={choices} onChoose={handleChoose} relationships={relationships} />
         ) : currentLine ? (
           <DialogueBox
             characterId={currentLine.characterId}

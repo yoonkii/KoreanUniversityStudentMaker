@@ -1,27 +1,36 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import type { PlayerStats } from '@/store/types';
 
-interface ActivityExecution {
+interface DayActivity {
   name: string;
   icon: string;
-  statEffects: Partial<PlayerStats>;
   timeSlot: string;
+  statEffects: Partial<PlayerStats>;
+  targetNpcId?: string;
+  targetNpcName?: string;
+  skipped?: boolean;
+}
+
+export interface DayGroup {
+  dayName: string;
+  activities: DayActivity[];
 }
 
 interface ActionPhaseProps {
-  activities: ActivityExecution[];
+  days: DayGroup[];
   currentStats: PlayerStats;
   onComplete: () => void;
   speed?: 1 | 2;
 }
 
 const STAT_LABELS: Record<keyof PlayerStats, string> = {
-  gpa: '학점',
+  knowledge: '준비도',
   money: '재정',
   health: '체력',
-  social: '사회성',
+  social: '인맥',
   stress: '스트레스',
   charm: '매력',
 };
@@ -32,41 +41,25 @@ const TIME_LABELS: Record<string, string> = {
   evening: '🌙 저녁',
 };
 
-// NPC cameos — brief appearances during activities
-const NPC_CAMEOS: Record<string, { npc: string; lines: string[] }> = {
-  '수업': { npc: '김 교수', lines: ['집중하세요!', '이 부분 시험에 나옵니다.', '질문 있는 사람?'] },
-  '도서관': { npc: '한민지', lines: ['...조용히 해.', '여기 자리 있어.', '같이 공부할래?'] },
-  '아르바이트': { npc: '이사장님', lines: ['오늘도 고생이야~', '손님 많으니 힘내!', '용돈 좀 보태줄게.'] },
-  '동아리': { npc: '정현우', lines: ['오, 왔어? 오늘 합주하자!', '신입 실력이 느는데?', '다음 공연 준비해야지.'] },
-  '데이트': { npc: '', lines: ['두근두근...', '오늘 날씨 좋다!', '어디 갈까?'] },
-  '운동': { npc: '', lines: ['땀이 시원하다!', '한 세트 더!', '체력이 올라가는 느낌.'] },
-  '휴식': { npc: '이재민', lines: ['야 넷플 뭐 봐?', '피자 시킬까?', 'zzz...'] },
-  '친구': { npc: '이재민', lines: ['밥 먹으러 가자!', '요즘 뭐 해?', '오늘 재밌었다!'] },
+const NPC_PORTRAITS: Record<string, string> = {
+  jaemin: '/assets/characters/jaemin/happy.png',
+  minji: '/assets/characters/minji/neutral.png',
+  soyeon: '/assets/characters/soyeon/neutral.png',
+  hyunwoo: '/assets/characters/hyunwoo/neutral.png',
 };
-
-function getNPCCameo(activityName: string): { npc: string; line: string } | null {
-  for (const [keyword, data] of Object.entries(NPC_CAMEOS)) {
-    if (activityName.includes(keyword)) {
-      const line = data.lines[Math.floor(Math.random() * data.lines.length)];
-      return { npc: data.npc, line };
-    }
-  }
-  return null;
-}
 
 // 17% random event chance per activity
 const RANDOM_EVENTS = [
-  { text: '교수님이 갑자기 퀴즈를 냈다!', effects: { gpa: 3, stress: 5 } },
+  { text: '교수님이 갑자기 퀴즈를 냈다!', effects: { knowledge: 3, stress: 5 } },
   { text: '친구가 커피를 사줬다 ☕', effects: { social: 2, stress: -3 } },
   { text: '버스를 놓쳐서 뛰어갔다...', effects: { health: -3, stress: 2 } },
   { text: '도서관에서 예쁜/멋진 사람을 봤다', effects: { charm: 1, stress: -1 } },
   { text: '편의점 세일! 돈을 아꼈다 💰', effects: { money: 5000 } },
   { text: '갑자기 비가 와서 우산을 못 챙겼다 🌧️', effects: { health: -2, stress: 3 } },
   { text: '동아리 선배가 밥을 사줬다 🍚', effects: { social: 3, money: 8000, stress: -2 } },
-  { text: '수업 중에 졸다가 들켰다... 😴', effects: { gpa: -2, stress: 5 } },
+  { text: '수업 중에 졸다가 들켰다... 😴', effects: { knowledge: -2, stress: 5 } },
 ];
 
-// Map activity names to background images
 function getActivityBackground(name: string): string {
   const n = name.toLowerCase();
   if (n.includes('수업') || n.includes('lecture')) return '/assets/backgrounds/classroom/daytime.png';
@@ -80,93 +73,81 @@ function getActivityBackground(name: string): string {
   return '/assets/backgrounds/campus/day.png';
 }
 
-export default function ActionPhase({ activities, currentStats, onComplete, speed = 1 }: ActionPhaseProps) {
-  const [currentIndex, setCurrentIndex] = useState(-1); // -1 = not started
-  const [animatingStats, setAnimatingStats] = useState<Partial<PlayerStats>>({});
+export default function ActionPhase({ days, currentStats, onComplete, speed = 1 }: ActionPhaseProps) {
+  const [currentDayIndex, setCurrentDayIndex] = useState(-1);
+  const [revealedActivities, setRevealedActivities] = useState(0);
   const [randomEvent, setRandomEvent] = useState<string | null>(null);
-  const [gameSpeed, setGameSpeed] = useState(2); // default to 2x for snappy pacing
+  const [gameSpeed, setGameSpeed] = useState(2);
   const [isSkipping, setIsSkipping] = useState(false);
-  const tickRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const baseDelay = gameSpeed === 2 ? 400 : 800; // faster: 400ms at ×2, 800ms at ×1
+  const dayDelay = gameSpeed === 2 ? 1500 : 2500;
 
-  const processActivity = useCallback((index: number) => {
-    if (index >= activities.length) {
+  const processDay = useCallback((dayIdx: number) => {
+    if (dayIdx >= days.length) {
       onComplete();
       return;
     }
 
-    setCurrentIndex(index);
+    setCurrentDayIndex(dayIdx);
+    setRevealedActivities(0);
     setRandomEvent(null);
-    setAnimatingStats({});
 
-    // Animate stat changes one by one
-    const activity = activities[index];
-    const statEntries = Object.entries(activity.statEffects).filter(([, v]) => v !== 0);
-    let delay = baseDelay;
+    const day = days[dayIdx];
+    const actCount = day.activities.length;
 
-    statEntries.forEach(([key, value], i) => {
-      setTimeout(() => {
-        setAnimatingStats(prev => ({ ...prev, [key]: value }));
-      }, delay * (i + 1));
-    });
+    // Reveal activities one by one
+    for (let i = 0; i < actCount; i++) {
+      setTimeout(() => setRevealedActivities(i + 1), (i + 1) * (gameSpeed === 2 ? 300 : 500));
+    }
 
-    // Random event check (17% chance)
-    const totalStatDelay = delay * (statEntries.length + 1);
+    // Random event check after all activities shown
+    const revealTime = actCount * (gameSpeed === 2 ? 300 : 500) + 200;
     setTimeout(() => {
-      if (Math.random() < 0.17) {
+      if (Math.random() < 0.12) {
         const event = RANDOM_EVENTS[Math.floor(Math.random() * RANDOM_EVENTS.length)];
         setRandomEvent(event.text);
-        // Apply event effects
-        setTimeout(() => {
-          setAnimatingStats(prev => {
-            const merged = { ...prev };
-            for (const [k, v] of Object.entries(event.effects)) {
-              merged[k as keyof PlayerStats] = ((merged[k as keyof PlayerStats] ?? 0) as number) + (v as number);
-            }
-            return merged;
-          });
-        }, baseDelay / 2);
       }
-    }, totalStatDelay);
+    }, revealTime);
 
-    // Move to next activity
-    setTimeout(() => {
-      processActivity(index + 1);
-    }, totalStatDelay + baseDelay * 1.5);
-  }, [activities, baseDelay, onComplete]);
+    // Move to next day
+    timerRef.current = setTimeout(() => processDay(dayIdx + 1), dayDelay);
+  }, [days, dayDelay, gameSpeed, onComplete]);
 
   useEffect(() => {
     if (isSkipping) {
+      if (timerRef.current) clearTimeout(timerRef.current);
       onComplete();
       return;
     }
-    // Start after a brief pause
-    const timer = setTimeout(() => processActivity(0), 500);
-    return () => clearTimeout(timer);
+    const timer = setTimeout(() => processDay(0), 400);
+    return () => {
+      clearTimeout(timer);
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [isSkipping]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const currentActivity = currentIndex >= 0 && currentIndex < activities.length
-    ? activities[currentIndex]
-    : null;
-
-  const bgSrc = currentActivity ? getActivityBackground(currentActivity.name) : '/assets/backgrounds/campus/day.png';
+  const currentDay = currentDayIndex >= 0 && currentDayIndex < days.length ? days[currentDayIndex] : null;
+  const bgSrc = currentDay && currentDay.activities[0]
+    ? getActivityBackground(currentDay.activities[0].name)
+    : '/assets/backgrounds/campus/day.png';
 
   return (
     <div className="flex flex-col items-center justify-center h-[100dvh] bg-navy px-4 relative overflow-hidden">
-      {/* Background image */}
+      {/* Background */}
       <div
-        className="absolute inset-0 bg-cover bg-center transition-all duration-700 opacity-30"
+        className="absolute inset-0 bg-cover bg-center transition-all duration-700 opacity-20"
         style={{ backgroundImage: `url(${bgSrc})` }}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/70 to-navy/40" />
+
       {/* Speed controls */}
-      <div className="absolute top-4 right-4 flex gap-2 z-30 relative">
+      <div className="absolute top-4 right-4 flex gap-2 z-30">
         <button
           onClick={() => setGameSpeed(gameSpeed === 1 ? 2 : 1)}
           className="px-3 py-1.5 text-sm glass rounded-lg text-txt-secondary hover:text-txt-primary transition-colors"
         >
-          {gameSpeed === 1 ? '×1' : '×2'} ⏩
+          {gameSpeed === 1 ? '×1' : '×2'}
         </button>
         <button
           onClick={() => setIsSkipping(true)}
@@ -176,104 +157,122 @@ export default function ActionPhase({ activities, currentStats, onComplete, spee
         </button>
       </div>
 
-      {/* Activity display */}
-      {currentActivity && (
-        <div className="text-center animate-fade-in relative z-10">
-          {/* Time slot */}
-          <div className="text-txt-secondary text-sm mb-2">
-            {TIME_LABELS[currentActivity.timeSlot] ?? currentActivity.timeSlot}
-          </div>
-
-          {/* Activity icon + name */}
-          <div className="text-6xl mb-4 animate-bounce-slow">
-            {currentActivity.icon}
-          </div>
-          <h2 className="text-2xl font-bold text-txt-primary mb-2">
-            {currentActivity.name}
+      {/* Day display */}
+      {currentDay && (
+        <div className="w-full max-w-md relative z-10 animate-fade-in">
+          {/* Day header */}
+          <h2 className="text-xl font-bold text-txt-primary text-center mb-4">
+            {currentDay.dayName}
           </h2>
 
-          {/* NPC cameo */}
-          {(() => {
-            const cameo = getNPCCameo(currentActivity.name);
-            if (!cameo) return <div className="mb-4" />;
-            return (
-              <p className="text-sm text-txt-secondary/60 italic mb-4">
-                {cameo.npc ? `${cameo.npc}: ` : ''}&ldquo;{cameo.line}&rdquo;
-              </p>
-            );
-          })()}
-
-          {/* Stat changes ticking in */}
-          <div className="flex flex-wrap justify-center gap-3 mb-6">
-            {Object.entries(animatingStats).map(([key, value]) => (
+          {/* 3 activity rows */}
+          <div className="flex flex-col gap-2">
+            {currentDay.activities.map((activity, i) => (
               <div
-                key={key}
-                className={`px-3 py-1.5 rounded-full text-sm font-mono font-bold animate-pop-in ${
-                  (value as number) > 0
-                    ? 'bg-teal/20 text-teal'
-                    : 'bg-red-500/20 text-red-400'
-                }`}
+                key={i}
+                className={`glass-strong rounded-xl px-4 py-3 flex items-center gap-3 transition-all duration-300 ${
+                  i < revealedActivities ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                } ${activity.skipped ? 'opacity-50 line-through' : ''}`}
               >
-                {STAT_LABELS[key as keyof PlayerStats]} {(value as number) > 0 ? '+' : ''}{value}
+                {/* Time slot */}
+                <span className="text-xs text-txt-secondary w-14 flex-shrink-0">
+                  {TIME_LABELS[activity.timeSlot] ?? activity.timeSlot}
+                </span>
+
+                {/* Activity icon + name */}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="text-lg">{activity.icon}</span>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-medium text-txt-primary truncate">
+                      {activity.skipped ? '😫 빠짐' : activity.name}
+                    </span>
+                    {activity.targetNpcName && !activity.skipped && (
+                      <span className="text-[10px] text-pink">with {activity.targetNpcName}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* NPC portrait (if targeted) */}
+                {activity.targetNpcId && NPC_PORTRAITS[activity.targetNpcId] && !activity.skipped && (
+                  <div className="w-8 h-8 rounded-full overflow-hidden border border-white/20 flex-shrink-0">
+                    <Image
+                      src={NPC_PORTRAITS[activity.targetNpcId]}
+                      alt={activity.targetNpcName ?? ''}
+                      width={32}
+                      height={32}
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+
+                {/* Stat chips */}
+                {!activity.skipped && i < revealedActivities && (
+                  <div className="flex gap-1 flex-shrink-0">
+                    {Object.entries(activity.statEffects)
+                      .filter(([, v]) => v !== 0)
+                      .slice(0, 3)
+                      .map(([key, value]) => (
+                        <span
+                          key={key}
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                            (key === 'stress' ? (value as number) < 0 : (value as number) > 0)
+                              ? 'bg-teal/20 text-teal'
+                              : 'bg-coral/20 text-coral'
+                          }`}
+                        >
+                          {STAT_LABELS[key as keyof PlayerStats]?.[0]}{(value as number) > 0 ? '+' : ''}{value}
+                        </span>
+                      ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
 
           {/* Random event */}
           {randomEvent && (
-            <div className="mt-4 px-6 py-3 glass-strong rounded-xl text-txt-primary animate-shake max-w-md mx-auto">
+            <div className="mt-3 px-4 py-2 glass-strong rounded-xl text-sm text-txt-primary text-center animate-shake">
               ⚡ {randomEvent}
             </div>
           )}
-
-          {/* Progress dots */}
-          <div className="flex gap-2 justify-center mt-8">
-            {activities.map((_, i) => (
-              <div
-                key={i}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  i === currentIndex
-                    ? 'bg-teal scale-125'
-                    : i < currentIndex
-                      ? 'bg-teal/40'
-                      : 'bg-txt-secondary/20'
-                }`}
-              />
-            ))}
-          </div>
         </div>
       )}
 
       {/* Starting state */}
-      {currentIndex === -1 && (
+      {currentDayIndex === -1 && (
         <div className="text-center relative z-10">
           <div className="text-4xl mb-4 animate-pulse">📋</div>
           <p className="text-txt-secondary">일과 시작 중...</p>
         </div>
       )}
 
+      {/* Progress dots (7 days) */}
+      <div className="absolute bottom-8 flex gap-2 justify-center z-10">
+        {days.map((_, i) => (
+          <div
+            key={i}
+            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+              i === currentDayIndex
+                ? 'bg-teal scale-125'
+                : i < currentDayIndex
+                  ? 'bg-teal/40'
+                  : 'bg-txt-secondary/20'
+            }`}
+          />
+        ))}
+      </div>
+
       <style jsx>{`
-        @keyframes pop-in {
-          0% { transform: scale(0); opacity: 0; }
-          70% { transform: scale(1.2); }
-          100% { transform: scale(1); opacity: 1; }
-        }
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
           25% { transform: translateX(-5px); }
           75% { transform: translateX(5px); }
         }
-        @keyframes bounce-slow {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
         @keyframes fade-in {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        .animate-pop-in { animation: pop-in 0.3s ease-out forwards; }
         .animate-shake { animation: shake 0.5s ease-in-out; }
-        .animate-bounce-slow { animation: bounce-slow 2s ease-in-out infinite; }
         .animate-fade-in { animation: fade-in 0.4s ease-out; }
       `}</style>
     </div>

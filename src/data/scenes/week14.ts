@@ -44,7 +44,7 @@ export const WEEK_14_SCENES: Scene[] = [
       {
         id: 'finals_allnighter',
         text: '잠은 시험 끝나고 잔다! 마지막까지 달린다.',
-        statEffects: { gpa: 5, health: -10, stress: 10 },
+        statEffects: { knowledge: 5, health: -10, stress: 10 },
         relationshipEffects: [
           { characterId: 'jaemin', change: 3 },
           { characterId: 'soyeon', change: -3 },
@@ -53,7 +53,7 @@ export const WEEK_14_SCENES: Scene[] = [
       {
         id: 'finals_balanced',
         text: '선배 말이 맞아. 잠깐 자고 와서 컨디션 챙기자.',
-        statEffects: { gpa: 2, health: 5, stress: -5 },
+        statEffects: { knowledge: 2, health: 5, stress: -5 },
         relationshipEffects: [
           { characterId: 'jaemin', change: 1 },
           { characterId: 'soyeon', change: 5 },
@@ -62,7 +62,7 @@ export const WEEK_14_SCENES: Scene[] = [
       {
         id: 'finals_encourage',
         text: '재민아, 같이 나가서 바람 쐬고 오자. 10분이면 돼.',
-        statEffects: { social: 4, stress: -5, health: 3 },
+        statEffects: { social: 4, stress: -5, health: 3, knowledge: -1 },
         relationshipEffects: [
           { characterId: 'jaemin', change: 7 },
           { characterId: 'soyeon', change: 3 },

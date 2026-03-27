@@ -45,7 +45,7 @@ export const WEEK_6_SCENES: Scene[] = [
       {
         id: 'night_study_group',
         text: '우리 셋이서 스터디 그룹 만들자! 같이 하면 빠르잖아.',
-        statEffects: { gpa: 3, social: 5, stress: 3 },
+        statEffects: { knowledge: 3, social: 5, stress: 3 },
         relationshipEffects: [
           { characterId: 'jaemin', change: 5 },
           { characterId: 'minji', change: 5 },
@@ -54,7 +54,7 @@ export const WEEK_6_SCENES: Scene[] = [
       {
         id: 'night_study_encourage',
         text: '재민아 괜찮아, 시간 충분해. 오늘부터 같이 하자.',
-        statEffects: { social: 3, charm: 2 },
+        statEffects: { social: 3, charm: 2, knowledge: -1 },
         relationshipEffects: [
           { characterId: 'jaemin', change: 8 },
           { characterId: 'minji', change: 2 },
@@ -63,7 +63,7 @@ export const WEEK_6_SCENES: Scene[] = [
       {
         id: 'night_study_focus',
         text: '미안, 나도 집중해야 해서... 각자 열심히 하자.',
-        statEffects: { gpa: 4, stress: 5 },
+        statEffects: { knowledge: 4, stress: 5 },
         relationshipEffects: [
           { characterId: 'jaemin', change: -2 },
           { characterId: 'minji', change: 2 },

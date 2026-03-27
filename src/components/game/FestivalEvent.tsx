@@ -52,7 +52,7 @@ const FESTIVAL_CHOICES: FestivalChoice[] = [
     title: '축제 스태프',
     emoji: '📋',
     description: '축제 운영 자원봉사로 스펙도 쌓고 인맥도 넓힌다',
-    statEffects: { social: 10, charm: 6, stress: 5, gpa: 2 },
+    statEffects: { social: 10, charm: 6, stress: 5, knowledge: 2 },
     npcEncounter: 'soyeon',
     npcLine: '봉사 와줘서 고마워! 이런 경험이 나중에 큰 도움 돼.',
   },
@@ -61,7 +61,7 @@ const FESTIVAL_CHOICES: FestivalChoice[] = [
     title: '축제 무시하고 공부',
     emoji: '📚',
     description: '시끄러운 캠퍼스를 피해 도서관에서 공부한다',
-    statEffects: { gpa: 8, stress: 3, social: -5 },
+    statEffects: { knowledge: 8, stress: 3, social: -5 },
     npcEncounter: 'prof-kim',
     npcLine: '축제 중에 도서관에 있다니... 대단한 의지군요.',
   },
@@ -134,7 +134,7 @@ export default function FestivalEvent({ onComplete }: FestivalEventProps) {
                     <div className="text-xs text-txt-secondary mt-0.5">{choice.description}</div>
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {Object.entries(choice.statEffects).map(([k, v]) => {
-                        const labels: Record<string, string> = { gpa: '학점', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력' };
+                        const labels: Record<string, string> = { knowledge: '준비도', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력' };
                         const isGood = k === 'stress' ? v < 0 : v > 0;
                         return (
                           <span key={k} className={`text-[10px] px-1.5 py-0.5 rounded ${isGood ? 'bg-teal/10 text-teal' : 'bg-coral/10 text-coral'}`}>
@@ -173,7 +173,7 @@ export default function FestivalEvent({ onComplete }: FestivalEventProps) {
             {/* Stat changes */}
             <div className="flex flex-wrap justify-center gap-2 mb-5">
               {Object.entries(selectedChoice.statEffects).map(([k, v]) => {
-                const labels: Record<string, string> = { gpa: '학점', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력' };
+                const labels: Record<string, string> = { knowledge: '준비도', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력' };
                 const isGood = k === 'stress' ? v < 0 : v > 0;
                 return (
                   <span key={k} className={`px-3 py-1 rounded-full text-xs font-bold ${isGood ? 'bg-teal/15 text-teal' : 'bg-coral/15 text-coral'}`}>

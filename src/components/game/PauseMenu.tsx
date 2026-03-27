@@ -33,7 +33,7 @@ export default function PauseMenu({ onClose }: PauseMenuProps) {
           {/* Quick stats */}
           <div className="grid grid-cols-3 gap-2 mb-5">
             {[
-              { label: '학점', value: stats.gpa, color: stats.gpa >= 60 ? 'text-teal' : 'text-coral' },
+              { label: '준비도', value: stats.knowledge, color: stats.knowledge >= 60 ? 'text-teal' : 'text-coral' },
               { label: '체력', value: stats.health, color: stats.health >= 40 ? 'text-teal' : 'text-coral' },
               { label: '스트레스', value: stats.stress, color: stats.stress <= 50 ? 'text-teal' : 'text-coral' },
             ].map((s) => (

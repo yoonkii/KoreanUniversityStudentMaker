@@ -3,7 +3,7 @@ import { detectCrisis } from './CrisisEvent';
 import type { PlayerStats } from '@/store/types';
 
 const DEFAULT_STATS: PlayerStats = {
-  gpa: 50, money: 500000, health: 70, social: 40, stress: 20, charm: 40,
+  knowledge: 50, money: 500000, health: 70, social: 40, stress: 20, charm: 40,
 };
 
 describe('detectCrisis', () => {
@@ -31,8 +31,8 @@ describe('detectCrisis', () => {
     expect(detectCrisis(stats, 3)?.id).toBe('broke_crisis');
   });
 
-  it('should detect academic warning when gpa <= 15 and week >= 8', () => {
-    const stats = { ...DEFAULT_STATS, gpa: 15 };
+  it('should detect academic warning when knowledge <= 15 and week >= 8', () => {
+    const stats = { ...DEFAULT_STATS, knowledge: 15 };
     expect(detectCrisis(stats, 5)).toBeNull(); // too early
     expect(detectCrisis(stats, 8)?.id).toBe('academic_warning');
   });

@@ -66,7 +66,7 @@ export function getStatDiffDescription(
       const sign = diff > 0 ? "+" : "";
       const label =
         lang === "ko"
-          ? { gpa: "학점", energy: "체력", social: "사회성", finances: "재정", career: "스펙", mental: "멘탈" }[key]
+          ? { knowledge: "준비도", energy: "체력", social: "사회성", finances: "재정", career: "스펙", mental: "멘탈" }[key]
           : key.charAt(0).toUpperCase() + key.slice(1);
       changes.push(`${label} ${sign}${diff}`);
     }

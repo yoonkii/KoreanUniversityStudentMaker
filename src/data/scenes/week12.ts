@@ -41,7 +41,7 @@ export const WEEK_12_SCENES: Scene[] = [
       {
         id: 'competition_join',
         text: '현우야 나도 끼워줘! 이런 경험 놓치기 아깝다.',
-        statEffects: { charm: 5, social: 4, stress: 8, gpa: -3 },
+        statEffects: { charm: 5, social: 4, stress: 8, knowledge: -3 },
         relationshipEffects: [
           { characterId: 'hyunwoo', change: 8 },
           { characterId: 'minji', change: 2 },
@@ -50,7 +50,7 @@ export const WEEK_12_SCENES: Scene[] = [
       {
         id: 'competition_solo',
         text: '관심 있는 공모전이 하나 있긴 해. 개인으로 나가볼까 해.',
-        statEffects: { gpa: 2, charm: 4, stress: 6 },
+        statEffects: { knowledge: 2, charm: 4, stress: 6 },
         relationshipEffects: [
           { characterId: 'hyunwoo', change: -1 },
           { characterId: 'minji', change: 4 },
@@ -59,7 +59,7 @@ export const WEEK_12_SCENES: Scene[] = [
       {
         id: 'competition_skip',
         text: '기말이 더 중요해. 나는 시험 준비에 집중할게.',
-        statEffects: { gpa: 4, stress: -2 },
+        statEffects: { knowledge: 4, stress: -2 },
         relationshipEffects: [
           { characterId: 'hyunwoo', change: -3 },
           { characterId: 'minji', change: 3 },

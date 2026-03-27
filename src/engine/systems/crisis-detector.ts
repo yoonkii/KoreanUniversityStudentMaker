@@ -49,7 +49,7 @@ export function detectCrisis(
         type: "burnout",
         description: "번아웃이 왔다. 모든 것이 의미없게 느껴진다.",
       },
-      statOverride: { mental: 25, social: Math.max(0, stats.social - 5), gpa: Math.max(0, stats.gpa - 5) },
+      statOverride: { mental: 25, social: Math.max(0, stats.social - 5), knowledge: Math.max(0, stats.knowledge - 5) },
     });
   }
 
@@ -86,18 +86,18 @@ export function detectCrisis(
     });
   }
 
-  // GPA < 20 at midterms or finals: Academic probation
+  // Knowledge < 20 at midterms or finals: Academic probation
   if (
-    stats.gpa < GPA_PROBATION_THRESHOLD &&
+    stats.knowledge < GPA_PROBATION_THRESHOLD &&
     (phase === "midterms" || phase === "finals")
   ) {
     crises.push({
       crisisTriggered: true,
       event: {
         day,
-        stat: "gpa",
+        stat: "knowledge",
         type: "probation",
-        description: "학사경고! 학점이 너무 낮아 경고를 받았다.",
+        description: "학사경고! 준비도가 너무 낮아 경고를 받았다.",
       },
     });
   }

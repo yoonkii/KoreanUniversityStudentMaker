@@ -13,23 +13,23 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'honor_roll',
     title: '장학생',
-    description: '학점 80 이상 달성',
+    description: '준비도 80 이상 달성',
     emoji: '🏆',
-    check: (stats) => stats.gpa >= 80,
+    check: (stats) => stats.knowledge >= 80,
   },
   {
     id: 'perfect_gpa',
     title: '올 A+',
-    description: '학점 95 이상 달성',
+    description: '준비도 95 이상 달성',
     emoji: '💎',
-    check: (stats) => stats.gpa >= 95,
+    check: (stats) => stats.knowledge >= 95,
   },
   {
     id: 'academic_probation',
     title: '학사경고',
-    description: '학점 20 이하로 떨어짐',
+    description: '준비도 20 이하로 떨어짐',
     emoji: '📉',
-    check: (stats) => stats.gpa <= 20,
+    check: (stats) => stats.knowledge <= 20,
   },
 
   // Social
@@ -121,7 +121,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: '모든 능력치 50 이상 (스트레스 50 이하)',
     emoji: '⚖️',
     check: (stats) =>
-      stats.gpa >= 50 && stats.health >= 50 && stats.social >= 50 &&
+      stats.knowledge >= 50 && stats.health >= 50 && stats.social >= 50 &&
       stats.charm >= 50 && stats.stress <= 50 && stats.money >= 200000,
   },
 
@@ -129,9 +129,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'overachiever',
     title: '갓생러',
-    description: '학점 80+, 인맥 60+, 매력 60+ 동시 달성',
+    description: '준비도 80+, 인맥 60+, 매력 60+ 동시 달성',
     emoji: '🌟',
-    check: (stats) => stats.gpa >= 80 && stats.social >= 60 && stats.charm >= 60,
+    check: (stats) => stats.knowledge >= 80 && stats.social >= 60 && stats.charm >= 60,
   },
   {
     id: 'money_saver',
@@ -153,9 +153,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'midterm_ace',
     title: '중간고사 에이스',
-    description: '중간고사 기간에 학점 70 이상',
+    description: '중간고사 기간에 준비도 70 이상',
     emoji: '📝',
-    check: (stats, _, week) => week >= 8 && week <= 9 && stats.gpa >= 70,
+    check: (stats, _, week) => week >= 8 && week <= 9 && stats.knowledge >= 70,
   },
 
   // Event & journey achievements
@@ -183,9 +183,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'rich_and_smart',
     title: '금수저 학생',
-    description: '₩800,000+, 학점 70+ 동시 달성',
+    description: '₩800,000+, 준비도 70+ 동시 달성',
     emoji: '👑',
-    check: (stats) => stats.money >= 800000 && stats.gpa >= 70,
+    check: (stats) => stats.money >= 800000 && stats.knowledge >= 70,
   },
 ];
 

@@ -4,7 +4,7 @@ const TENSION_MAX = 100;
 
 // Ideal midpoints for core stats (higher distance = more pressure)
 const IDEAL_STRESS = 30;
-const IDEAL_GPA = 70;
+const IDEAL_KNOWLEDGE = 70;
 const IDEAL_HEALTH = 70;
 
 // Week numbers that trigger exam-period bonus tension
@@ -31,7 +31,7 @@ const WEEK_ESCALATION_PER_WEEK = 2;
  *     + week * 2
  *   )
  *
- * - statPressure: average distance from ideal for stress, gpa, health (0-100)
+ * - statPressure: average distance from ideal for stress, knowledge, health (0-100)
  * - relationshipVariance: max affection - min affection across known characters
  * - weekBonus: +30 during midterm (week 8) or finals (week 15)
  */
@@ -42,9 +42,9 @@ export function calculateTension(
 ): number {
   // --- Stat pressure ---
   const stressDistance = Math.abs(stats.stress - IDEAL_STRESS);
-  const gpaDistance = Math.abs(stats.gpa - IDEAL_GPA);
+  const knowledgeDistance = Math.abs(stats.knowledge - IDEAL_KNOWLEDGE);
   const healthDistance = Math.abs(stats.health - IDEAL_HEALTH);
-  const statPressure = (stressDistance + gpaDistance + healthDistance) / 3;
+  const statPressure = (stressDistance + knowledgeDistance + healthDistance) / 3;
 
   // --- Relationship variance ---
   const affectionValues = Object.values(relationships).map((r) => r.affection);
