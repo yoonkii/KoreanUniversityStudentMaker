@@ -643,6 +643,50 @@ export default function EndingPage() {
           </div>
         )}
 
+        {/* Growth comparison — before/after stats */}
+        {(() => {
+          const startingStats = useGameStore.getState().startingStats;
+          if (!startingStats) return null;
+          const GROWTH_STATS: { key: keyof import('@/store/types').PlayerStats; label: string; emoji: string }[] = [
+            { key: 'knowledge', label: '준비도', emoji: '📚' },
+            { key: 'health', label: '체력', emoji: '💚' },
+            { key: 'social', label: '인맥', emoji: '👥' },
+            { key: 'charm', label: '매력', emoji: '✨' },
+            { key: 'stress', label: '스트레스', emoji: '🔥' },
+          ];
+          return (
+            <div
+              className={`bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10 transition-all duration-1000 ${
+                animStep >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+            >
+              <h3 className="text-sm font-bold text-white/60 mb-3">📊 성장 기록</h3>
+              <div className="flex flex-col gap-2">
+                {GROWTH_STATS.map(({ key, label, emoji }) => {
+                  const start = startingStats[key];
+                  const end = stats[key];
+                  const delta = end - start;
+                  const isGood = key === 'stress' ? delta < 0 : delta > 0;
+                  return (
+                    <div key={key} className="flex items-center gap-2">
+                      <span className="text-sm w-5">{emoji}</span>
+                      <span className="text-xs text-white/50 w-16">{label}</span>
+                      <div className="flex-1 flex items-center gap-2">
+                        <span className="text-xs text-white/30 w-8 text-right">{key === 'money' ? `${Math.round(start/10000)}만` : start}</span>
+                        <span className="text-white/20">→</span>
+                        <span className="text-xs text-white/70 w-8">{key === 'money' ? `${Math.round(end/10000)}만` : end}</span>
+                        <span className={`text-xs font-bold ${isGood ? 'text-teal' : 'text-coral'}`}>
+                          ({delta > 0 ? '+' : ''}{delta})
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Replay teaser — other paths */}
         <div
           className={`bg-white/[0.03] backdrop-blur-md rounded-2xl p-5 border border-white/5 transition-all duration-1000 ${

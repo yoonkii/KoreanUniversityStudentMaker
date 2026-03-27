@@ -80,6 +80,7 @@ interface GameStore {
   unlockedAchievements: string[];
   newAchievements: { id: string; title: string; emoji: string }[];
   examResults: ExamResults;
+  startingStats: PlayerStats | null; // Snapshot of stats at game start for ending comparison
 
   // --- Actions ---
   setHasHydrated: (v: boolean) => void;
@@ -130,6 +131,7 @@ export const useGameStore = create<GameStore>()(
       unlockedAchievements: [],
       newAchievements: [],
       examResults: {},
+      startingStats: null,
 
       // --- Actions ---
 
@@ -164,9 +166,11 @@ export const useGameStore = create<GameStore>()(
             startStats.charm += ngPlus * 3;
           }
         }
+        const clampedStart = clampAllStats(startStats);
         set({
           player: profile,
-          stats: clampAllStats(startStats),
+          stats: clampedStart,
+          startingStats: { ...clampedStart },
           currentWeek: 1,
           currentSceneIndex: 0,
           relationships: {},
@@ -363,6 +367,7 @@ export const useGameStore = create<GameStore>()(
           unlockedAchievements: [],
           newAchievements: [],
           examResults: {},
+          startingStats: null,
         });
       },
     }),
