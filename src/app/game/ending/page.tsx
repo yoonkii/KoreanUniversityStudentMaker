@@ -864,24 +864,46 @@ export default function EndingPage() {
           </div>
         </div>
 
-        {/* Replay teaser — other paths */}
+        {/* Replay teaser — other paths with hints */}
         <div
           className={`bg-white/[0.03] backdrop-blur-md rounded-2xl p-5 border border-white/5 transition-all duration-1000 ${
             animStep >= 5 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
         >
           <p className="text-xs text-white/30 mb-3">다른 가능성이 있었을지도...</p>
-          <div className="flex flex-wrap gap-2">
-            {Object.entries(ARCHETYPES)
-              .filter(([key]) => key !== archetypeKey)
-              .slice(0, 4)
-              .map(([key, arch]) => (
-                <div key={key} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 text-white/25 text-xs">
-                  <span>{arch.emoji}</span>
-                  <span>{arch.ko}</span>
-                  <span className="text-white/15">?</span>
-                </div>
-              ))}
+          <div className="flex flex-col gap-2">
+            {(() => {
+              const collected = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('kusm-archetypes') ?? '[]') as string[] : [];
+              const ENDING_HINTS: Record<string, string> = {
+                scholar: '공부에 집중하면...?',
+                social: '인맥을 넓히면...?',
+                hustler: '돈을 많이 모으면...?',
+                wellness: '건강을 지키면...?',
+                chill: '스트레스를 낮추면...?',
+                charm: '매력을 올리면...?',
+                balanced: '모든 걸 균형 있게 하면...?',
+                burnout: '너무 무리하면...?',
+                broke: '돈이 바닥나면...?',
+                campus_couple: '누군가와 특별한 관계가 되면...? 💕',
+                professors_protege: '교수님의 신뢰를 얻으면...? 🎓',
+                club_star: '동아리에서 빛나면...? 🎸',
+                perfect_mentorship: '완벽한 선후배 관계를 만들면...? 🤝',
+                bromance: '룸메와 최고의 우정을 쌓으면...? 🏠',
+              };
+              return Object.entries(ARCHETYPES)
+                .filter(([key]) => key !== archetypeKey && !collected.includes(key))
+                .slice(0, 3)
+                .map(([key, arch]) => (
+                  <div key={key} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03]">
+                    <span className="text-lg grayscale opacity-40">{arch.emoji}</span>
+                    <div className="flex-1">
+                      <span className="text-xs text-white/30">{arch.ko}</span>
+                      <p className="text-[10px] text-white/20 italic">{ENDING_HINTS[key] ?? '???'}</p>
+                    </div>
+                    <span className="text-[9px] text-white/10">미발견</span>
+                  </div>
+                ));
+            })()}
           </div>
         </div>
 
