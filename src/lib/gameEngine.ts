@@ -340,6 +340,62 @@ const WEEKLY_EVENT_POOL: WeeklyEventDef[] = [
     priority: 4,
     condition: (stats, w) => w >= 6 && stats.social < 15 && stats.stress > 50,
   },
+  // ─── NPC Special Day Events ───
+  {
+    id: 'jaemin_birthday',
+    name: '재민이 생일',
+    description: '재민이 생일이다! "야 오늘 내 생일이야! 케이크는 내가 샀으니까 같이 먹자!" 🎂',
+    effects: { social: 6, stress: -5, money: -15000 },
+    probability: 1.0, // Always fires on the right week
+    priority: 5,
+    condition: (_, w) => w === 5,
+  },
+  {
+    id: 'minji_award',
+    name: '민지의 수상',
+    description: '민지가 교내 논문 대회에서 우수상을 받았다! 축하 메시지를 보냈다.',
+    effects: { social: 3, knowledge: 2 },
+    probability: 1.0,
+    priority: 5,
+    condition: (_, w, rels) => w === 11 && (rels?.['minji']?.affection ?? 0) >= 30,
+  },
+  {
+    id: 'soyeon_graduation_prep',
+    name: '소연 선배 졸업 준비',
+    description: '소연 선배가 졸업사진을 찍고 있다. "벌써 이 시간이 왔네..." 약간 울먹였다.',
+    effects: { social: 5, stress: 3 },
+    probability: 1.0,
+    priority: 5,
+    condition: (_, w, rels) => w === 13 && (rels?.['soyeon']?.affection ?? 0) >= 40,
+  },
+  {
+    id: 'hyunwoo_last_concert',
+    name: '현우의 마지막 공연',
+    description: '현우 선배의 졸업 전 마지막 공연이 있다. "꼭 와줘. 마지막이니까."',
+    effects: { social: 8, charm: 3, stress: -5, money: -10000 },
+    probability: 1.0,
+    priority: 5,
+    condition: (_, w, rels) => w === 14 && (rels?.['hyunwoo']?.affection ?? 0) >= 45,
+  },
+  // ─── Campus Calendar Events (fixed timing, no probability) ───
+  {
+    id: 'campus_cherry_blossom',
+    name: '벚꽃 시즌',
+    description: '캠퍼스에 벚꽃이 만개했다. 길을 걷는 것만으로도 행복한 하루.',
+    effects: { stress: -8, charm: 2 },
+    probability: 1.0,
+    priority: 3,
+    condition: (_, w) => w === 3,
+  },
+  {
+    id: 'campus_typhoon',
+    name: '태풍 경보',
+    description: '태풍 때문에 갑자기 휴강이 됐다. 하루 종일 기숙사에서 보냈다.',
+    effects: { stress: -5, health: 3, knowledge: -2 },
+    probability: 0.3,
+    priority: 3,
+    condition: (_, w) => w === 10 || w === 11,
+  },
 ];
 
 // ─── Weather System ───
