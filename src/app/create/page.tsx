@@ -72,8 +72,12 @@ export default function CreatePage() {
             <div className="text-center">
               {isNewGamePlus ? (
                 <>
-                  <p className="text-gold/60 text-xs mb-1">✨ NEW GAME+ ({completionCount}회차) — 엔딩 수집: {collectedArchetypes.length}/9</p>
-                  <p className="text-white/40 text-sm mb-2">다시 시작하는 학기. 경험이 빛을 발한다.</p>
+                  <p className="text-gold/60 text-xs mb-1">✨ NEW GAME+ ({completionCount}회차) — 엔딩 수집: {collectedArchetypes.length}/14</p>
+                  <p className="text-white/40 text-sm mb-2">
+                    {completionCount >= 5 ? '베테랑의 귀환. 남은 엔딩을 찾아서.' :
+                     completionCount >= 2 ? '다시 시작하는 학기. 이번엔 다른 길을.' :
+                     '다시 시작하는 학기. 경험이 빛을 발한다.'}
+                  </p>
                 </>
               ) : (
                 <p className="text-white/40 text-sm mb-2">새 학기가 시작됩니다</p>
