@@ -181,6 +181,28 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
           </div>
         )}
 
+        {/* Ending trajectory hint — subtle indication of current path */}
+        {currentWeek >= 5 && (() => {
+          // Determine dominant stat to hint at ending
+          const scores: Record<string, { value: number; emoji: string; hint: string }> = {
+            scholar: { value: stats.knowledge, emoji: '📚', hint: '학자의 길을 걷고 있다' },
+            social: { value: stats.social, emoji: '🦋', hint: '인싸의 기운이 느껴진다' },
+            charm: { value: stats.charm, emoji: '✨', hint: '매력이 빛나고 있다' },
+            wellness: { value: stats.health, emoji: '💪', hint: '건강한 생활을 유지하고 있다' },
+            chill: { value: 100 - stats.stress, emoji: '🌊', hint: '여유로운 삶을 살고 있다' },
+          };
+          const sorted = Object.entries(scores).sort(([,a],[,b]) => b.value - a.value);
+          const top = sorted[0];
+          if (top[1].value < 40) return null;
+          return (
+            <div className="mb-3 px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/5">
+              <p className="text-[10px] text-txt-secondary/40">
+                {top[1].emoji} 현재 방향: <span className="text-txt-secondary/60">{top[1].hint}</span>
+              </p>
+            </div>
+          );
+        })()}
+
         {/* Stat overview with trend indicators */}
         <div className="flex flex-col gap-2 mb-4">
           <p className="text-xs text-txt-secondary font-medium">현재 상태</p>
