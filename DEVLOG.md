@@ -1090,5 +1090,7 @@ Complete rewrite of core game mechanics across 59 files (+1496/-707 lines):
 - Systems: NPC jealousy, exam countdown, consequence text, collection gallery, calendar view
 - Features: send animations, NPC portraits in action, relationship trends, memory monologues
 - Content: heartfelt stat-gated finale, post-exam reactions, campus rumors, semester awards
+- Polish: dream selection previews, week rating tags, activity streaks, relationship ranking
+- UX: NPC portraits in encounters, send animation, exam countdown, loading tips, calendar view
 
 ---
