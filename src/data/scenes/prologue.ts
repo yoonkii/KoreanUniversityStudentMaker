@@ -15,7 +15,15 @@ export const PROLOGUE_SCENES: Scene[] = [
       },
       {
         characterId: null,
-        text: '합격 통보를 받은 게 엊그제 같은데, 벌써 대학생이라니.',
+        text: '정문을 지나자 넓은 잔디밭이 펼쳐진다. 새내기 환영 현수막이 바람에 펄럭이고, 동아리 홍보 부스에서 음악이 흘러나온다.',
+      },
+      {
+        characterId: null,
+        text: '합격 통보를 받은 게 엊그제 같은데, 벌써 대학생이라니. 주변을 둘러보니 나처럼 지도를 들고 서성이는 새내기들이 보인다.',
+      },
+      {
+        characterId: null,
+        text: '학생식당에서 풍기는 밥 냄새, 카페에서 새어 나오는 커피 향, 멀리서 들리는 기타 소리... 이게 대학이구나.',
       },
       {
         characterId: null,
@@ -23,7 +31,7 @@ export const PROLOGUE_SCENES: Scene[] = [
       },
       {
         characterId: null,
-        text: '이 캠퍼스에서 보낼 16주. 학점, 인간관계, 돈, 건강... 모든 걸 균형 있게 챙겨야 한다.',
+        text: '이 캠퍼스에서 보낼 16주. 누구를 만나고, 무엇을 배우고, 어떤 사람이 될까. 모든 건 내 선택에 달려 있다.',
       },
     ],
   },

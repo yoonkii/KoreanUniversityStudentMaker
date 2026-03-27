@@ -5,6 +5,7 @@ import Image from 'next/image';
 import type { PlayerStats, CharacterRelationship } from '@/store/types';
 import { generateEncounters, generateGossip, type CampusEncounter } from '@/lib/campusSimulation';
 import { findNpcsAtLocation } from '@/lib/livingCampus';
+import { getSpecificLocation, getLocationFlavor } from '@/lib/campusLocations';
 import { getNpcContextualLine } from '@/lib/weeklyDialogueCache';
 import { getInnerMonologue } from '@/lib/innerMonologue';
 import { getActivityFlavorText } from '@/lib/activityFlavor';
@@ -514,10 +515,22 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
       {/* Day display */}
       {currentDay && (
         <div className="w-full max-w-md relative z-10 animate-fade-in">
-          {/* Day header with semester atmosphere on first day */}
+          {/* Day header with specific location */}
           <h2 className="text-xl font-bold text-txt-primary text-center mb-1">
             {currentDay.dayName}
           </h2>
+          {/* Show specific location for the first activity */}
+          {currentDay.activities[0] && !currentDay.activities[0].skipped && (() => {
+            const actType = currentDay.activities[0].name.includes('수업') ? 'lecture'
+              : currentDay.activities[0].name.includes('공부') ? 'study'
+              : currentDay.activities[0].name.includes('알바') ? 'parttime'
+              : currentDay.activities[0].name.includes('운동') ? 'exercise'
+              : currentDay.activities[0].name.includes('휴식') ? 'rest'
+              : currentDay.activities[0].name.includes('동아리') ? 'club'
+              : 'friends';
+            const spot = getSpecificLocation(actType, currentWeek, currentDayIndex);
+            return <p className="text-[9px] text-txt-secondary/30 text-center mb-1">📍 {spot.name}</p>;
+          })()}
           {currentDayIndex === 0 && (
             <p className="text-[10px] text-txt-secondary/30 text-center mb-3">
               {currentWeek <= 3 ? '🌸 봄의 시작 — 캠퍼스가 활기를 띤다' :
