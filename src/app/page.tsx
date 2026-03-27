@@ -87,9 +87,15 @@ export default function Home() {
           </h1>
           <p className="text-sm sm:text-base text-white/40 -mt-2 tracking-widest">KOREAN UNIVERSITY STUDENT MAKER</p>
           <p className="text-base sm:text-lg md:text-xl text-white/70 max-w-md leading-relaxed px-2">
-            학점, 인간관계, 알바, 연애, 취업...
-            <br />
-            <span className="text-white/90 font-medium">당신의 대학 생활을 직접 만들어 보세요</span>
+            {(() => {
+              if (typeof window === 'undefined') return null;
+              const completions = parseInt(localStorage.getItem('kusm-completions') ?? '0', 10);
+              const archetypes = JSON.parse(localStorage.getItem('kusm-archetypes') ?? '[]') as string[];
+              if (completions >= 5) return <>매 학기가 다른 이야기.<br /><span className="text-white/90 font-medium">아직 발견하지 못한 엔딩이 {14 - archetypes.length}개 남았어요</span></>;
+              if (completions >= 2) return <>다른 선택이 다른 결말을 만든다.<br /><span className="text-white/90 font-medium">이번엔 어떤 대학 생활을 만들까요?</span></>;
+              if (completions === 1) return <>첫 학기를 마쳤군요!<br /><span className="text-white/90 font-medium">다른 길을 걸어보세요. {14 - archetypes.length}개의 엔딩이 기다립니다</span></>;
+              return <>학점, 인간관계, 알바, 연애, 취업...<br /><span className="text-white/90 font-medium">당신의 대학 생활을 직접 만들어 보세요</span></>;
+            })()}
           </p>
 
           {/* Buttons */}
