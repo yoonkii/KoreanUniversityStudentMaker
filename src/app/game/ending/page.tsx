@@ -739,6 +739,60 @@ export default function EndingPage() {
           );
         })()}
 
+        {/* Semester Awards — PM-style recognition */}
+        <div
+          className={`bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-gold/15 transition-all duration-1000 ${
+            animStep >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}
+        >
+          <h3 className="text-sm font-bold text-gold/80 mb-3">🏆 학기 어워드</h3>
+          <div className="flex flex-col gap-2">
+            {(() => {
+              const awards: { emoji: string; title: string; desc: string }[] = [];
+              const startingStats = useGameStore.getState().startingStats;
+              const knowledgeGrowth = startingStats ? stats.knowledge - startingStats.knowledge : 0;
+              const socialGrowth = startingStats ? stats.social - startingStats.social : 0;
+              const charmGrowth = startingStats ? stats.charm - startingStats.charm : 0;
+
+              // Growth-based awards
+              if (knowledgeGrowth >= 40) awards.push({ emoji: '🧠', title: '최다 성장상', desc: `준비도 +${knowledgeGrowth}! 엄청난 발전!` });
+              if (socialGrowth >= 30) awards.push({ emoji: '🌟', title: '인맥왕상', desc: `인맥 +${socialGrowth}! 사교의 달인!` });
+              if (charmGrowth >= 25) awards.push({ emoji: '💎', title: '매력 폭발상', desc: `매력 +${charmGrowth}! 캠퍼스 스타!` });
+
+              // Stat-based awards
+              if (stats.stress <= 20) awards.push({ emoji: '🧘', title: '마음의 평화상', desc: '스트레스 20 이하로 마무리!' });
+              if (stats.health >= 80) awards.push({ emoji: '💪', title: '건강왕상', desc: '체력 80 이상! 대단한 자기관리.' });
+              if (stats.money >= 800000) awards.push({ emoji: '💰', title: '재테크상', desc: `₩${(stats.money/10000).toFixed(0)}만! 부의 시작.` });
+
+              // Relationship awards
+              const soulmates = Object.values(relationships).filter(r => r.affection >= 90);
+              const closeFriends2 = Object.values(relationships).filter(r => r.affection >= 70);
+              if (soulmates.length > 0) awards.push({ emoji: '💕', title: '소울메이트상', desc: `${soulmates.length}명의 소울메이트!` });
+              else if (closeFriends2.length >= 3) awards.push({ emoji: '🤝', title: '인간관계상', desc: `${closeFriends2.length}명의 절친!` });
+
+              // Event-based awards
+              if (eventHistory.length >= 20) awards.push({ emoji: '📖', title: '스토리텔러상', desc: `${eventHistory.length}개의 추억!` });
+
+              // Exam awards
+              const er = useGameStore.getState().examResults;
+              if (er.semesterGpa && er.semesterGpa >= 4.0) awards.push({ emoji: '🎓', title: '우등상', desc: `학기 GPA ${er.semesterGpa.toFixed(2)}!` });
+
+              // Fallback
+              if (awards.length === 0) awards.push({ emoji: '🎯', title: '완주상', desc: '16주를 끝까지 버텼다! 그것만으로 대단해.' });
+
+              return awards.slice(0, 4).map((a, i) => (
+                <div key={i} className="flex items-center gap-3 px-3 py-2 bg-gold/5 rounded-lg">
+                  <span className="text-xl">{a.emoji}</span>
+                  <div>
+                    <span className="text-xs font-bold text-gold">{a.title}</span>
+                    <p className="text-[10px] text-white/50">{a.desc}</p>
+                  </div>
+                </div>
+              ));
+            })()}
+          </div>
+        </div>
+
         {/* Replay teaser — other paths */}
         <div
           className={`bg-white/[0.03] backdrop-blur-md rounded-2xl p-5 border border-white/5 transition-all duration-1000 ${
