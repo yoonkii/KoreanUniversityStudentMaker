@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import type { PlayerStats, CharacterRelationship } from '@/store/types';
 import { generateEncounters, generateGossip, type CampusEncounter } from '@/lib/campusSimulation';
+import { getNpcContextualLine } from '@/lib/weeklyDialogueCache';
 import { useGameStore } from '@/store/gameStore';
 
 interface DayActivity {
@@ -166,17 +167,27 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
       // Pick a random activity from today for encounter context
       const mainAct = day.activities.find(a => !a.skipped);
       if (mainAct) {
-        for (const [keyword, npcLines] of Object.entries(NPC_ENCOUNTER_LINES)) {
-          if (mainAct.name.includes(keyword)) {
-            const npcIds = Object.keys(npcLines);
-            // 30% chance of encounter per eligible NPC
-            const eligible = npcIds.filter(() => Math.random() < 0.3);
-            if (eligible.length > 0) {
-              const npcId = eligible[0];
-              const lines = npcLines[npcId];
-              setNpcEncounter(lines[Math.floor(Math.random() * lines.length)]);
+        // Try Gemini-generated contextual line first (from weekly cache)
+        if (mainAct.targetNpcId) {
+          const aiLine = getNpcContextualLine(mainAct.targetNpcId, currentWeek, mainAct.name);
+          if (aiLine) {
+            setNpcEncounter(`💬 ${aiLine}`);
+          }
+        }
+
+        // Fallback to hardcoded NPC encounter lines
+        if (!mainAct.targetNpcId || !getNpcContextualLine(mainAct.targetNpcId ?? '', currentWeek, mainAct.name)) {
+          for (const [keyword, npcLines] of Object.entries(NPC_ENCOUNTER_LINES)) {
+            if (mainAct.name.includes(keyword)) {
+              const npcIds = Object.keys(npcLines);
+              const eligible = npcIds.filter(() => Math.random() < 0.3);
+              if (eligible.length > 0) {
+                const npcId = eligible[0];
+                const lines = npcLines[npcId];
+                setNpcEncounter(lines[Math.floor(Math.random() * lines.length)]);
+              }
+              break;
             }
-            break;
           }
         }
       }

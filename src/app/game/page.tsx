@@ -31,6 +31,7 @@ import type { DayGroup } from '@/components/game/ActionPhase';
 // import { initializeNPCs } from '@/engine/data/npc-initializer';
 // import { CORE_NPC_SHEETS } from '@/engine/data/core-npcs';
 import { checkAchievements } from '@/lib/achievements';
+import { triggerDialogueGeneration } from '@/lib/weeklyDialogueCache';
 
 export default function GameScreen() {
   const router = useRouter();
@@ -608,6 +609,8 @@ export default function GameScreen() {
           setShowWeeklyOverview(false);
           advanceWeek();
           setShowWeekTitle(true);
+          // Trigger background Gemini dialogue generation for next week (1 API call)
+          triggerDialogueGeneration(currentWeek + 1, stats, relationships);
           setMTDone(false); setFestivalDone(false); setExamDone(false); setCrisisDismissed(false);
           // Show save indicator briefly
           setShowSaveIndicator(true);
