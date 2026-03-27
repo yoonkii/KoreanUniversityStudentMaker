@@ -163,6 +163,46 @@ const MID_ACTIVITY_CHOICES: MidActivityChoice[] = [
       { text: '뒷담화는 별로...', effects: { charm: 2, social: -1 }, flavor: '친구가 "너 진짜 착하다" 라고 했다.' },
     ],
   },
+  {
+    id: 'study_eureka',
+    prompt: '공부하다가 갑자기 이해가 안 되던 개념이 머릿속에서 연결됐다!',
+    activityKeyword: '공부',
+    probability: 0.12,
+    options: [
+      { text: '이거다! 정리해두자 📝', effects: { knowledge: 5, charm: 1, stress: -2 }, flavor: '완벽한 요약 노트가 완성됐다. 뿌듯하다.' },
+      { text: '이해는 했는데 넘어가자', effects: { knowledge: 2, stress: -1 }, flavor: '대충 이해한 것 같다. 시험 때 기억나려나...' },
+    ],
+  },
+  {
+    id: 'parttime_regular',
+    prompt: '단골 할머니가 오셨다. "학생, 오늘도 고생이야~" 하며 팁을 주시려 한다.',
+    activityKeyword: '알바',
+    probability: 0.15,
+    options: [
+      { text: '감사합니다, 할머니 💛', effects: { money: 5000, charm: 3, stress: -3 }, flavor: '할머니의 따뜻한 미소에 피로가 풀렸다.' },
+      { text: '아니에요, 괜찮습니다', effects: { charm: 4 }, flavor: '할머니가 "착한 학생이네" 하며 칭찬하셨다.' },
+    ],
+  },
+  {
+    id: 'exercise_rain',
+    prompt: '운동하려고 나왔는데 갑자기 비가 내리기 시작한다.',
+    activityKeyword: '운동',
+    probability: 0.15,
+    options: [
+      { text: '비 맞으며 달리기! 🌧️', effects: { health: 6, charm: 3, stress: -5 }, flavor: '영화 같은 순간이었다. 빗속 러닝.' },
+      { text: '실내 운동으로 전환', effects: { health: 4, stress: -2 }, flavor: '체육관으로 옮겼다. 현명한 판단.' },
+    ],
+  },
+  {
+    id: 'date_sunset',
+    prompt: '데이트 중에 캠퍼스 뒤편 언덕에서 석양이 아름답게 물들었다.',
+    activityKeyword: '데이트',
+    probability: 0.2,
+    options: [
+      { text: '"같이 보자" 하며 멈춘다 🌅', effects: { charm: 5, social: 3, stress: -8 }, flavor: '석양 아래 나란히 앉은 두 사람. 완벽한 순간.' },
+      { text: '사진 찍어서 SNS에 올리기', effects: { charm: 4, social: 5, stress: -3 }, flavor: '좋아요가 폭발했다. 부러움을 사는 인스타.' },
+    ],
+  },
 ];
 
 // 17% random event chance per activity
