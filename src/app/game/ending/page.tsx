@@ -961,6 +961,10 @@ export default function EndingPage() {
               const achievements = useGameStore.getState().unlockedAchievements.length;
               const er = useGameStore.getState().examResults;
 
+              const streaks = useGameStore.getState().activityStreaks;
+              const maxStreak = Object.entries(streaks).sort(([,a],[,b]) => b - a)[0];
+              const closeFriendsCount = Object.values(allRels).filter(r => r.affection >= 70).length;
+
               const statItems = [
                 { value: '16', label: '주차 완료', emoji: '📅' },
                 { value: `${npcsMet}`, label: '만난 NPC', emoji: '👤' },
@@ -968,9 +972,9 @@ export default function EndingPage() {
                 { value: `${eventHistory.length}`, label: '이벤트', emoji: '⚡' },
                 { value: `${achievements}`, label: '업적', emoji: '🏆' },
                 { value: er.semesterGpa ? `${er.semesterGpa.toFixed(1)}` : '-', label: '학기 GPA', emoji: '📊' },
+                { value: `${closeFriendsCount}`, label: '절친', emoji: '💛' },
+                { value: maxStreak && maxStreak[1] >= 3 ? `${maxStreak[1]}주` : '-', label: '최장 연속', emoji: '🔥' },
                 { value: `${diaryCount}`, label: '일기', emoji: '📔' },
-                { value: `₩${Math.round(stats.money / 10000)}만`, label: '최종 잔고', emoji: '💰' },
-                { value: `${stats.stress}`, label: '최종 스트레스', emoji: '🔥' },
               ];
 
               return statItems.map((item, i) => (
