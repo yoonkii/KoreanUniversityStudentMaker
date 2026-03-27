@@ -25,6 +25,7 @@ import ScheduleViewer from '@/components/game/ScheduleViewer';
 import RelationshipPanel from '@/components/game/RelationshipPanel';
 import PauseMenu from '@/components/game/PauseMenu';
 import CrisisEvent, { detectCrisis } from '@/components/game/CrisisEvent';
+import OrientationEvent from '@/components/game/OrientationEvent';
 import type { Choice, PlayerStats, Scene, WeekSchedule, DayKey } from '@/store/types';
 import type { DayGroup } from '@/components/game/ActionPhase';
 // NPC engine imports available for future AI integration
@@ -70,6 +71,7 @@ export default function GameScreen() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
   const [prologueDone, setPrologueDone] = useState(false);
+  const [otDone, setOTDone] = useState(false); // Orientation before 수강신청
   const [sugangsincheongDone, setSugangsincheongDone] = useState(false);
   const [mtDone, setMTDone] = useState(false);
   const [festivalDone, setFestivalDone] = useState(false);
@@ -397,7 +399,8 @@ export default function GameScreen() {
   if (!player) return null;
 
   const showPrologue = currentWeek === 1 && !prologueDone;
-  const showSugangsincheong = currentWeek === 1 && prologueDone && !sugangsincheongDone;
+  const showOT = currentWeek === 1 && prologueDone && !otDone;
+  const showSugangsincheong = currentWeek === 1 && prologueDone && otDone && !sugangsincheongDone;
   const showMT = currentWeek === 4 && !mtDone;
   const showFestival = currentWeek === 9 && !festivalDone;
   const showExam = (currentWeek === 7 || currentWeek === 14) && !examDone;
@@ -512,7 +515,12 @@ export default function GameScreen() {
         <PrologueSequence onComplete={() => setPrologueDone(true)} />
       )}
 
-      {/* 수강신청 mini-game (week 1 only, after onboarding) */}
+      {/* OT (orientation) — meet classmates before 수강신청 */}
+      {phase === 'planning' && showOT && (
+        <OrientationEvent onComplete={() => setOTDone(true)} />
+      )}
+
+      {/* 수강신청 mini-game (week 1 only, after OT) */}
       {phase === 'planning' && showSugangsincheong && (
         <SugangsincheongEvent onComplete={() => setSugangsincheongDone(true)} />
       )}
