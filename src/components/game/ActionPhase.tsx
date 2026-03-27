@@ -307,6 +307,7 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
   const [activeChoice, setActiveChoice] = useState<MidActivityChoice | null>(null);
   const [choiceFlavor, setChoiceFlavor] = useState<string | null>(null);
   const [monologue, setMonologue] = useState<string | null>(null);
+  const [dayTransition, setDayTransition] = useState<string | null>(null);
   const [runningStats, setRunningStats] = useState<PlayerStats>({ ...currentStats });
   const currentWeek = useGameStore((s) => s.currentWeek);
   const relationships = useGameStore((s) => s.relationships);
@@ -334,6 +335,25 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
     setCampusEncounter(null);
     setChoiceFlavor(null);
     setMonologue(null);
+
+    // Day transition — brief atmospheric connector between days
+    if (dayIdx > 0) {
+      const DAY_TRANSITIONS = [
+        '다음 날 아침이 밝았다.',
+        '하루가 지나고...',
+        '알람 소리에 눈을 떴다.',
+        '또 하루가 시작된다.',
+        '어느새 다음 날.',
+      ];
+      const EVENING_TO_MORNING = [
+        '밤새 뒤척이다 겨우 잠들었다. 일어나니 벌써 아침.',
+        '어젯밤 늦게까지 깨어 있었다. 오늘은 일찍 자야지.',
+        '기숙사 창문으로 아침 햇살이 들어온다.',
+      ];
+      const pool = dayIdx === 1 || dayIdx === 4 ? EVENING_TO_MORNING : DAY_TRANSITIONS;
+      setDayTransition(pool[dayIdx % pool.length]);
+      setTimeout(() => setDayTransition(null), 800);
+    }
 
     const day = days[dayIdx];
 
@@ -540,6 +560,13 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
           건너뛰기 ⏭️
         </button>
       </div>
+
+      {/* Day transition text */}
+      {dayTransition && !currentDay && (
+        <div className="text-center relative z-10 animate-fade-in">
+          <p className="text-sm text-txt-secondary/40 italic">{dayTransition}</p>
+        </div>
+      )}
 
       {/* Day display */}
       {currentDay && (
