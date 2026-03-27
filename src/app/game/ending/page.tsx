@@ -1107,15 +1107,17 @@ export default function EndingPage() {
             {Object.entries(relationships)
               .filter(([, r]) => r.encounters > 0)
               .sort(([, a], [, b]) => b.affection - a.affection)
-              .map(([id]) => {
-                const NPC_CREDIT: Record<string, string> = {
-                  jaemin: '이재민 — 룸메이트이자 최고의 친구',
-                  minji: '한민지 — 라이벌이자 동료',
-                  soyeon: '박소연 — 따뜻한 선배',
-                  hyunwoo: '정현우 — 자유로운 영혼',
-                  'prof-kim': '김 교수 — 엄하지만 따뜻한 스승',
-                };
-                return NPC_CREDIT[id] ? <p key={id}>{NPC_CREDIT[id]}</p> : null;
+              .map(([id, rel]) => {
+                const NPC_NAMES: Record<string, string> = { jaemin: '이재민', minji: '한민지', soyeon: '박소연', hyunwoo: '정현우', 'prof-kim': '김 교수' };
+                const name = NPC_NAMES[id];
+                if (!name) return null;
+                // Dynamic description based on relationship tier
+                const desc = rel.affection >= 90 ? '평생 잊지 못할 소울메이트'
+                  : rel.affection >= 70 ? '가장 소중한 절친'
+                  : rel.affection >= 50 ? '함께 웃고 울었던 친구'
+                  : rel.affection >= 25 ? '캠퍼스에서 마주치면 인사하는 사이'
+                  : '스쳐 지나간 인연';
+                return <p key={id}>{name} — {desc}</p>;
               })}
             <p className="mt-2 text-white/10">그리고 {player?.name ?? '나'}의 1학기</p>
           </div>
@@ -1123,7 +1125,7 @@ export default function EndingPage() {
             KOREAN UNIVERSITY STUDENT MAKER
           </p>
           <p className="text-[8px] text-white/[0.06] mt-1">
-            Built with 💛 through 112 AUTOPLAY cycles
+            Built with 💛 through 123 AUTOPLAY cycles
           </p>
         </div>
       </div>
