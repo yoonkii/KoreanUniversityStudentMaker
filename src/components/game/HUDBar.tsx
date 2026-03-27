@@ -93,22 +93,23 @@ export default function HUDBar() {
             </span>
           </div>
 
-          {/* Right: Quick-glance mini stats (mobile only — sidebar hidden on mobile) */}
-          <div className="flex items-center gap-3 text-xs text-txt-secondary lg:hidden">
-            <div className="flex items-center gap-1" title="준비도">
-              <span style={{ color: '#FFD166' }}>📚</span>
-              <span className={`font-mono ${knowledge < 30 ? 'text-coral' : ''}`}>{knowledge}</span>
-              {examResults?.midtermGpa && (
-                <span className="text-[9px] text-gold/60 ml-0.5">중간:{examResults.midtermGpa.toFixed(1)}</span>
-              )}
-            </div>
-            <div className="flex items-center gap-1" title="체력">
-              <span style={{ color: health < 30 ? '#FF6B6B' : '#4ECDC4' }}>♥</span>
-              <span className={`font-mono ${health < 30 ? 'text-coral' : ''}`}>{health}</span>
-            </div>
-            <div className="flex items-center gap-1" title="돈">
-              <span style={{ color: '#FFD166' }}>₩</span>
-              <span className="font-mono">{money >= 10000 ? `${Math.floor(money / 10000)}만` : money.toLocaleString('ko-KR')}</span>
+          {/* Right: Quick-glance mini stat bars (mobile only) */}
+          <div className="flex items-center gap-2 text-xs text-txt-secondary lg:hidden">
+            {([
+              { emoji: '📚', value: knowledge, max: 100, color: '#FFD166', label: '준비도' },
+              { emoji: '♥', value: health, max: 100, color: health < 30 ? '#FF6B6B' : '#4ECDC4', label: '체력' },
+              { emoji: '🔥', value: stress, max: 100, color: stress > 70 ? '#FF6B6B' : stress > 40 ? '#FFA500' : '#4ECDC4', label: '스트레스' },
+            ] as const).map(stat => (
+              <div key={stat.label} className="flex items-center gap-1" title={`${stat.label} ${stat.value}/100`}>
+                <span style={{ color: stat.color }} className="text-[10px]">{stat.emoji}</span>
+                <div className="w-10 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${stat.value}%`, backgroundColor: stat.color }} />
+                </div>
+              </div>
+            ))}
+            <div className="flex items-center gap-0.5" title={`₩${money.toLocaleString('ko-KR')}`}>
+              <span className="text-[10px]" style={{ color: '#FFD166' }}>₩</span>
+              <span className="font-mono text-[10px]">{money >= 10000 ? `${Math.floor(money / 10000)}만` : money.toLocaleString('ko-KR')}</span>
             </div>
           </div>
 
