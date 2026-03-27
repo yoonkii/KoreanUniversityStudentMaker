@@ -61,6 +61,7 @@ export default function KakaoMessages({ messages, onDismiss }: KakaoMessagesProp
   const [visibleCount, setVisibleCount] = useState(0);
   const [replyPhase, setReplyPhase] = useState(false);
   const [selectedReply, setSelectedReply] = useState<SelectedReply | null>(null);
+  const [sendingAnimation, setSendingAnimation] = useState<{ myMessage: string; npcResponse: string } | null>(null);
 
   const allMessagesShown = visibleCount >= messages.length;
 
@@ -75,17 +76,35 @@ export default function KakaoMessages({ messages, onDismiss }: KakaoMessagesProp
     setSelectedReply({ npcId, option });
   };
 
+  // NPC response lines after receiving your message
+  const NPC_RESPONSES: Record<string, string[]> = {
+    jaemin: ['ㅋㅋㅋ 알겠어!', '오 좋아 좋아!', 'ㅎㅎ 고마워~', '야 진짜? 최고다!'],
+    minji: ['알겠어.', '...응.', '고마워.', 'ㅋ 그래.'],
+    soyeon: ['알겠어요~ 😊', '네! 기대할게요!', '고마워 후배야 💛'],
+    hyunwoo: ['오 ㅋㅋ 좋지!', '알겠어 후배!', 'ㅎㅎ 역시!'],
+  };
+
   const handleSend = () => {
     if (!selectedReply) return;
-    const ignoredNpcs = messages
-      .map(m => m.senderId)
-      .filter(id => id !== selectedReply.npcId && id !== 'prof-kim');
-    onDismiss({
-      repliedTo: selectedReply.npcId,
-      affectionChange: selectedReply.option.affectionChange,
-      statEffects: selectedReply.option.statEffects,
-      ignoredNpcs: [...new Set(ignoredNpcs)],
-    });
+    // Show send animation
+    const npcId = selectedReply.npcId;
+    const responses = NPC_RESPONSES[npcId] ?? ['👍'];
+    const npcResponse = responses[Math.floor(Math.random() * responses.length)];
+    setSendingAnimation({ myMessage: selectedReply.option.text, npcResponse });
+    setReplyPhase(false);
+
+    // After animation, dismiss
+    setTimeout(() => {
+      const ignoredNpcs = messages
+        .map(m => m.senderId)
+        .filter(id => id !== npcId && id !== 'prof-kim');
+      onDismiss({
+        repliedTo: npcId,
+        affectionChange: selectedReply.option.affectionChange,
+        statEffects: selectedReply.option.statEffects,
+        ignoredNpcs: [...new Set(ignoredNpcs)],
+      });
+    }, 2500);
   };
 
   const handleDismissOrReply = () => {
@@ -117,7 +136,28 @@ export default function KakaoMessages({ messages, onDismiss }: KakaoMessagesProp
           <div className="w-4" />
         </div>
 
-        {!replyPhase ? (
+        {sendingAnimation ? (
+          /* Send animation — shows your sent message + NPC typing + response */
+          <div className="bg-[#1a1030] px-4 py-4 min-h-[280px] max-h-[55vh] flex flex-col justify-end gap-3">
+            {/* Your sent message (right-aligned) */}
+            <div className="flex justify-end animate-fade-in">
+              <div className="bg-teal/30 backdrop-blur-sm rounded-xl rounded-tr-none px-3.5 py-2.5 text-sm text-white/90 max-w-[240px] border border-teal/20">
+                {sendingAnimation.myMessage}
+              </div>
+            </div>
+            {/* NPC typing indicator → response */}
+            <div className="flex gap-3 items-start animate-fade-in" style={{ animationDelay: '0.8s', opacity: 0, animationFillMode: 'forwards' }}>
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex-shrink-0" />
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl rounded-tl-none px-3.5 py-2.5 text-sm text-white/90 border border-white/5">
+                {sendingAnimation.npcResponse}
+              </div>
+            </div>
+            {/* Read receipt */}
+            <div className="text-right text-[9px] text-teal/50 animate-fade-in" style={{ animationDelay: '1.2s', opacity: 0, animationFillMode: 'forwards' }}>
+              읽음 ✓
+            </div>
+          </div>
+        ) : !replyPhase ? (
           <>
             {/* Messages */}
             <div className="bg-[#1a1030] px-4 py-4 min-h-[280px] max-h-[55vh] overflow-y-auto flex flex-col gap-4">
