@@ -370,6 +370,7 @@ export default function GameScreen() {
   const goalWarnings = useGameStore((state) => state.goalWarnings);
   const tierNotification = useGameStore((state) => state.tierNotification);
   const clearTierNotification = useGameStore((state) => state.clearTierNotification);
+  const newAchievements = useGameStore((state) => state.newAchievements);
 
   // All hooks MUST be above this line — React requires stable hook order
   if (!hydrated) {
@@ -444,6 +445,21 @@ export default function GameScreen() {
           </div>
         );
       })()}
+
+      {/* Achievement toast — immediate celebration on unlock */}
+      {newAchievements.length > 0 && phase !== 'summary' && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 animate-slide-up">
+          {newAchievements.slice(0, 2).map((ach) => (
+            <div key={ach.id} className="glass-strong px-5 py-3 rounded-xl flex items-center gap-3 shadow-2xl border border-gold/30 animate-bounce-once">
+              <span className="text-2xl">{ach.emoji}</span>
+              <div>
+                <div className="text-xs font-bold text-gold">업적 달성!</div>
+                <div className="text-sm text-txt-primary">{ach.title}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Prologue sequence (week 1 only, before planning) */}
       {phase === 'planning' && showPrologue && (
