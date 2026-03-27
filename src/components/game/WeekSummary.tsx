@@ -211,6 +211,43 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
           </div>
         )}
 
+        {/* Milestone celebrations — "level up" moments */}
+        {(() => {
+          const milestones: { emoji: string; text: string }[] = [];
+          const prevKnowledge = stats.knowledge - (weekStatDeltas.knowledge ?? 0);
+          const prevSocial = stats.social - (weekStatDeltas.social ?? 0);
+          const prevCharm = stats.charm - (weekStatDeltas.charm ?? 0);
+          const prevHealth = stats.health - (weekStatDeltas.health ?? 0);
+          // Knowledge milestones
+          if (prevKnowledge < 40 && stats.knowledge >= 40) milestones.push({ emoji: '📖', text: '준비도가 올라가고 있어! 기초가 잡히는 느낌이다.' });
+          if (prevKnowledge < 60 && stats.knowledge >= 60) milestones.push({ emoji: '🎯', text: '시험 준비 순조로워! 이 페이스면 좋은 성적을 기대할 수 있다.' });
+          if (prevKnowledge < 80 && stats.knowledge >= 80) milestones.push({ emoji: '🏆', text: '준비도 최상! A+ 학점을 노려볼 수 있는 실력이다!' });
+          // Social milestones
+          if (prevSocial < 50 && stats.social >= 50) milestones.push({ emoji: '🤝', text: '캠퍼스에서 아는 사람이 늘었다. 인사하는 사람이 많아졌어!' });
+          if (prevSocial < 75 && stats.social >= 75) milestones.push({ emoji: '🌟', text: '캠퍼스 인싸 등극! 어딜 가든 아는 사람이 있다.' });
+          // Charm milestones
+          if (prevCharm < 60 && stats.charm >= 60) milestones.push({ emoji: '✨', text: '분위기가 달라졌다는 말을 듣기 시작했다.' });
+          // Health milestones
+          if (prevHealth < 40 && stats.health >= 40) milestones.push({ emoji: '💚', text: '체력이 돌아오고 있다. 컨디션 회복 중!' });
+          // Stress warnings (inverse milestones)
+          if (stats.stress >= 80 && (stats.stress - (weekStatDeltas.stress ?? 0)) < 80) milestones.push({ emoji: '🚨', text: '번아웃 위험! 당장 쉬어야 한다...' });
+          // Money milestones
+          if (stats.money >= 500000 && (stats.money - (weekStatDeltas.money ?? 0)) < 500000) milestones.push({ emoji: '💰', text: '통장 잔고 50만 원 돌파! 여유가 생겼다.' });
+          if (stats.money <= 50000 && (stats.money - (weekStatDeltas.money ?? 0)) > 50000) milestones.push({ emoji: '😱', text: '잔고가 5만 원 이하... 다음 주부터 알바 필수!' });
+
+          if (milestones.length === 0) return null;
+          return (
+            <div className="flex flex-col gap-1.5 mb-4 animate-stat-reveal" style={{ animationDelay: '850ms' }}>
+              {milestones.map((m, i) => (
+                <div key={i} className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-gold/5 border border-gold/15">
+                  <span className="text-lg">{m.emoji}</span>
+                  <span className="text-xs text-gold/90 font-medium">{m.text}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
         {/* Character diary entry */}
         <div className="mb-4 animate-stat-reveal" style={{ animationDelay: '900ms' }}>
           <div className="bg-white/[0.03] rounded-xl px-4 py-3 border border-white/5">
