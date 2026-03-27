@@ -65,6 +65,16 @@ export const WEEK_12_SCENES: Scene[] = [
           { characterId: 'minji', change: 3 },
         ],
       },
+      {
+        id: 'competition_lead',
+        text: '내가 팀장 할게. 기획서도 내가 쓸 수 있어. 같이 하자!',
+        statEffects: { charm: 8, social: 6, stress: 10, money: 50000 },
+        relationshipEffects: [
+          { characterId: 'hyunwoo', change: 12 },
+          { characterId: 'minji', change: 8 },
+        ],
+        requiredStat: { stat: 'charm', min: 55 },
+      },
     ],
   },
 ];

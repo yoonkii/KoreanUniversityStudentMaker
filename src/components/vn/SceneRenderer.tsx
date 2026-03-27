@@ -186,7 +186,7 @@ export default function SceneRenderer({ scene, onSceneEnd, activityId, timeLabel
           /* Hide dialogue while stat popup is showing to prevent click-through */
           null
         ) : showChoices && choices && choices.length > 0 ? (
-          <ChoiceList choices={choices} onChoose={handleChoose} relationships={relationships} />
+          <ChoiceList choices={choices} onChoose={handleChoose} relationships={relationships} stats={useGameStore.getState().stats} />
         ) : currentLine ? (
           <DialogueBox
             characterId={currentLine.characterId}

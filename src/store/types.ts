@@ -56,6 +56,7 @@ export interface Choice {
   statEffects: Partial<PlayerStats>;
   relationshipEffects?: { characterId: string; change: number }[];
   requiredRelationship?: { characterId: string; minAffection: number }; // Gray out if not met
+  requiredStat?: { stat: keyof PlayerStats; min: number }; // Gray out if stat too low
 }
 
 export interface Scene {

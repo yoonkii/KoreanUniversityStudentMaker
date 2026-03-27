@@ -69,6 +69,16 @@ export const WEEK_6_SCENES: Scene[] = [
           { characterId: 'minji', change: 2 },
         ],
       },
+      {
+        id: 'night_study_teach',
+        text: '내가 정리한 노트 있는데, 설명해줄까? 가르치면 나도 복습 되거든.',
+        statEffects: { knowledge: 5, charm: 4, social: 4, stress: 2 },
+        relationshipEffects: [
+          { characterId: 'jaemin', change: 10 },
+          { characterId: 'minji', change: 8 },
+        ],
+        requiredStat: { stat: 'knowledge', min: 50 },
+      },
     ],
   },
 ];

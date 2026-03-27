@@ -15,6 +15,7 @@ interface ChoiceListProps {
   choices: Choice[];
   onChoose: (choice: Choice) => void;
   relationships?: Record<string, CharacterRelationship>;
+  stats?: PlayerStats;
 }
 
 const STAT_LABELS: Record<keyof PlayerStats, string> = {
@@ -35,7 +36,7 @@ function formatStatValue(key: keyof PlayerStats, value: number): string {
   return `${prefix}${value}`;
 }
 
-export default function ChoiceList({ choices, onChoose, relationships }: ChoiceListProps) {
+export default function ChoiceList({ choices, onChoose, relationships, stats }: ChoiceListProps) {
   return (
     <div className="glass-dialogue rounded-t-2xl w-full max-w-5xl mx-auto px-6 py-5">
       <p className="text-sm text-txt-secondary mb-4">선택지를 골라주세요</p>
@@ -45,8 +46,15 @@ export default function ChoiceList({ choices, onChoose, relationships }: ChoiceL
 
           // Check relationship requirement
           const req = choice.requiredRelationship;
-          const meetsRequirement = !req || (relationships?.[req.characterId]?.affection ?? 0) >= req.minAffection;
+          const meetsRelReq = !req || (relationships?.[req.characterId]?.affection ?? 0) >= req.minAffection;
           const requiredTierLabel = req ? getTierLabel(req.minAffection) : '';
+
+          // Check stat requirement
+          const statReq = choice.requiredStat;
+          const meetsStatReq = !statReq || (stats?.[statReq.stat] ?? 0) >= statReq.min;
+          const statReqLabel = statReq ? `${STAT_LABELS[statReq.stat]} ${statReq.min} 이상` : '';
+
+          const meetsRequirement = meetsRelReq && meetsStatReq;
 
           return (
             <button
@@ -70,9 +78,14 @@ export default function ChoiceList({ choices, onChoose, relationships }: ChoiceL
                 <p className="text-base text-txt-primary break-keep">{choice.text}</p>
 
                 {/* Locked indicator */}
-                {!meetsRequirement && req && (
+                {!meetsRelReq && req && (
                   <p className="text-xs text-coral/70 mt-1">
                     🔒 {req.characterId}와(과) {requiredTierLabel} 이상 필요
+                  </p>
+                )}
+                {!meetsStatReq && statReq && (
+                  <p className="text-xs text-coral/70 mt-1">
+                    🔒 {statReqLabel} 필요 (현재: {stats?.[statReq.stat] ?? 0})
                   </p>
                 )}
 
