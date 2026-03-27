@@ -63,7 +63,7 @@ export async function generateStructured<T>(
   schema: { parse: (data: unknown) => T }
 ): Promise<GenerateResult<T>> {
   const {
-    model = "gemini-3.1-flash-lite-preview",
+    model = "gemini-2.0-flash",
     systemPrompt,
     userPrompt,
     jsonSchema,
@@ -103,9 +103,11 @@ export async function generateStructured<T>(
       }
 
       // Only add thinking config for models that support it (not flash-lite)
-      if (thinkingLevel !== "minimal" && !model.includes("lite")) {
-        config.thinkingConfig = { thinkingLevel };
-      }
+      // thinkingConfig only for models that support it (2.5+ flash)
+      // gemini-2.0-flash does NOT support thinking
+      // if (thinkingLevel !== "minimal" && model.includes("2.5")) {
+      //   config.thinkingConfig = { thinkingLevel };
+      // }
 
       const response = await client.models.generateContent({
         model,
@@ -135,6 +137,7 @@ export async function generateStructured<T>(
         raw,
       };
     } catch (error) {
+      console.error(`[Gemini generateStructured] Attempt ${attempt + 1} failed:`, error instanceof Error ? error.message : error);
       if (attempt < maxRetries) {
         await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
         continue;
@@ -153,7 +156,7 @@ export async function generateText(
   options: Omit<GenerateOptions, "jsonSchema">
 ): Promise<string> {
   const {
-    model = "gemini-3.1-flash-lite-preview",
+    model = "gemini-2.0-flash",
     systemPrompt,
     userPrompt,
     thinkingLevel = "low",
@@ -185,9 +188,11 @@ export async function generateText(
       });
 
       const config: Record<string, unknown> = {};
-      if (thinkingLevel !== "minimal" && !model.includes("lite")) {
-        config.thinkingConfig = { thinkingLevel };
-      }
+      // thinkingConfig only for models that support it (2.5+ flash)
+      // gemini-2.0-flash does NOT support thinking
+      // if (thinkingLevel !== "minimal" && model.includes("2.5")) {
+      //   config.thinkingConfig = { thinkingLevel };
+      // }
 
       const response = await client.models.generateContent({
         model,
@@ -197,6 +202,7 @@ export async function generateText(
 
       return response.text ?? "";
     } catch (error) {
+      console.error(`[Gemini generateText] Attempt ${attempt + 1} failed:`, error instanceof Error ? error.message : error);
       if (attempt < maxRetries) {
         await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
         continue;
