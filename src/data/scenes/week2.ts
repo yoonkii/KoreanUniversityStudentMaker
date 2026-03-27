@@ -71,6 +71,10 @@ export const WEEK_2_SCENES: Scene[] = [
         text: '학생회관 3층. 동아리 박람회가 열리고 있다. 형형색색의 현수막과 음악 소리가 복도를 채운다.',
       },
       {
+        characterId: null,
+        text: '밴드 동아리 부스 앞을 지나가는데, 기타를 들고 있는 선배가 다가왔다. 카리스마 있는 눈빛에 자유로운 분위기.',
+      },
+      {
         characterId: 'hyunwoo',
         expression: 'cool',
         text: '어, 잠깐. 너 뭔가 느낌 있는데? 우리 동아리 관심 없어?',

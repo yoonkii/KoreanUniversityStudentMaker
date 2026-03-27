@@ -70,7 +70,11 @@ export const WEEK_1_SCENES: Scene[] = [
     dialogue: [
       {
         characterId: null,
-        text: '첫 전공 수업. 강의실은 200명 규모인데 벌써 빈자리가 별로 없다. 교수님이 출석부를 들고 단상에 선다.',
+        text: '첫 전공 수업. 강의실은 200명 규모인데 벌써 빈자리가 별로 없다.',
+      },
+      {
+        characterId: null,
+        text: '단상에 한 교수님이 올라선다. 날카로운 눈매에 깔끔한 정장 차림 — 첫인상부터 엄격한 분이란 걸 알 수 있다.',
       },
       {
         characterId: 'prof-kim',
@@ -123,6 +127,10 @@ export const WEEK_1_SCENES: Scene[] = [
         text: '도서관 3층 열람실. 첫 주부터 과제가 나왔다. 전공 서적을 펼쳐 놓고 한 시간째 같은 페이지를 보고 있다.',
       },
       {
+        characterId: null,
+        text: '그때 맞은편에서 누군가가 말을 걸어왔다. 분홍빛 머리카락의 선배 — 따뜻한 미소가 인상적이다.',
+      },
+      {
         characterId: 'soyeon',
         expression: 'teasing',
         text: '야, 그 페이지 아까부터 계속 보고 있는 거 아니야? ㅋㅋ',
@@ -170,6 +178,10 @@ export const WEEK_1_SCENES: Scene[] = [
       { characterId: 'boss', expression: 'pleased', position: 'right' },
     ],
     dialogue: [
+      {
+        characterId: null,
+        text: '재민이가 학교 앞 카페로 끌고 왔다. 작지만 아늑한 분위기. 카운터 뒤에서 인자한 눈의 사장님이 웃고 계신다.',
+      },
       {
         characterId: 'jaemin',
         expression: 'happy',
