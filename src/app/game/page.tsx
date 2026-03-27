@@ -427,7 +427,34 @@ export default function GameScreen() {
         const TIER_EMOJI: Record<string, string> = {
           acquaintance: '🤝', friend: '😊', close_friend: '💛', soulmate: '💕',
         };
-        const TIER_DESC: Record<string, string> = {
+        // NPC-specific tier descriptions for personal feel
+        const NPC_TIER_DESC: Record<string, Record<string, string>> = {
+          jaemin: {
+            acquaintance: '같은 방을 쓰는 사이. 이름은 기억한다.',
+            friend: '편하게 라면도 나눠 먹는 사이가 됐다.',
+            close_friend: '새벽에 인생 얘기를 나눌 수 있는 친구.',
+            soulmate: '룸메를 넘어, 평생 갈 친구가 됐다.',
+          },
+          minji: {
+            acquaintance: '같은 과에서 얼굴은 안다.',
+            friend: '라이벌이면서 동시에 든든한 스터디 메이트.',
+            close_friend: '경쟁 뒤에 숨은 진심을 알게 됐다.',
+            soulmate: '가장 이해받는 느낌. 말 안 해도 통한다.',
+          },
+          soyeon: {
+            acquaintance: '따뜻한 선배. 이름을 기억해줬다.',
+            friend: '선배의 진심 어린 조언이 힘이 된다.',
+            close_friend: '선후배를 넘어 진짜 언니/오빠 같은 존재.',
+            soulmate: '졸업해도 이어질 인연. 인생의 멘토.',
+          },
+          hyunwoo: {
+            acquaintance: '동아리에서 알게 된 쿨한 선배.',
+            friend: '같이 합주하며 웃는 사이.',
+            close_friend: '음악과 인생을 나누는 형/누나.',
+            soulmate: '무대 위에서 눈빛만으로 통하는 사이.',
+          },
+        };
+        const TIER_DESC_DEFAULT: Record<string, string> = {
           acquaintance: '서로 이름을 기억하게 되었다',
           friend: '편하게 대화할 수 있는 사이가 되었다',
           close_friend: '속 깊은 이야기를 나눌 수 있게 되었다',
@@ -435,7 +462,9 @@ export default function GameScreen() {
         };
         const name = NPC_KO[tierNotification.characterId] ?? tierNotification.characterId;
         const emoji = TIER_EMOJI[tierNotification.newTier] ?? '💫';
-        const desc = TIER_DESC[tierNotification.newTier] ?? '관계가 깊어졌습니다';
+        const desc = NPC_TIER_DESC[tierNotification.characterId]?.[tierNotification.newTier]
+          ?? TIER_DESC_DEFAULT[tierNotification.newTier]
+          ?? '관계가 깊어졌습니다';
         return (
           <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-slide-down">
             <div className="glass-strong px-6 py-4 rounded-xl flex items-center gap-3 shadow-2xl border border-pink/30">
