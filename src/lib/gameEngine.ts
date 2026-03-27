@@ -410,6 +410,34 @@ const WEEKLY_EVENT_POOL: WeeklyEventDef[] = [
       return minji >= 40 && others.length > 0;
     },
   },
+  // ─── Post-Exam NPC Reactions ───
+  {
+    id: 'post_midterm_minji_react',
+    name: '민지의 중간 반응',
+    description: '민지: "시험 어땠어? 나는... 생각보다 잘 본 것 같아." 은근 경쟁심이 보인다.',
+    effects: { social: 3, stress: 3, knowledge: 1 },
+    probability: 0.8,
+    priority: 4,
+    condition: (_, w, rels) => w === 8 && (rels?.['minji']?.affection ?? 0) >= 30,
+  },
+  {
+    id: 'post_midterm_jaemin_react',
+    name: '재민이의 중간 반응',
+    description: '재민: "야 시험 끝났다! 치킨 먹으러 가자! 걱정은 성적표 나올 때 해도 되잖아 ㅋㅋ"',
+    effects: { social: 5, stress: -8, money: -12000 },
+    probability: 0.8,
+    priority: 4,
+    condition: (_, w, rels) => w === 8 && (rels?.['jaemin']?.affection ?? 0) >= 30,
+  },
+  {
+    id: 'post_finals_soyeon_farewell',
+    name: '소연 선배의 작별',
+    description: '소연 선배: "이번 학기 정말 고생 많았어. 방학에도 가끔 연락해. 잊지 마."',
+    effects: { social: 8, stress: -10 },
+    probability: 0.9,
+    priority: 5,
+    condition: (_, w, rels) => w === 15 && (rels?.['soyeon']?.affection ?? 0) >= 40,
+  },
   {
     id: 'jaemin_neglected',
     name: '재민이의 섭섭함',
