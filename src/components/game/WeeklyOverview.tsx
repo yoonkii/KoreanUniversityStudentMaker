@@ -3,6 +3,7 @@
 import { useGameStore } from '@/store/gameStore';
 import { getRelationshipTier } from '@/store/gameStore';
 import { getWeekCondition, getWeatherForWeek } from '@/lib/gameEngine';
+import { getCachedDialogue } from '@/lib/weeklyDialogueCache';
 import Image from 'next/image';
 import GlassPanel from '@/components/ui/GlassPanel';
 
@@ -94,6 +95,37 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
           <h2 className="text-xl font-bold text-txt-primary">{nextWeek}주차 준비</h2>
           <p className="text-sm text-txt-secondary mt-1">{mood.label}</p>
         </div>
+
+        {/* Campus atmosphere — AI-generated or fallback */}
+        {(() => {
+          const aiDialogue = getCachedDialogue(nextWeek);
+          const atmosphere = aiDialogue?.campusAtmosphere;
+          // Fallback atmospheric descriptions by semester phase
+          const FALLBACK_ATMOSPHERE: Record<number, string> = {
+            1: '벚꽃이 만개한 캠퍼스. 신입생들의 설렘이 공기 중에 가득하다.',
+            2: '캠퍼스 곳곳에서 동아리 홍보 부스가 활기를 띤다.',
+            3: '도서관 앞 벤치에서 학생들이 과제를 논의하고 있다.',
+            4: 'MT 시즌이라 과 깃발을 든 학생들이 보인다.',
+            5: '수강 변경 기간. 행정실 앞에 줄이 길다.',
+            6: '중간고사가 다가오면서 도서관 자리가 부족해지기 시작했다.',
+            7: '시험 기간. 편의점 에너지 드링크가 불티나게 팔린다.',
+            8: '중간고사가 끝나고 캠퍼스에 잠시 여유가 돌아왔다.',
+            9: '축제 준비로 캠퍼스가 화려하게 꾸며지고 있다.',
+            10: '가을이 깊어지며 캠퍼스의 나뭇잎이 물들고 있다.',
+            11: '공모전 포스터가 게시판을 가득 채우고 있다.',
+            12: '겨울이 다가오며 캠퍼스에 찬 바람이 분다.',
+            13: '기말고사 준비로 카페마다 학생들이 가득하다.',
+            14: '도서관 24시간 개방. 기말 전쟁이 시작됐다.',
+            15: '종강을 앞둔 캠퍼스. 학생들 표정이 밝아지고 있다.',
+          };
+          const text = atmosphere || FALLBACK_ATMOSPHERE[nextWeek] || '';
+          if (!text) return null;
+          return (
+            <p className="text-xs text-txt-secondary/50 italic text-center mb-3 px-4 leading-relaxed">
+              {text}
+            </p>
+          );
+        })()}
 
         {/* Soyeon companion message (PM2 Cube butler pattern) */}
         <div className="flex gap-3 px-3 py-3 mb-4 bg-white/5 rounded-xl border-l-2 border-pink/40">
