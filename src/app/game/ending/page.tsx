@@ -226,6 +226,7 @@ export default function EndingPage() {
   const [animStep, setAnimStep] = useState(0);
   const [showMontage, setShowMontage] = useState(true);
   const [montageIndex, setMontageIndex] = useState(0);
+  const [isNewEnding, setIsNewEnding] = useState(false);
 
   // Track completion count for New Game+ bonus
   useEffect(() => {
@@ -237,6 +238,7 @@ export default function EndingPage() {
     if (!collection.includes(archetypeKey)) {
       collection.push(archetypeKey);
       localStorage.setItem('kusm-archetypes', JSON.stringify(collection));
+      setIsNewEnding(true);
     }
   }, [hydrated, player]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -417,6 +419,11 @@ export default function EndingPage() {
             animStep >= 1 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
         >
+          {isNewEnding && (
+            <div className="mb-3 px-4 py-1.5 rounded-full bg-gold/20 border border-gold/40 inline-block animate-bounce-once">
+              <span className="text-xs font-bold text-gold tracking-wider">✨ NEW ENDING UNLOCKED ✨</span>
+            </div>
+          )}
           <div className="text-5xl sm:text-7xl mb-2 sm:mb-3">{archetype.emoji}</div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white mb-1">{archetype.ko}</h1>
           <p className="text-sm sm:text-lg text-white/50">{archetype.en}</p>
