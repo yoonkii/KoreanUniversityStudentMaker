@@ -111,7 +111,37 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
           </div>
         </div>
 
-        {/* Stat overview */}
+        {/* Semester progress bar */}
+        <div className="mb-4">
+          <div className="flex justify-between text-[10px] text-txt-secondary/50 mb-1">
+            <span>1주차</span>
+            <span>학기 진행도 {Math.round((currentWeek / 16) * 100)}%</span>
+            <span>16주차</span>
+          </div>
+          <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+            <div className="h-full bg-teal rounded-full transition-all duration-500" style={{ width: `${(currentWeek / 16) * 100}%` }} />
+          </div>
+        </div>
+
+        {/* Knowledge → GPA projection */}
+        {currentWeek < 16 && (
+          <div className="mb-4 px-3 py-2.5 rounded-xl bg-gold/5 border border-gold/15">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-txt-secondary">📊 예상 학점 (현재 준비도 기준)</span>
+              <span className="text-sm font-bold text-gold">
+                ~{((stats.knowledge / 100) * 4.5).toFixed(1)} / 4.5
+              </span>
+            </div>
+            <p className="text-[10px] text-txt-secondary/50 mt-1">
+              {stats.knowledge >= 70 ? '이대로면 A 이상 가능!' :
+               stats.knowledge >= 50 ? 'B+ 정도. 더 공부하면 A도 가능해요.' :
+               stats.knowledge >= 30 ? 'C+ 수준. 시험 전까지 준비도를 올려야 해요.' :
+               '위험! 공부에 집중하지 않으면 학점이 낮을 수 있어요.'}
+            </p>
+          </div>
+        )}
+
+        {/* Stat overview with trend indicators */}
         <div className="flex flex-col gap-2 mb-4">
           <p className="text-xs text-txt-secondary font-medium">현재 상태</p>
           {topStats.map((stat) => (
@@ -119,6 +149,9 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
               <span className="text-sm text-txt-secondary">{stat.icon} {stat.label}</span>
               <span className={`text-sm font-medium ${statusColor[stat.status]}`}>
                 {stat.label === '돈' ? `₩${stat.value.toLocaleString('ko-KR')}` : `${stat.value}/100`}
+                <span className="ml-1 text-[10px]">
+                  {stat.status === 'danger' ? '⬇️' : stat.status === 'warning' ? '➡️' : '⬆️'}
+                </span>
               </span>
             </div>
           ))}
