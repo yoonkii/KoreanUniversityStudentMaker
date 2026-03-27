@@ -63,7 +63,7 @@ export async function generateStructured<T>(
   schema: { parse: (data: unknown) => T }
 ): Promise<GenerateResult<T>> {
   const {
-    model = "gemini-2.0-flash-lite",
+    model = "gemini-3.1-flash-lite-preview",
     systemPrompt,
     userPrompt,
     jsonSchema,
@@ -153,7 +153,7 @@ export async function generateText(
   options: Omit<GenerateOptions, "jsonSchema">
 ): Promise<string> {
   const {
-    model = "gemini-2.0-flash-lite",
+    model = "gemini-3.1-flash-lite-preview",
     systemPrompt,
     userPrompt,
     thinkingLevel = "low",
