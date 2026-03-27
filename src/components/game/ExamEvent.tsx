@@ -15,9 +15,10 @@ interface ExamStrategy {
   title: string;
   emoji: string;
   description: string;
-  multiplier: number; // Multiplies knowledge → GPA conversion
-  statEffects: Record<string, number>; // Side effects (stress, health)
+  multiplier: number;
+  statEffects: Record<string, number>;
   resultText: string;
+  requiredNpc?: { id: string; minAffection: number; lockedText: string };
 }
 
 const EXAM_STRATEGIES: ExamStrategy[] = [
@@ -47,15 +48,17 @@ const EXAM_STRATEGIES: ExamStrategy[] = [
     multiplier: 0.9,
     statEffects: { social: 6, stress: 3, charm: 2 },
     resultText: '서로 모르는 부분을 알려주며 공부했다. 혼자였으면 못 풀었을 문제도 있었다.',
+    requiredNpc: { id: 'minji', minAffection: 40, lockedText: '🔒 민지와 친해져야 스터디 그룹 가능 (호감도 40+)' },
   },
   {
     id: 'jokbo',
     title: '족보 활용',
     emoji: '📋',
-    description: '선배에게 받은 족보로 시험을 준비한다. 편하지만 변형 문제에 약하다.',
+    description: '소연 선배에게 받은 족보로 시험을 준비한다.',
     multiplier: 1.05,
     statEffects: { social: 2, stress: -2 },
     resultText: '족보 덕분에 출제 경향을 파악했다. 전부 맞지는 않았지만 도움이 됐다.',
+    requiredNpc: { id: 'soyeon', minAffection: 45, lockedText: '🔒 소연 선배와 친해져야 족보 획득 가능 (호감도 45+)' },
   },
   {
     id: 'give_up',
@@ -179,11 +182,13 @@ export default function ExamEvent({ type, onComplete }: ExamEventProps) {
             {EXAM_STRATEGIES.map((strategy) => {
               const estimatedGpa = calculateExamGpa(stats.knowledge, strategy.multiplier, minjiBonusGpa);
               const grade = getGpaGrade(estimatedGpa);
+              const isLocked = strategy.requiredNpc && (relationships[strategy.requiredNpc.id]?.affection ?? 0) < strategy.requiredNpc.minAffection;
               return (
                 <button
                   key={strategy.id}
-                  onClick={() => handleChoose(strategy)}
-                  className="glass-strong px-4 py-4 rounded-xl text-left hover:bg-white/10 transition-all cursor-pointer active:scale-[0.98] group"
+                  onClick={() => !isLocked && handleChoose(strategy)}
+                  disabled={!!isLocked}
+                  className={`glass-strong px-4 py-4 rounded-xl text-left transition-all group ${isLocked ? 'opacity-40 cursor-not-allowed' : 'hover:bg-white/10 cursor-pointer active:scale-[0.98]'}`}
                 >
                   <div className="flex items-start gap-3">
                     <span className="text-2xl flex-shrink-0 mt-0.5">{strategy.emoji}</span>
@@ -192,7 +197,9 @@ export default function ExamEvent({ type, onComplete }: ExamEventProps) {
                         <div className="text-sm font-bold text-txt-primary group-hover:text-teal transition-colors">{strategy.title}</div>
                         <span className={`text-xs font-bold ${grade.color}`}>~{estimatedGpa.toFixed(1)} ({grade.label})</span>
                       </div>
-                      <div className="text-xs text-txt-secondary mt-0.5">{strategy.description}</div>
+                      <div className="text-xs text-txt-secondary mt-0.5">
+                        {isLocked ? strategy.requiredNpc!.lockedText : strategy.description}
+                      </div>
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {Object.entries(strategy.statEffects).map(([k, v]) => {
                           const labels: Record<string, string> = { knowledge: '준비도', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력' };
