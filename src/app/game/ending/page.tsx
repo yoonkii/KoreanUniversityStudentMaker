@@ -331,8 +331,25 @@ export default function EndingPage() {
   // Event count highlight
   if (eventHistory.length >= 10) highlights.push({ emoji: '📸', text: '매주가 이벤트였던 정신없이 바쁜 학기!' });
 
-  // Cap at 4 highlights for clean display
-  const displayHighlights = highlights.slice(0, 4);
+  // Event-based highlights — reference actual memorable moments
+  const eventTexts = eventHistory.map(e => e.summary);
+  if (eventTexts.some(t => t.includes('MT'))) highlights.push({ emoji: '🏕️', text: 'MT에서의 추억이 가장 빛나는 순간이었다.' });
+  if (eventTexts.some(t => t.includes('생일'))) highlights.push({ emoji: '🎂', text: '생일 파티의 따뜻함이 기억에 남는다.' });
+  if (eventTexts.some(t => t.includes('공연'))) highlights.push({ emoji: '🎸', text: '무대 위의 경험은 평생 잊지 못할 것이다.' });
+  if (eventTexts.some(t => t.includes('고백') || t.includes('커플'))) highlights.push({ emoji: '💌', text: '두근거렸던 그 순간이 떠오른다.' });
+  if (eventTexts.some(t => t.includes('장학금'))) highlights.push({ emoji: '🎓', text: '장학금 소식에 기뻐 날뛰었던 그 날!' });
+  if (eventTexts.some(t => t.includes('인턴'))) highlights.push({ emoji: '💼', text: '인턴십 기회가 찾아온 건 노력의 결과였다.' });
+
+  // Streak-based highlights
+  const streaks = useGameStore.getState().activityStreaks;
+  const maxStreak = Object.entries(streaks).sort(([,a],[,b]) => b - a)[0];
+  if (maxStreak && maxStreak[1] >= 5) {
+    const STREAK_NAMES: Record<string, string> = { study: '공부', exercise: '운동', parttime: '알바', club: '동아리' };
+    highlights.push({ emoji: '🔥', text: `${STREAK_NAMES[maxStreak[0]] ?? maxStreak[0]} ${maxStreak[1]}주 연속 — 대단한 꾸준함!` });
+  }
+
+  // Cap at 5 highlights for clean display
+  const displayHighlights = highlights.slice(0, 5);
 
   // Dream vs Reality comparison
   const DREAM_INFO: Record<string, { label: string; emoji: string; matchArchetypes: string[] }> = {
