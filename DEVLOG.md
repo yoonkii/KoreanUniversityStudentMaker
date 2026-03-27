@@ -956,3 +956,44 @@ Added "초기화" button in the header that clears all slots. Appears only when 
 - Playability: 9.5/10 (was 9 — smart fill dramatically reduces onboarding friction)
 
 ---
+
+## Realism Overhaul Session (2026-03-26)
+
+### QA Testing — 3 Critical Bugs Fixed
+- **Scene infinite loop**: StatChangePopup timer reset every render (inline onDone callback). Fixed with useRef.
+- **Character portraits invisible**: Container had height but zero width. Next.js Image fill needs sized parent.
+- **Schedule/action phase overlap**: Phase state wasn't guarded during action phase transition.
+
+### Realism Overhaul — 6 Feedback Points Addressed
+Complete rewrite of core game mechanics across 59 files (+1496/-707 lines):
+1. **GPA → Knowledge (준비도)**: GPA no longer exists at semester start. Knowledge (0-100) builds through study/lectures. Actual GPA computed only at exam events via `knowledge × strategyMultiplier + noise`.
+2. **NPC-Targeted Social Activities**: Friends/date activities now pick which NPC. Each NPC gives different stat effects. Dating requires Friend tier (affection ≥ 50).
+3. **KakaoTalk Reply System**: Reply to ONE NPC per week. Ignoring messagers costs -1 affection. Trade-off mechanic.
+4. **Action Phase Shows All Activities**: 3 activities per day × 7 days displayed with day headers.
+5. **Harder Trade-offs**: Weekly baseline drains (₩-30K, health -3, stress +5). Starting money 500K→300K. Study costs social -2. Every scene choice has a cost.
+6. **Relationship Mechanics**: Tier bonuses (민지: knowledge+10-20%, 재민: stress relief). Decay after 3 weeks neglect. Relationship-gated choices.
+
+### AUTOPLAY Cycles C1-C14
+
+| Cycle | Feature | Impact |
+|-------|---------|--------|
+| C1 | 11 NPC-initiated events + milestone celebrations | World feels alive, "level up" moments |
+| C2 | Semester progress bar + GPA projection + stat trends | Strategic planning visibility |
+| C3 | Probabilistic activity outcomes (±20%, crits, bad days) | Each playthrough different |
+| C4 | NPC affection auto-bump from social activities | Schedule → relationships |
+| C5 | 5 hidden relationship-based endings (14 total) | Discovery/replay motivation |
+| C6 | Richer action phase with stat ticking + NPC encounters | PM-style observation fun |
+| C7 | Living campus: 15 background NPCs + gossip system | Populated, breathing campus |
+| C8 | Dynamic context-aware events with narrative arcs | Story emergence from relationships |
+| C9 | Gemini weekly dialogue cache (1 API call/week) | AI-powered contextual NPC lines |
+| C10 | Energy budget system (PM-style constraint) | Strategic resource management |
+| C11 | 3 stat-gated unlockable activities | PM-style progression/discovery |
+| C12 | 7 mid-activity choice events (PM-style interrupts) | Player agency during action phase |
+| C13 | NPC mood board in WeeklyOverview | Relationship strategic visibility |
+| C14 | Contextual week title cards | Narrative continuity, stat-reactive |
+
+**Gemini API Fix**: Switched from gemini-3-flash-preview to gemini-2.0-flash-lite. Fixed thinkingConfig (not supported on lite), responseJsonSchema→responseSchema field name.
+
+**Total**: 48 tests passing, build clean, 20+ commits.
+
+---
