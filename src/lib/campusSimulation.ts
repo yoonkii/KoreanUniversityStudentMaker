@@ -34,6 +34,15 @@ const CAMPUS_NPCS: CampusNpc[] = [
   { id: 'ajumma', name: '학식 아주머니', role: '학식당 직원', personality: '학생들 밥 많이 주는 다정한 분' },
   { id: 'guard', name: '경비 아저씨', role: '기숙사 경비', personality: '밤에 나가는 학생 걱정하는 분' },
   { id: 'sunbae_kim', name: '김 선배', role: '4학년 선배', personality: '취준생, 약간 우울' },
+  // ─── Extended roster (cycle 26) ───
+  { id: 'chaeyoung', name: '류채영', role: '같은 과 동기', personality: '패션에 관심 많은 세련된 친구' },
+  { id: 'woojin', name: '김우진', role: '과 선배', personality: '게임 좋아하는 3학년' },
+  { id: 'haeun', name: '이하은', role: '교환학생', personality: '호기심 많은 외국어 전공' },
+  { id: 'janitor', name: '청소 아저씨', role: '환경미화원', personality: '아침 일찍 학교를 깨끗이 하시는 분' },
+  { id: 'librarian', name: '사서 선생님', role: '도서관 사서', personality: '조용하지만 책 추천을 잘 해주심' },
+  { id: 'delivery', name: '배달 기사님', role: '배달원', personality: '학교 앞 배달 전문, 학생들에게 친절' },
+  { id: 'couple_a', name: '커플 A', role: '캠퍼스 커플', personality: '항상 붙어 다니는 선배 커플' },
+  { id: 'freshman', name: '신입생', role: '1학년 후배', personality: '모든 게 신기한 눈으로 캠퍼스를 돌아다님' },
 ];
 
 // ─── Campus Location Types ───
@@ -151,6 +160,14 @@ function npcLikelyAt(npc: CampusNpc, location: CampusLocation, week: number): bo
     ajumma: ['cafeteria'],
     guard: ['dorm'],
     sunbae_kim: ['library', 'cafe'],
+    chaeyoung: ['cafeteria', 'cafe', 'campus_path'],
+    woojin: ['club_room', 'dorm', 'cafeteria'],
+    haeun: ['classroom', 'cafeteria', 'campus_path'],
+    janitor: ['campus_path', 'classroom'],
+    librarian: ['library'],
+    delivery: ['dorm', 'cafeteria'],
+    couple_a: ['campus_path', 'cafeteria', 'cafe'],
+    freshman: ['classroom', 'campus_path', 'cafeteria'],
   };
   const prefs = locationPrefs[npc.id] ?? ['campus_path'];
   return prefs.includes(location);
@@ -229,6 +246,48 @@ function generateNpcDialogue(
       cafe: ['해리가 카페에서 이어폰을 끼고 일하면서 콧노래를 부르고 있다.'],
       club_room: ['해리: "이 곡 들어봐! 우리 다음 공연에 넣으면 어떨까?"'],
       classroom: [], library: [], cafeteria: [], gym: [], dorm: [], campus_path: [],
+    },
+    chaeyoung: {
+      cafeteria: ['채영: "오늘 학식 비주얼 별로다... 밖에서 먹을까?"'],
+      cafe: ['채영이 새 옷을 입고 왔다. "어때? 할인 받아서 샀어!"'],
+      campus_path: ['채영이 지나가면서 반갑게 손을 흔들었다.'],
+      classroom: [], library: [], gym: [], club_room: [], dorm: [],
+    },
+    woojin: {
+      club_room: ['우진 선배: "주말에 롤 한 판 할 사람?"'],
+      dorm: ['우진 선배 방에서 게임 소리가 들린다... 밤새 하는 건가.'],
+      cafeteria: ['우진 선배: "학식 라면이 최고야. 반박 불가."'],
+      classroom: [], library: [], cafe: [], gym: [], campus_path: [],
+    },
+    haeun: {
+      classroom: ['하은: "한국어 아직 어렵다... 이 단어 뭐야?" 열심히 필기하고 있다.'],
+      cafeteria: ['하은이 한국 음식을 신기해하며 먹고 있다. "이거 맛있어!"'],
+      campus_path: ['하은이 캠퍼스 사진을 찍고 있다. "여기 너무 예뻐!"'],
+      library: [], cafe: [], gym: [], club_room: [], dorm: [],
+    },
+    janitor: {
+      campus_path: ['청소 아저씨가 낙엽을 쓸고 계신다. 가볍게 인사했다.'],
+      classroom: ['청소 아저씨: "학생들 쓰레기 좀 제대로 버려줬으면..."'],
+      library: [], cafe: [], cafeteria: [], gym: [], club_room: [], dorm: [],
+    },
+    librarian: {
+      library: [
+        '사서 선생님: "이 책 추천해요. 요즘 학생들한테 인기 많아요."',
+        '사서 선생님이 조용히 새 책을 정리하고 계신다.',
+      ],
+      classroom: [], cafe: [], cafeteria: [], gym: [], club_room: [], dorm: [], campus_path: [],
+    },
+    couple_a: {
+      campus_path: ['앞에서 커플이 팔짱 끼고 걸어가고 있다. ...부럽다.'],
+      cafeteria: ['커플이 한 그릇을 나눠 먹고 있다. 주변에서 부러운 시선.'],
+      cafe: ['카페 구석에서 커플이 달달하게 대화하고 있다.'],
+      classroom: [], library: [], gym: [], club_room: [], dorm: [],
+    },
+    freshman: {
+      classroom: ['후배가 건물을 못 찾아 헤매고 있다. "선배, 여기 어디예요?"'],
+      campus_path: ['신입생들이 단체로 캠퍼스 투어를 하고 있다.'],
+      cafeteria: ['후배가 학식 메뉴판을 진지하게 읽고 있다.'],
+      library: [], cafe: [], gym: [], club_room: [], dorm: [],
     },
   };
 
