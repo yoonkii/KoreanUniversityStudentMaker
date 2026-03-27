@@ -490,10 +490,21 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
       {/* Day display */}
       {currentDay && (
         <div className="w-full max-w-md relative z-10 animate-fade-in">
-          {/* Day header */}
-          <h2 className="text-xl font-bold text-txt-primary text-center mb-4">
+          {/* Day header with semester atmosphere on first day */}
+          <h2 className="text-xl font-bold text-txt-primary text-center mb-1">
             {currentDay.dayName}
           </h2>
+          {currentDayIndex === 0 && (
+            <p className="text-[10px] text-txt-secondary/30 text-center mb-3">
+              {currentWeek <= 3 ? '🌸 봄의 시작 — 캠퍼스가 활기를 띤다' :
+               currentWeek <= 6 ? '🌿 4월의 캠퍼스 — 일상이 자리잡는 중' :
+               currentWeek <= 8 ? '📝 시험 시즌 — 도서관이 붐빈다' :
+               currentWeek === 9 ? '🎉 축제 주간 — 온 캠퍼스가 들뜬다' :
+               currentWeek <= 11 ? '🍂 중반을 넘긴 학기 — 시간이 빠르다' :
+               currentWeek <= 13 ? '❄️ 겨울이 다가온다 — 마무리의 시간' :
+               '🎓 학기의 끝 — 종강이 보인다'}
+            </p>
+          )}
 
           {/* 3 activity rows */}
           <div className="flex flex-col gap-2">
