@@ -85,6 +85,18 @@ export default function WeekTitleCard({ week, onDone }: WeekTitleCardProps) {
         <p className="text-lg text-txt-secondary/70 animate-fade-in-up max-w-md px-4" style={{ animationDelay: '0.2s' }}>
           {subtitle}
         </p>
+        {/* Mood music indicator — atmospheric suggestion */}
+        <p className="text-[10px] text-txt-secondary/20 mt-4 animate-fade-in-up tracking-wider" style={{ animationDelay: '0.4s' }}>
+          {week <= 3 ? '♪ 새로운 시작 — 설레는 봄의 멜로디' :
+           week === 4 ? '♪ MT의 밤 — 캠프파이어 기타' :
+           week <= 6 ? '♪ 일상의 리듬 — 카페 재즈' :
+           week <= 8 ? '♪ 긴장감 — 시험의 정적' :
+           week === 9 ? '♪ 축제의 열기 — 밴드 사운드' :
+           week <= 11 ? '♪ 가을 산책 — 잔잔한 피아노' :
+           week <= 13 ? '♪ 마지막 질주 — 결의의 테마' :
+           week <= 15 ? '♪ 그리고 — 이별과 시작의 노래' :
+           '♪ 에필로그 — 추억의 멜로디'}
+        </p>
       </div>
     </div>
   );
