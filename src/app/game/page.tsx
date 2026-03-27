@@ -33,6 +33,7 @@ import type { DayGroup } from '@/components/game/ActionPhase';
 // import { CORE_NPC_SHEETS } from '@/engine/data/core-npcs';
 import { checkAchievements } from '@/lib/achievements';
 import { triggerDialogueGeneration } from '@/lib/weeklyDialogueCache';
+import { triggerNarrationGeneration } from '@/lib/activityNarrationCache';
 import { triggerAiCampusGeneration, getOverheardConversation, getWeeklyRoutines } from '@/lib/livingCampus';
 
 export default function GameScreen() {
@@ -226,6 +227,8 @@ export default function GameScreen() {
     if (dayGroups.length > 0) {
       setActionDays(dayGroups);
       setShowActionPhase(true);
+      // Trigger Gemini narration generation in background
+      triggerNarrationGeneration(dayGroups, currentWeek, stats);
     } else if (scenes.length > 0) {
       setSceneQueue(scenes);
       setPhase('simulation');

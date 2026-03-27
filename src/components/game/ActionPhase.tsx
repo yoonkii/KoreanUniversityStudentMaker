@@ -10,6 +10,7 @@ import { getNpcContextualLine } from '@/lib/weeklyDialogueCache';
 import { getInnerMonologue } from '@/lib/innerMonologue';
 import { getActivityFlavorText } from '@/lib/activityFlavor';
 import { getActivityResult } from '@/lib/activityResults';
+import { getNarration, getConnector } from '@/lib/activityNarrationCache';
 import { getCampusAmbience } from '@/lib/campusAmbience';
 import { useGameStore } from '@/store/gameStore';
 
@@ -660,6 +661,13 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
                       <span className="text-[10px] text-pink">with {activity.targetNpcName}</span>
                     )}
                     {!activity.skipped && i < revealedActivities && (() => {
+                      // Gemini narration takes priority
+                      const globalIdx = currentDayIndex * 3 + i;
+                      const aiNarration = getNarration(currentWeek, globalIdx);
+                      if (aiNarration) {
+                        return <span className="text-[10px] text-txt-primary/50 italic leading-tight line-clamp-2">{aiNarration}</span>;
+                      }
+                      // Fallback to hardcoded
                       const flavor = activity.targetNpcName ? null : getActivityFlavorText(activity.name, currentWeek);
                       const result = getActivityResult(activity.name, currentWeek, i);
                       const ambience = getCampusAmbience(activity.name, currentWeek, i);
