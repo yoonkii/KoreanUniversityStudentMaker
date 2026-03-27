@@ -63,7 +63,7 @@ function getWeekComment(deltas: Partial<PlayerStats>): string {
 }
 
 /** Character diary — personal reflection on the week */
-function getDiaryEntry(week: number, deltas: Partial<PlayerStats>, stats: PlayerStats): string {
+export function getDiaryEntry(week: number, deltas: Partial<PlayerStats>, stats: PlayerStats): string {
   const stress = deltas.stress ?? 0;
   const knowledge = deltas.knowledge ?? 0;
   const social = deltas.social ?? 0;
@@ -260,7 +260,13 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
 
         {/* Continue button */}
         <button
-          onClick={() => { clearNewAchievements(); onContinue(); }}
+          onClick={() => {
+            clearNewAchievements();
+            // Save diary entry
+            const diary = getDiaryEntry(currentWeek, weekStatDeltas, stats);
+            useGameStore.getState().addDiaryEntry(currentWeek, diary);
+            onContinue();
+          }}
           className={`w-full py-3 rounded-xl font-semibold text-base transition-all duration-300 cursor-pointer active:scale-[0.98] ${
             currentWeek >= 16
               ? 'bg-gold/20 text-gold border border-gold/30 hover:bg-gold/30'

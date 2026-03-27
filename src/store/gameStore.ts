@@ -80,7 +80,8 @@ interface GameStore {
   unlockedAchievements: string[];
   newAchievements: { id: string; title: string; emoji: string }[];
   examResults: ExamResults;
-  startingStats: PlayerStats | null; // Snapshot of stats at game start for ending comparison
+  startingStats: PlayerStats | null;
+  diaryEntries: { week: number; text: string }[];
 
   // --- Actions ---
   setHasHydrated: (v: boolean) => void;
@@ -104,6 +105,7 @@ interface GameStore {
   setWeeklyEvent: (event: WeeklyEvent | null) => void;
   setExamResults: (results: Partial<ExamResults>) => void;
   addNpcMemory: (characterId: string, memory: string) => void;
+  addDiaryEntry: (week: number, text: string) => void;
   resetGame: () => void;
 }
 
@@ -132,6 +134,7 @@ export const useGameStore = create<GameStore>()(
       newAchievements: [],
       examResults: {},
       startingStats: null,
+      diaryEntries: [],
 
       // --- Actions ---
 
@@ -332,6 +335,12 @@ export const useGameStore = create<GameStore>()(
         }));
       },
 
+      addDiaryEntry(week, text) {
+        set((state) => ({
+          diaryEntries: [...state.diaryEntries, { week, text }],
+        }));
+      },
+
       addNpcMemory(characterId, memory) {
         const { relationships } = get();
         const rel = relationships[characterId];
@@ -368,6 +377,7 @@ export const useGameStore = create<GameStore>()(
           newAchievements: [],
           examResults: {},
           startingStats: null,
+          diaryEntries: [],
         });
       },
     }),
