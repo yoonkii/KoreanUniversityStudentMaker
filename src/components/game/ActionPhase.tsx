@@ -177,6 +177,22 @@ const RANDOM_EVENTS = [
   { text: '수업 중에 졸다가 들켰다... 😴', effects: { knowledge: -2, stress: 5 } },
 ];
 
+// Time-of-day atmosphere — changes gradient overlay and ambient text
+const TIME_ATMOSPHERE: Record<string, { gradient: string; ambientText: string }> = {
+  morning: {
+    gradient: 'from-blue-900/40 via-navy/60 to-navy/80',
+    ambientText: '아침 햇살이 캠퍼스를 비추고 있다.',
+  },
+  afternoon: {
+    gradient: 'from-amber-900/20 via-navy/60 to-navy/80',
+    ambientText: '오후의 따뜻한 햇빛이 비추고 있다.',
+  },
+  evening: {
+    gradient: 'from-indigo-900/50 via-navy/70 to-navy/90',
+    ambientText: '해가 지고 캠퍼스에 가로등이 켜졌다.',
+  },
+};
+
 function getActivityBackground(name: string): string {
   const n = name.toLowerCase();
   if (n.includes('수업') || n.includes('lecture')) return '/assets/backgrounds/classroom/daytime.png';
@@ -372,12 +388,16 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
 
   return (
     <div className="flex flex-col items-center justify-center h-[100dvh] bg-navy px-4 relative overflow-hidden">
-      {/* Background */}
+      {/* Background with time-of-day atmosphere */}
       <div
         className="absolute inset-0 bg-cover bg-center transition-all duration-700 opacity-20"
         style={{ backgroundImage: `url(${bgSrc})` }}
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/70 to-navy/40" />
+      {(() => {
+        const firstAct = currentDay?.activities[0];
+        const timeAtmo = TIME_ATMOSPHERE[firstAct?.timeSlot ?? 'afternoon'] ?? TIME_ATMOSPHERE.afternoon;
+        return <div className={`absolute inset-0 bg-gradient-to-t ${timeAtmo.gradient} transition-all duration-1000`} />;
+      })()}
 
       {/* Speed controls */}
       <div className="absolute top-4 right-4 flex gap-2 z-30">
