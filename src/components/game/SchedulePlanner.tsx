@@ -7,6 +7,7 @@ import { ACTIVITIES, ACTIVITY_LIST } from '@/data/activities';
 import { CHARACTERS } from '@/data/characters';
 import { getWeekCondition, getWeatherForWeek } from '@/lib/gameEngine';
 import type { DayKey, TimeSlot, WeekSchedule, ActivitySlot, NpcActivityVariant } from '@/store/types';
+import { getWeeklyRoutines } from '@/lib/livingCampus';
 
 interface SchedulePlannerProps {
   onComplete: (schedule: WeekSchedule) => void;
@@ -384,6 +385,21 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
 
   return (
     <div className="flex flex-col h-full max-w-3xl mx-auto p-3 sm:p-4 gap-3 sm:gap-4">
+      {/* Campus life ticker — what NPCs are doing right now */}
+      {(() => {
+        const campus = getWeeklyRoutines(currentWeek);
+        const timeOfDay = new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening';
+        const routine = campus.routines[currentWeek % campus.routines.length];
+        const slot = routine[timeOfDay];
+        return (
+          <div className="px-3 py-2 rounded-lg bg-white/[0.03] border border-white/5 text-[10px] text-txt-secondary/40">
+            <span className="text-txt-secondary/60">{routine.npcName}</span>
+            <span className="mx-1">·</span>
+            <span className="italic">{slot.activity}</span>
+          </div>
+        );
+      })()}
+
       {/* First-time tutorial overlay */}
       {showTutorial && (
         <div className="px-3 py-3 rounded-xl bg-teal/10 border border-teal/20 text-xs text-teal/80 leading-relaxed">
