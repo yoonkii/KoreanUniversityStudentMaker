@@ -90,11 +90,17 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/40 cursor-pointer" onClick={onContinue}>
       <GlassPanel variant="strong" className="w-full max-w-lg p-6 animate-modal-enter">
-        {/* Header */}
+        {/* Header with seasonal accent */}
         <div className="text-center mb-5">
           <span className="text-4xl mb-2 block">{mood.emoji}</span>
           <h2 className="text-xl font-bold text-txt-primary">{nextWeek}주차 준비</h2>
-          <p className="text-sm text-txt-secondary mt-1">{mood.label}</p>
+          <div className="flex items-center justify-center gap-2 mt-1">
+            <span className="text-sm text-txt-secondary">{mood.label}</span>
+            <span className="text-xs text-txt-secondary/30">·</span>
+            <span className="text-xs text-txt-secondary/50">
+              {nextWeek <= 3 ? '🌸 3월' : nextWeek <= 7 ? '🌿 4월' : nextWeek <= 11 ? '☀️ 5월' : '🌻 6월'}
+            </span>
+          </div>
         </div>
 
         {/* Campus atmosphere — AI-generated or fallback */}
