@@ -838,6 +838,45 @@ export default function EndingPage() {
           </div>
         </div>
 
+        {/* Play statistics — journey in numbers */}
+        <div
+          className={`bg-white/[0.03] backdrop-blur-md rounded-2xl p-5 border border-white/5 mb-4 transition-all duration-1000 ${
+            animStep >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}
+        >
+          <h3 className="text-sm font-bold text-white/40 mb-3">📋 플레이 기록</h3>
+          <div className="grid grid-cols-3 gap-3">
+            {(() => {
+              const allRels = relationships;
+              const npcsMet = Object.values(allRels).filter(r => r.encounters > 0).length;
+              const totalEncounters = Object.values(allRels).reduce((sum, r) => sum + r.encounters, 0);
+              const diaryCount = useGameStore.getState().diaryEntries.length;
+              const achievements = useGameStore.getState().unlockedAchievements.length;
+              const er = useGameStore.getState().examResults;
+
+              const statItems = [
+                { value: '16', label: '주차 완료', emoji: '📅' },
+                { value: `${npcsMet}`, label: '만난 NPC', emoji: '👤' },
+                { value: `${totalEncounters}`, label: '만남 횟수', emoji: '🤝' },
+                { value: `${eventHistory.length}`, label: '이벤트', emoji: '⚡' },
+                { value: `${achievements}`, label: '업적', emoji: '🏆' },
+                { value: er.semesterGpa ? `${er.semesterGpa.toFixed(1)}` : '-', label: '학기 GPA', emoji: '📊' },
+                { value: `${diaryCount}`, label: '일기', emoji: '📔' },
+                { value: `₩${Math.round(stats.money / 10000)}만`, label: '최종 잔고', emoji: '💰' },
+                { value: `${stats.stress}`, label: '최종 스트레스', emoji: '🔥' },
+              ];
+
+              return statItems.map((item, i) => (
+                <div key={i} className="text-center">
+                  <span className="text-lg">{item.emoji}</span>
+                  <div className="text-sm font-bold text-white/70 mt-0.5">{item.value}</div>
+                  <div className="text-[9px] text-white/30">{item.label}</div>
+                </div>
+              ));
+            })()}
+          </div>
+        </div>
+
         {/* Action buttons */}
         <div
           className={`flex flex-col gap-3 transition-all duration-1000 ${
