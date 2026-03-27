@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Scene, Choice, SceneCharacter } from '@/store/types';
 import { ACTIVITY_COLORS, type ActivityColorKey } from '@/data/activity-colors';
 import { useAIDialogue } from '@/hooks/useAIDialogue';
@@ -10,6 +10,7 @@ import StatChangePopup from './StatChangePopup';
 import CharacterPortrait from './CharacterPortrait';
 import DialogueBox from './DialogueBox';
 import ChoiceList from './ChoiceList';
+import { getRelationshipGreeting, getRelationshipReaction } from '@/lib/dialogueModifier';
 
 /** Derive an activity key from a scene's location string */
 function locationToActivity(location: string): ActivityColorKey {
@@ -64,7 +65,37 @@ export default function SceneRenderer({ scene, onSceneEnd, activityId, timeLabel
   const relationships = useGameStore((s) => s.relationships);
   const { dialogue: aiDialogue, isLoading: isAILoading } = useAIDialogue(scene, enableAIDialogue);
   const { choices, characters, location, backgroundVariant } = scene;
-  const dialogue = aiDialogue;
+
+  // Apply relationship-aware dialogue modifiers
+  const dialogue = useMemo(() => {
+    const lines = [...aiDialogue];
+    if (lines.length === 0) return lines;
+
+    // Find first NPC line and add greeting
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].characterId && lines[i].characterId !== null) {
+        const greeting = getRelationshipGreeting(lines[i].characterId!, relationships);
+        if (greeting) {
+          lines[i] = { ...lines[i], text: greeting + lines[i].text };
+        }
+        break;
+      }
+    }
+
+    // Find last NPC line and add reaction
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (lines[i].characterId && lines[i].characterId !== null) {
+        const reaction = getRelationshipReaction(lines[i].characterId!, relationships);
+        if (reaction) {
+          lines[i] = { ...lines[i], text: lines[i].text + reaction };
+        }
+        break;
+      }
+    }
+
+    return lines;
+  }, [aiDialogue, relationships]);
+
   const currentLine = dialogue[currentLineIndex];
   const isLastLine = currentLineIndex >= dialogue.length - 1;
 
