@@ -48,6 +48,15 @@ const MONOLOGUE_POOL: MonologueEntry[] = [
   { text: '첫 주... 다 새롭고 설레고 어색하다.', condition: (_, w) => w === 1 },
 ];
 
+// Memory-based monologues — reference past events
+const MEMORY_MONOLOGUES: { trigger: string; text: string; minWeek: number }[] = [
+  { trigger: 'MT', text: 'MT에서의 캠프파이어가 그립다. 그때가 좋았는데.', minWeek: 6 },
+  { trigger: '축제', text: '축제 때 불꽃놀이, 아직도 눈에 선하다.', minWeek: 11 },
+  { trigger: '중간고사', text: '중간고사 때 죽을 뻔했지... 그래도 살아남았다.', minWeek: 10 },
+  { trigger: '생일', text: '재민이 생일에 케이크 먹던 거, 벌써 추억이 됐네.', minWeek: 8 },
+  { trigger: '공연', text: '현우 선배 공연이 아직도 기억에 남는다.', minWeek: 15 },
+];
+
 /**
  * Get a contextual inner monologue line for the current state.
  * Returns null ~50% of the time to avoid being too chatty.
@@ -56,9 +65,19 @@ export function getInnerMonologue(
   stats: PlayerStats,
   week: number,
   activityName?: string,
+  eventHistory?: { week: number; summary: string }[],
 ): string | null {
   // 50% chance to show any monologue (keeps it special)
   if (Math.random() > 0.5) return null;
+
+  // 20% chance of memory-based monologue (references past events)
+  if (eventHistory && eventHistory.length > 0 && Math.random() < 0.2) {
+    for (const mem of MEMORY_MONOLOGUES) {
+      if (week >= mem.minWeek && eventHistory.some(e => e.summary.includes(mem.trigger))) {
+        return mem.text;
+      }
+    }
+  }
 
   // Filter eligible monologues
   const eligible = MONOLOGUE_POOL.filter(m => {

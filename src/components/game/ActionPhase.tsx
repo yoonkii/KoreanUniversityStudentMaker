@@ -248,7 +248,8 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
 
     // Inner monologue — VN-style character thoughts
     const mainActivity = day.activities.find(a => !a.skipped);
-    const thought = mainActivity ? getInnerMonologue(runningStats, currentWeek + dayIdx, mainActivity.name) : null;
+    const evHistory = useGameStore.getState().eventHistory;
+    const thought = mainActivity ? getInnerMonologue(runningStats, currentWeek + dayIdx, mainActivity.name, evHistory) : null;
     if (thought) {
       setTimeout(() => setMonologue(thought), actRevealDelay * day.activities.length + 100);
     }
