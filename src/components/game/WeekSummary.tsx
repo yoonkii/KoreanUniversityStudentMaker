@@ -110,6 +110,20 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
           <p className="text-sm text-txt-secondary mb-1">주간 결산</p>
           <h2 className="text-2xl font-bold text-txt-primary">{currentWeek}주차 완료</h2>
           <p className="text-sm text-teal/80 mt-1.5">{getWeekComment(weekStatDeltas)}</p>
+          {/* Week rating tag */}
+          {(() => {
+            const totalPositive = Object.entries(weekStatDeltas)
+              .filter(([k, v]) => k !== 'stress' && k !== 'money' && (v ?? 0) > 0)
+              .reduce((sum, [, v]) => sum + (v ?? 0), 0);
+            const stressDelta = weekStatDeltas.stress ?? 0;
+            let tag: { text: string; color: string };
+            if (totalPositive >= 20 && stressDelta <= 5) tag = { text: '🌟 최고의 한 주', color: 'text-gold' };
+            else if (totalPositive >= 12) tag = { text: '😊 좋은 한 주', color: 'text-teal' };
+            else if (stressDelta >= 15) tag = { text: '😰 힘든 한 주', color: 'text-coral' };
+            else if (totalPositive <= 3 && stressDelta >= 5) tag = { text: '😐 평범한 한 주', color: 'text-txt-secondary' };
+            else tag = { text: '🙂 무난한 한 주', color: 'text-txt-secondary' };
+            return <p className={`text-xs mt-1 ${tag.color}`}>{tag.text}</p>;
+          })()}
         </div>
 
         {/* Weekly highlight — the single most notable thing */}
