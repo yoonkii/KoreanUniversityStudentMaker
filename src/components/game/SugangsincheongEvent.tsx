@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface CourseSlot {
   id: string;
@@ -67,14 +67,39 @@ export default function SugangsincheongEvent({ onComplete }: SugangsincheongEven
     return () => clearTimeout(timer);
   }, [serverCrashed, crashTimer]);
 
-  // Seats drain in real-time during selection
+  const [npcGrabNotice, setNpcGrabNotice] = useState<string | null>(null);
+
+  // NPC course preferences — they grab specific courses
+  const NPC_COURSE_TARGETS: Record<string, { npcName: string; courseId: string; message: string }[]> = {
+    c1: [{ npcName: '민지', courseId: 'c1', message: '민지가 전공기초 I을 신청했다!' }],
+    c5: [{ npcName: '민지', courseId: 'c5', message: '민지가 데이터분석 입문을 빠르게 넣었다!' }],
+    c8: [{ npcName: '재민', courseId: 'c8', message: '재민이가 프로그래밍 기초를 신청했다! "같이 듣자!"' }],
+    c2: [{ npcName: '소연 선배', courseId: 'c2', message: '소연 선배: "심리학 개론 넣었어~ 같이 듣자!"' }],
+    c6: [{ npcName: '현우 선배', courseId: 'c6', message: '현우 선배가 창업과 혁신을 신청했다.' }],
+  };
+  const npcGrabbedRef = useRef<Set<string>>(new Set());
+
+  // Seats drain in real-time + NPC competition
   useEffect(() => {
     if (phase !== 'selecting') return;
     const interval = setInterval(() => {
       setCourses(prev => prev.map(c => {
-        if (selected.includes(c.id)) return c; // Don't drain courses you selected
+        if (selected.includes(c.id)) return c;
         const drain = c.popular ? Math.ceil(Math.random() * 2) : (Math.random() < 0.2 ? 1 : 0);
-        return { ...c, seats: Math.max(0, c.seats - drain) };
+        const newSeats = Math.max(0, c.seats - drain);
+
+        // NPC grabs their target course at specific seat thresholds
+        if (!npcGrabbedRef.current.has(c.id) && NPC_COURSE_TARGETS[c.id]) {
+          const threshold = c.popular ? c.maxSeats * 0.4 : c.maxSeats * 0.6;
+          if (newSeats <= threshold) {
+            npcGrabbedRef.current.add(c.id);
+            const grab = NPC_COURSE_TARGETS[c.id][0];
+            setNpcGrabNotice(grab.message);
+            setTimeout(() => setNpcGrabNotice(null), 2500);
+          }
+        }
+
+        return { ...c, seats: newSeats };
       }));
     }, 2000);
     return () => clearInterval(interval);
@@ -134,6 +159,13 @@ export default function SugangsincheongEvent({ onComplete }: SugangsincheongEven
             <div className="animate-spin w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full" />
             <span>재접속 시도 중... ({crashTimer}초)</span>
           </div>
+        </div>
+      )}
+
+      {/* NPC course grab notification */}
+      {npcGrabNotice && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 glass-strong rounded-xl text-sm text-pink border border-pink/30 animate-slide-down max-w-sm text-center">
+          👤 {npcGrabNotice}
         </div>
       )}
 
