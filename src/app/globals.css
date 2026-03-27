@@ -118,6 +118,28 @@
 .animate-stat-reveal { animation: statReveal 0.3s ease-out forwards; opacity: 0; }
 .animate-slide-down { animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
+/* Stress/health visual effects */
+@keyframes subtleShake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-1px); }
+  30% { transform: translateX(1px); }
+  50% { transform: translateX(-1px); }
+  70% { transform: translateX(1px); }
+  90% { transform: translateX(-1px); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes bounceOnce {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-8px); }
+  60% { transform: translateY(-3px); }
+}
+.animate-subtle-shake { animation: subtleShake 0.5s ease-in-out infinite; }
+.animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
+.animate-bounce-once { animation: bounceOnce 0.6s ease-out; }
+
 /* Korean text */
 .break-keep {
   word-break: keep-all;

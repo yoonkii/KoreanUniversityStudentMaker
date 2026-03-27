@@ -394,8 +394,12 @@ export default function GameScreen() {
   // Stress visual intensity: subtle red vignette when stress > 60
   const stressIntensity = Math.max(0, (stats.stress - 60) / 40); // 0 at 60, 1 at 100
 
+  // Visual effects based on character state
+  const healthDesaturation = stats.health < 30 ? `saturate(${0.4 + (stats.health / 30) * 0.6})` : undefined;
+  const stressShake = stats.stress >= 90 ? 'animate-subtle-shake' : '';
+
   return (
-    <div className="min-h-[100dvh] bg-navy relative">
+    <div className={`min-h-[100dvh] bg-navy relative ${stressShake}`} style={healthDesaturation ? { filter: healthDesaturation } : undefined}>
       {/* Save indicator */}
       {showSaveIndicator && (
         <div className="fixed bottom-4 right-4 z-50 px-3 py-1.5 rounded-lg bg-teal/20 text-teal text-xs font-medium backdrop-blur-sm border border-teal/20 animate-fade-in-up">
