@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
-import type { PlayerStats } from '@/store/types';
+import type { PlayerStats, CharacterRelationship } from '@/store/types';
+import { generateEncounters, generateGossip, type CampusEncounter } from '@/lib/campusSimulation';
+import { useGameStore } from '@/store/gameStore';
 
 interface DayActivity {
   name: string;
@@ -107,7 +109,11 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
   const [revealedActivities, setRevealedActivities] = useState(0);
   const [randomEvent, setRandomEvent] = useState<string | null>(null);
   const [npcEncounter, setNpcEncounter] = useState<string | null>(null);
+  const [campusEncounter, setCampusEncounter] = useState<CampusEncounter | null>(null);
+  const [gossip, setGossip] = useState<string | null>(null);
   const [runningStats, setRunningStats] = useState<PlayerStats>({ ...currentStats });
+  const currentWeek = useGameStore((s) => s.currentWeek);
+  const relationships = useGameStore((s) => s.relationships);
   const [gameSpeed, setGameSpeed] = useState(2);
   const [isSkipping, setIsSkipping] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -126,6 +132,7 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
     setRevealedActivities(0);
     setRandomEvent(null);
     setNpcEncounter(null);
+    setCampusEncounter(null);
 
     const day = days[dayIdx];
     const actCount = day.activities.length;
@@ -173,10 +180,24 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
           }
         }
       }
-      // Also check for random event (lower chance since we have NPC encounters)
+      // Campus background NPC encounters (living campus)
+      if (mainAct) {
+        const campusEnc = generateEncounters(mainAct.name, currentWeek + dayIdx, runningStats, relationships);
+        if (campusEnc.length > 0) {
+          setCampusEncounter(campusEnc[0]);
+        }
+      }
+
+      // Also check for random event (lower chance since we have encounters)
       if (Math.random() < 0.08) {
         const event = RANDOM_EVENTS[Math.floor(Math.random() * RANDOM_EVENTS.length)];
         setRandomEvent(event.text);
+      }
+
+      // Show gossip on first day only
+      if (dayIdx === 0) {
+        const g = generateGossip(currentWeek, runningStats);
+        if (g) setGossip(g.text);
       }
     }, encounterTime);
 
@@ -303,6 +324,21 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
           {npcEncounter && (
             <div className="mt-3 px-4 py-2.5 glass-strong rounded-xl text-sm text-pink/90 border border-pink/20 animate-fade-in">
               💬 {npcEncounter}
+            </div>
+          )}
+
+          {/* Campus background NPC encounter */}
+          {campusEncounter && !npcEncounter && (
+            <div className="mt-2 px-4 py-2 glass rounded-xl text-xs text-txt-secondary/70 border border-white/5 animate-fade-in">
+              <span className="text-txt-secondary/40 mr-1">[{campusEncounter.npcRole}]</span>
+              {campusEncounter.dialogue}
+            </div>
+          )}
+
+          {/* Gossip — campus atmosphere */}
+          {gossip && currentDayIndex === 0 && (
+            <div className="mt-2 px-3 py-1.5 rounded-lg text-[10px] text-txt-secondary/50 italic">
+              📢 {gossip}
             </div>
           )}
 
