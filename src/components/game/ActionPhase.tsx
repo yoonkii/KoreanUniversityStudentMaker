@@ -491,10 +491,25 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
             ))}
           </div>
 
-          {/* NPC encounter */}
+          {/* NPC encounter — with portrait for targeted activities */}
           {npcEncounter && (
-            <div className="mt-3 px-4 py-2.5 glass-strong rounded-xl text-sm text-pink/90 border border-pink/20 animate-fade-in">
-              💬 {npcEncounter}
+            <div className="mt-3 px-4 py-2.5 glass-strong rounded-xl border border-pink/20 animate-fade-in flex items-start gap-3">
+              {(() => {
+                // Try to find which NPC is speaking from the current day's targeted activity
+                const targetNpc = currentDay?.activities.find(a => a.targetNpcId)?.targetNpcId;
+                const portrait = targetNpc ? NPC_PORTRAITS[targetNpc] : null;
+                const NPC_DISPLAY: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연', hyunwoo: '현우' };
+                const name = targetNpc ? NPC_DISPLAY[targetNpc] : null;
+                return portrait ? (
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full overflow-hidden border border-pink/30">
+                      <Image src={portrait} alt={name ?? ''} width={32} height={32} className="object-cover object-top" />
+                    </div>
+                    <span className="text-[8px] text-pink/60 block text-center mt-0.5">{name}</span>
+                  </div>
+                ) : null;
+              })()}
+              <p className="text-sm text-pink/90 leading-relaxed flex-1">{npcEncounter}</p>
             </div>
           )}
 
