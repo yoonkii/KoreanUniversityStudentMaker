@@ -651,13 +651,29 @@ export default function GameScreen() {
         />
       )}
 
-      {/* AI loading indicator */}
+      {/* AI loading indicator with gameplay tips */}
       {isLoadingAI && (
         <div className="flex items-center justify-center h-[100dvh]">
-          <div className="text-center animate-fade-in-up">
+          <div className="text-center animate-fade-in-up max-w-sm px-4">
             <div className="animate-spin w-10 h-10 border-3 border-teal border-t-transparent rounded-full mx-auto mb-4" />
             <p className="text-txt-secondary text-sm">AI가 이야기를 만들고 있어요...</p>
-            <p className="text-txt-secondary/40 text-xs mt-1">잠시만 기다려 주세요</p>
+            <p className="text-txt-secondary/30 text-xs mt-3 italic leading-relaxed">
+              {(() => {
+                const tips = [
+                  '💡 친구와 시간을 보내면 자동으로 호감도가 올라가요.',
+                  '💡 스트레스가 70을 넘으면 모든 능력치 상승이 반감돼요.',
+                  '💡 에너지를 초과하면 체력이 크게 떨어져요. 휴식도 중요!',
+                  '💡 NPC와 3주 이상 안 만나면 호감도가 조금씩 떨어져요.',
+                  '💡 수업+공부를 같은 주에 넣으면 "효율적 학습" 콤보!',
+                  '💡 매력 40 이상이면 "자기관리" 활동이 해금돼요.',
+                  '💡 시험은 준비도 × 전략 배율로 학점이 결정돼요.',
+                  '💡 카카오톡에서 답장을 안 하면 호감도가 떨어져요.',
+                  '💡 일기장은 메뉴(⚙️)에서 언제든 볼 수 있어요.',
+                  '💡 숨겨진 엔딩이 5개 있어요. NPC 관계에 주목!',
+                ];
+                return tips[currentWeek % tips.length];
+              })()}
+            </p>
           </div>
         </div>
       )}
