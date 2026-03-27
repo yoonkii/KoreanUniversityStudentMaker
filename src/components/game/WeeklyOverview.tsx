@@ -5,7 +5,7 @@ import { getRelationshipTier } from '@/store/gameStore';
 import { getWeekCondition, getWeatherForWeek } from '@/lib/gameEngine';
 import { getCachedDialogue } from '@/lib/weeklyDialogueCache';
 import { generateRumors } from '@/lib/rumorSystem';
-import { getNpcLocationSummary } from '@/lib/livingCampus';
+import { getNpcLocationSummary, rollNpcInvitation } from '@/lib/livingCampus';
 import Image from 'next/image';
 import GlassPanel from '@/components/ui/GlassPanel';
 
@@ -338,6 +338,33 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
                     {r.text}
                   </div>
                 ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* NPC invitation — someone wants to hang out! */}
+        {(() => {
+          const rels = useGameStore.getState().relationships;
+          const invitation = rollNpcInvitation(nextWeek, rels);
+          if (!invitation) return null;
+          const NPC_PORTRAITS_SMALL: Record<string, string> = {
+            jaemin: '/assets/characters/jaemin/happy.png',
+            minji: '/assets/characters/minji/friendly.png',
+            soyeon: '/assets/characters/soyeon/happy.png',
+            hyunwoo: '/assets/characters/hyunwoo/cool.png',
+          };
+          return (
+            <div className="mb-4 px-3 py-3 rounded-xl bg-pink/5 border border-pink/15 animate-fade-in">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full overflow-hidden border border-pink/30 flex-shrink-0">
+                  <Image src={NPC_PORTRAITS_SMALL[invitation.npcId] ?? ''} alt="" width={40} height={40} className="object-cover object-top" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs font-bold text-pink">{invitation.npcName}의 초대</p>
+                  <p className="text-sm text-txt-primary/80 mt-0.5">&ldquo;{invitation.message}&rdquo;</p>
+                  <p className="text-[10px] text-txt-secondary/40 mt-1 italic">📍 {invitation.activity}</p>
+                </div>
               </div>
             </div>
           );
