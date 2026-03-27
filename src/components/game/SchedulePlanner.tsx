@@ -301,6 +301,35 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
     setSlots(newSlots);
   }, [stats, activityRequiresNpc, getAvailableNpcs]);
 
+  // Template presets — one-tap schedules for common playstyles
+  const applyTemplate = useCallback((template: string) => {
+    const TEMPLATES: Record<string, string[]> = {
+      // 21 activities (7 days × 3 slots) for each template
+      scholar: ['lecture','study','study', 'lecture','study','study', 'study','lecture','rest', 'lecture','study','study', 'study','study','rest', 'study','rest','exercise', 'rest','study','exercise'],
+      social: ['lecture','friends','club', 'lecture','friends','friends', 'club','friends','exercise', 'lecture','date','friends', 'friends','club','rest', 'friends','exercise','friends', 'rest','rest','friends'],
+      balanced: ['lecture','study','exercise', 'study','friends','rest', 'lecture','club','exercise', 'study','friends','rest', 'lecture','study','exercise', 'friends','rest','club', 'rest','exercise','friends'],
+      hustler: ['lecture','parttime','parttime', 'parttime','study','parttime', 'lecture','parttime','rest', 'parttime','parttime','study', 'parttime','study','rest', 'parttime','rest','exercise', 'rest','parttime','exercise'],
+    };
+    const activities = TEMPLATES[template];
+    if (!activities) return;
+    const newSlots: Partial<Record<SlotKey, SlotData>> = {};
+    let idx = 0;
+    for (const day of DAY_KEYS) {
+      for (const time of TIME_SLOTS) {
+        const activityId = activities[idx] ?? 'rest';
+        if (activityRequiresNpc(activityId)) {
+          const available = getAvailableNpcs(activityId).filter((n) => n.meetsRequirement);
+          const targetNpcId = available.length > 0 ? available[Math.floor(Math.random() * available.length)].variant.npcId : undefined;
+          newSlots[makeKey(day, time)] = { activityId, targetNpcId };
+        } else {
+          newSlots[makeKey(day, time)] = { activityId };
+        }
+        idx++;
+      }
+    }
+    setSlots(newSlots);
+  }, [activityRequiresNpc, getAvailableNpcs]);
+
   return (
     <div className="flex flex-col h-full max-w-3xl mx-auto p-3 sm:p-4 gap-3 sm:gap-4">
       {/* Header */}
@@ -381,16 +410,27 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
         })}
       </div>
 
-      {/* Hint */}
+      {/* Hint + Quick Templates */}
       {totalScheduled === 0 && !selectedActivity && (
-        <div className="flex items-center justify-between">
-          <p className="text-[11px] text-txt-secondary/50">활동을 탭하면 자동으로 빈 슬롯에 배정됩니다</p>
-          <button
-            onClick={handleSmartFill}
-            className="text-[11px] text-lavender/70 hover:text-lavender transition-colors cursor-pointer"
-          >
-            자동 채우기
-          </button>
+        <div>
+          <p className="text-[11px] text-txt-secondary/50 mb-2">활동을 탭하거나 템플릿을 선택하세요</p>
+          <div className="flex flex-wrap gap-1.5">
+            <button onClick={handleSmartFill} className="text-[10px] px-2.5 py-1.5 rounded-lg bg-lavender/10 text-lavender border border-lavender/20 hover:bg-lavender/20 transition-all cursor-pointer">
+              ✨ AI 추천
+            </button>
+            <button onClick={() => applyTemplate('scholar')} className="text-[10px] px-2.5 py-1.5 rounded-lg bg-gold/10 text-gold border border-gold/20 hover:bg-gold/20 transition-all cursor-pointer">
+              📚 학점러
+            </button>
+            <button onClick={() => applyTemplate('social')} className="text-[10px] px-2.5 py-1.5 rounded-lg bg-pink/10 text-pink border border-pink/20 hover:bg-pink/20 transition-all cursor-pointer">
+              🦋 인싸
+            </button>
+            <button onClick={() => applyTemplate('balanced')} className="text-[10px] px-2.5 py-1.5 rounded-lg bg-teal/10 text-teal border border-teal/20 hover:bg-teal/20 transition-all cursor-pointer">
+              ⚖️ 밸런스
+            </button>
+            <button onClick={() => applyTemplate('hustler')} className="text-[10px] px-2.5 py-1.5 rounded-lg bg-coral/10 text-coral border border-coral/20 hover:bg-coral/20 transition-all cursor-pointer">
+              💰 알바왕
+            </button>
+          </div>
         </div>
       )}
 
