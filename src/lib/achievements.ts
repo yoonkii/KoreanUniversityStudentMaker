@@ -187,6 +187,52 @@ export const ACHIEVEMENTS: Achievement[] = [
     emoji: '👑',
     check: (stats) => stats.money >= 800000 && stats.knowledge >= 70,
   },
+  // ─── Secret Achievements ───
+  {
+    id: 'social_butterfly_max',
+    title: '사교계의 왕',
+    description: '모든 주요 NPC와 친구 이상',
+    emoji: '🦋',
+    check: (_, rels) => {
+      const main4 = ['jaemin', 'minji', 'soyeon', 'hyunwoo'];
+      return main4.every(id => (rels[id]?.affection ?? 0) >= 50);
+    },
+  },
+  {
+    id: 'zero_stress',
+    title: '무스트레스 마스터',
+    description: '스트레스 0 달성',
+    emoji: '🧘',
+    check: (stats) => stats.stress === 0,
+  },
+  {
+    id: 'millionaire',
+    title: '대학생 백만장자',
+    description: '₩1,000,000 이상 보유',
+    emoji: '💸',
+    check: (stats) => stats.money >= 1000000,
+  },
+  {
+    id: 'all_stats_60',
+    title: '만능인',
+    description: '준비도, 체력, 인맥, 매력 모두 60 이상',
+    emoji: '🌈',
+    check: (stats) => stats.knowledge >= 60 && stats.health >= 60 && stats.social >= 60 && stats.charm >= 60,
+  },
+  {
+    id: 'love_triangle',
+    title: '삼각관계',
+    description: '2명 이상의 NPC와 절친 이상',
+    emoji: '💔',
+    check: (_, rels) => Object.values(rels).filter(r => r.affection >= 70).length >= 2,
+  },
+  {
+    id: 'hermit',
+    title: '은둔자',
+    description: '인맥 10 이하, 준비도 70 이상',
+    emoji: '🏔️',
+    check: (stats) => stats.social <= 10 && stats.knowledge >= 70,
+  },
 ];
 
 /** Check which achievements are newly unlocked */
