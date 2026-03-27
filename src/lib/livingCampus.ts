@@ -105,6 +105,27 @@ export interface CampusLife {
 function getJaeminRoutine(week: number): NpcRoutine {
   const isExamSeason = [6, 7, 8, 13, 14, 15].includes(week);
   const isFestival = week === 9;
+
+  // Varied morning dialogues
+  const morningLines = [
+    '학식 오늘 돈까스다! 빨리 와 자리 없어!',
+    '오늘 학식 비빔밥이래. 3,500원에 이 정도면 개이득이지!',
+    '아 늦었다... 1교시 출석 불렀나? 확인 좀 해줘ㅠ',
+    '편의점 삼각김밥 2+1이래! 아침은 이걸로 해결이야.',
+  ];
+  const afternoonLines = [
+    '야 같이 농구 한 판 할래? 3대3 하는데 한 명 부족해!',
+    'ㅋㅋㅋ 이 영상 봐봐. 고양이가 빵에 얼굴 넣었어.',
+    '피시방 갈래? 오버워치 시즌 시작했어!',
+    '낮잠 자다가 일어났는데 벌써 4시야... 시간 어디 갔지?',
+  ];
+  const eveningLines = [
+    '라면 먹을래? 내가 쏠게! 계란 라면이 최고지.',
+    '야 롤 한 판만 더... 아 졌다ㅋㅋ 다시!',
+    '치킨 시킬까? 황금올리브 먹고 싶다...',
+    '넷플 뭐 봐? 나 요즘 이상한 변호사 우영우 다시 보는 중.',
+  ];
+
   return {
     npcId: 'jaemin', npcName: '이재민',
     morning: {
@@ -112,48 +133,63 @@ function getJaeminRoutine(week: number): NpcRoutine {
       activity: isExamSeason ? '도서관에서 벼락치기 중' : '학식당에서 아침 먹는 중',
       dialogue: isExamSeason ? '야... 밤새 공부했는데 하나도 모르겠어ㅠ 커피 사와줘...'
         : isFestival ? '축제다!! 오늘 뭐 볼 거야?!'
-        : week <= 3 ? '학식 오늘 돈까스다! 빨리 와 자리 없어!'
-        : '아 배고파... 오늘 뭐 먹지?',
+        : morningLines[week % morningLines.length],
     },
     afternoon: {
       location: isExamSeason ? 'library' : week % 2 === 0 ? 'gym' : 'cafe',
       activity: isExamSeason ? '계속 공부 중... 눈이 빠질 것 같다'
         : week % 2 === 0 ? '체육관에서 농구 중' : '카페에서 유튜브 보는 중',
       dialogue: isExamSeason ? '이 공식 맞아? 아 모르겠다 그냥 외우자...'
-        : week % 2 === 0 ? '야 같이 농구 한 판 할래? 혼자 하니까 심심해!'
-        : 'ㅋㅋㅋ 이 영상 봐봐 진짜 웃겨',
+        : afternoonLines[week % afternoonLines.length],
     },
     evening: {
       location: week % 3 === 0 ? 'convenience_store' : 'dorm',
       activity: week % 3 === 0 ? '편의점에서 야식 고르는 중' : '기숙사에서 게임 중',
-      dialogue: week % 3 === 0 ? '라면 먹을래? 내가 쏠게!'
-        : '야 롤 한 판만 더... 아 졌다ㅋㅋ',
+      dialogue: eveningLines[week % eveningLines.length],
     },
   };
 }
 
 function getMinjiRoutine(week: number): NpcRoutine {
   const isExamSeason = [6, 7, 8, 13, 14, 15].includes(week);
+
+  const morningLines = [
+    '...앞자리 앉을 거야? 난 여기 앉을 건데.',
+    '오늘 교수님이 중요하다고 하신 부분 정리했어. 볼래?',
+    '어제 과제 다 했어? ...나는 새벽 2시에 끝냈어.',
+    '이번 주 발표 순서 정해졌대. 준비해야 할 것 같아.',
+  ];
+  const afternoonLines = [
+    '...여기 조용해서 좋아. 너도 공부할 거야?',
+    '이 논문 읽어봤어? 교수님이 추천하신 건데 어렵다...',
+    '카페 아메리카노 리필 됐다. 가격 대비 최고야.',
+    '...자꾸 핸드폰 보게 돼. 에브리타임 중독인가.',
+  ];
+  const eveningLines = [
+    '아메리카노 3잔째... 살 것 같아.',
+    '도서관 곧 닫는대. 학생회관 자습실로 옮길까.',
+    '오늘 공부한 거 정리하면... 아직 부족한데.',
+    '...배고파. 근데 나가기 귀찮아.',
+  ];
+
   return {
     npcId: 'minji', npcName: '한민지',
     morning: {
       location: 'classroom',
       activity: '수업 시작 전에 예습하는 중',
       dialogue: isExamSeason ? '...이번 범위 끝냈어? 나 아직 3장 남았어.'
-        : week <= 3 ? '...앞자리 앉을 거야? 난 여기 앉을 건데.'
-        : '오늘 교수님이 중요하다고 하신 부분 정리했어. 볼래?',
+        : morningLines[week % morningLines.length],
     },
     afternoon: {
       location: isExamSeason ? 'library' : week % 2 === 0 ? 'cafe' : 'library',
       activity: isExamSeason ? '도서관에서 미친 듯이 공부 중' : '조용히 공부하는 중',
       dialogue: isExamSeason ? '말 걸지 마. 집중하고 있어.'
-        : '...여기 조용해서 좋아. 너도 공부할 거야?',
+        : afternoonLines[week % afternoonLines.length],
     },
     evening: {
       location: week >= 10 ? 'cafe' : 'library',
       activity: week >= 10 ? '카페에서 과제하는 중' : '도서관 마감 시간까지 버티는 중',
-      dialogue: week >= 10 ? '아메리카노 3잔째... 살 것 같아.'
-        : '도서관 곧 닫는대. 나가야 하나...',
+      dialogue: eveningLines[week % eveningLines.length],
     },
   };
 }
