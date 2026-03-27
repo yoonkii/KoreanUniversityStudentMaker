@@ -550,6 +550,58 @@ export default function EndingPage() {
             {archetype.description}
           </p>
 
+          {/* Personalized semester narrative — YOUR story */}
+          {(() => {
+            const name = player?.name ?? '학생';
+            const lines: string[] = [];
+
+            // Opening
+            lines.push(`${name}의 1학기는 그렇게 지나갔다.`);
+
+            // Relationship highlights
+            const bestFriend = Object.entries(relationships)
+              .filter(([, r]) => r.affection >= 60)
+              .sort(([, a], [, b]) => b.affection - a.affection)[0];
+            const NPC_KO: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연 선배', hyunwoo: '현우 선배' };
+            if (bestFriend) {
+              const bfName = NPC_KO[bestFriend[0]] ?? bestFriend[0];
+              if (bestFriend[1].affection >= 85) {
+                lines.push(`${bfName}과(와)의 우정은 학기의 가장 소중한 선물이었다.`);
+              } else {
+                lines.push(`${bfName}과(와) 함께한 시간이 기억에 남는다.`);
+              }
+            }
+
+            // Stat journey highlights
+            const startStats = useGameStore.getState().startingStats;
+            if (startStats) {
+              const knowledgeGain = stats.knowledge - startStats.knowledge;
+              if (knowledgeGain >= 40) lines.push('처음엔 아무것도 몰랐지만, 이제는 자신감이 생겼다.');
+              else if (knowledgeGain >= 20) lines.push('조금씩이지만, 확실히 성장하고 있다는 걸 느꼈다.');
+            }
+
+            if (stats.stress > 70) lines.push('쉽지 않은 학기였다. 하지만 포기하지 않았다.');
+            else if (stats.stress < 30) lines.push('여유로운 학기였다. 나만의 페이스를 찾았다.');
+
+            if (stats.money > 500000) lines.push('경제적으로도 안정을 찾았다.');
+            else if (stats.money < 50000) lines.push('통장은 빈약했지만, 그래도 버텨냈다.');
+
+            // Event count
+            if (eventHistory.length >= 15) lines.push('수많은 순간들이 추억이 되어 가슴에 남았다.');
+            else if (eventHistory.length >= 8) lines.push('하나하나가 소중한 기억들이다.');
+
+            // Closing
+            lines.push('이제 방학이다. 다음 학기에는 어떤 이야기가 기다리고 있을까.');
+
+            return (
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <p className="text-sm text-white/50 leading-relaxed italic">
+                  {lines.join(' ')}
+                </p>
+              </div>
+            );
+          })()}
+
           {/* Future flash — what happens next */}
           <div className="mt-4 pt-4 border-t border-white/10">
             <p className="text-xs text-white/40 mb-1.5">그 후...</p>
