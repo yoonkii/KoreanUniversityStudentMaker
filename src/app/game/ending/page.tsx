@@ -780,6 +780,23 @@ export default function EndingPage() {
           </div>
         )}
 
+        {/* Academic Report Card */}
+        {(() => {
+          const er = useGameStore.getState().examResults;
+          if (!er.midtermGpa && !er.finalsGpa) return null;
+          const gl = (gpa: number) => gpa >= 4.0 ? { g: 'A+', c: 'text-teal' } : gpa >= 3.5 ? { g: 'A', c: 'text-teal' } : gpa >= 3.0 ? { g: 'B+', c: 'text-gold' } : gpa >= 2.5 ? { g: 'B', c: 'text-gold' } : gpa >= 2.0 ? { g: 'C+', c: 'text-coral' } : { g: 'F', c: 'text-red-500' };
+          return (
+            <div className={`bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10 transition-all duration-1000 ${animStep >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+              <h3 className="text-sm font-bold text-white/60 mb-3">🎓 성적표</h3>
+              <div className="flex justify-center gap-6">
+                {er.midtermGpa != null && <div className="text-center"><p className="text-[10px] text-white/30">중간</p><p className={`text-2xl font-bold ${gl(er.midtermGpa).c}`}>{er.midtermGpa.toFixed(2)}</p><p className={`text-xs ${gl(er.midtermGpa).c}`}>{gl(er.midtermGpa).g}</p></div>}
+                {er.finalsGpa != null && <div className="text-center"><p className="text-[10px] text-white/30">기말</p><p className={`text-2xl font-bold ${gl(er.finalsGpa).c}`}>{er.finalsGpa.toFixed(2)}</p><p className={`text-xs ${gl(er.finalsGpa).c}`}>{gl(er.finalsGpa).g}</p></div>}
+                {er.semesterGpa != null && <div className="text-center border-l border-white/10 pl-6"><p className="text-[10px] text-white/30">종합</p><p className={`text-3xl font-bold ${gl(er.semesterGpa).c}`}>{er.semesterGpa.toFixed(2)}</p><p className={`text-sm font-bold ${gl(er.semesterGpa).c}`}>{gl(er.semesterGpa).g}</p></div>}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Growth comparison — before/after stats */}
         {(() => {
           const startingStats = useGameStore.getState().startingStats;
