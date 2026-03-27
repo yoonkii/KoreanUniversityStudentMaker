@@ -7,8 +7,39 @@ import { useGameStore as useNewStore } from "@/stores/game-store";
 import type { PlayerStats } from "@/store/types";
 import { ACHIEVEMENTS } from "@/lib/achievements";
 
-/** Determine the player archetype from final stats */
-function determineArchetype(stats: PlayerStats): string {
+/** Determine the player archetype from final stats + relationships */
+function determineArchetype(stats: PlayerStats, relationships?: Record<string, { affection: number }>): string {
+  // ── Hidden/surprise endings (checked first — rare, rewarding) ──
+
+  // "캠퍼스 커플" — dating an NPC to soulmate level
+  const soulmates = relationships ? Object.entries(relationships).filter(([, r]) => r.affection >= 90) : [];
+  if (soulmates.length > 0 && stats.charm >= 60) return "campus_couple";
+
+  // "교수님의 제자" — high knowledge + prof-kim relationship
+  if (stats.knowledge >= 80 && (relationships?.['prof-kim']?.affection ?? 0) >= 70) return "professors_protege";
+
+  // "동아리 스타" — high charm + hyunwoo soulmate
+  if (stats.charm >= 70 && (relationships?.['hyunwoo']?.affection ?? 0) >= 80) return "club_star";
+
+  // "완벽한 선후배" — soyeon close friend + high knowledge
+  if ((relationships?.['soyeon']?.affection ?? 0) >= 80 && stats.knowledge >= 60 && stats.social >= 60) return "perfect_mentorship";
+
+  // "룸메 브로맨스" — jaemin soulmate + low stress
+  if ((relationships?.['jaemin']?.affection ?? 0) >= 85 && stats.stress < 30) return "bromance";
+
+  // ── Standard checks ──
+
+  // Check for burnout (high stress, low everything)
+  if (stats.stress > 80 && stats.health < 30) return "burnout";
+
+  // Check for broke
+  if (stats.money < 30000 && stats.stress > 60) return "broke";
+
+  // Check for balanced (all stats within 20 of each other)
+  const vals = [stats.knowledge, stats.health, stats.social, stats.charm];
+  const range = Math.max(...vals) - Math.min(...vals);
+  if (range < 20 && stats.stress < 50) return "balanced";
+
   const normalized: Record<string, number> = {
     scholar: stats.knowledge,
     social: stats.social,
@@ -18,7 +49,6 @@ function determineArchetype(stats: PlayerStats): string {
     charm: stats.charm,
   };
 
-  // Find dominant stat
   let maxKey = "scholar";
   let maxVal = 0;
   for (const [key, val] of Object.entries(normalized)) {
@@ -27,17 +57,6 @@ function determineArchetype(stats: PlayerStats): string {
       maxVal = val;
     }
   }
-
-  // Check for balanced (all stats within 20 of each other)
-  const vals = [stats.knowledge, stats.health, stats.social, stats.charm];
-  const range = Math.max(...vals) - Math.min(...vals);
-  if (range < 20 && stats.stress < 50) return "balanced";
-
-  // Check for burnout (high stress, low everything)
-  if (stats.stress > 80 && stats.health < 30) return "burnout";
-
-  // Check for broke
-  if (stats.money < 30000 && stats.stress > 60) return "broke";
 
   return maxKey;
 }
@@ -114,6 +133,42 @@ const ARCHETYPES: Record<string, Archetype> = {
     description: "통장은 텅 비었지만 경험은 가득! 라면의 소중함을 깨달은 한 학기였습니다.",
     futureFlash: "가성비의 달인이 된 당신은 절약 블로그를 시작한다. '대학생 월 30만원으로 살기' 글이 입소문을 타며 뜻밖의 수입이 생긴다.",
   },
+  // ── Hidden Endings ──
+  campus_couple: {
+    ko: "캠퍼스 커플",
+    en: "The Campus Couple",
+    emoji: "💑",
+    description: "대학에서 진정한 사랑을 찾았어요. 캠퍼스를 함께 걸으며 추억을 만든 소중한 학기.",
+    futureFlash: "2학기에도 함께 수강신청을 하고, 도서관 옆자리에 앉아 공부한다. 졸업 후에도 이어질 인연의 시작이다.",
+  },
+  professors_protege: {
+    ko: "교수님의 제자",
+    en: "The Professor's Protégé",
+    emoji: "🎓",
+    description: "뛰어난 실력으로 교수님의 눈에 띄었어요. 학문의 길이 열리기 시작합니다.",
+    futureFlash: "학부연구생으로 합류하고, 교수님의 학회 발표에 공동저자로 이름을 올린다. 대학원 추천서도 약속받는다.",
+  },
+  club_star: {
+    ko: "동아리 스타",
+    en: "The Club Star",
+    emoji: "🎸",
+    description: "동아리에서 없어서는 안 될 존재가 되었어요. 무대 위의 당신은 빛났습니다.",
+    futureFlash: "축제 무대에서의 공연 영상이 SNS에서 화제가 된다. 외부 공연 초대가 이어지며, 진로의 새로운 가능성을 발견한다.",
+  },
+  perfect_mentorship: {
+    ko: "완벽한 선후배",
+    en: "The Perfect Mentorship",
+    emoji: "🤝",
+    description: "선배의 가르침과 당신의 노력이 만나 최고의 시너지를 만들었어요.",
+    futureFlash: "소연 선배의 인맥으로 인턴십 기회를 얻고, 당신도 후배들에게 같은 도움을 주겠다고 결심한다. 선후배의 아름다운 전통이 이어진다.",
+  },
+  bromance: {
+    ko: "평생 룸메",
+    en: "The Lifelong Roommate",
+    emoji: "🏠",
+    description: "재민이와 함께한 기숙사 생활은 대학의 가장 소중한 기억이 되었어요.",
+    futureFlash: "방학에도 재민이네 집에 놀러 가고, 2학기에도 같은 방을 신청한다. 졸업 후에도 가장 먼저 연락하는 친구가 된다.",
+  },
 };
 
 function getLetterGrade(value: number, isMoney?: boolean): string {
@@ -185,7 +240,7 @@ export default function EndingPage() {
     }
   }, [hydrated, player]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const archetypeKey = determineArchetype(stats);
+  const archetypeKey = determineArchetype(stats, relationships);
   const archetype = ARCHETYPES[archetypeKey] ?? ARCHETYPES.balanced;
 
   // Memory montage — show event highlights before main reveal
