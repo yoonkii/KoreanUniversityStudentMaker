@@ -4,6 +4,7 @@ import { useGameStore } from '@/store/gameStore';
 import { getRelationshipTier } from '@/store/gameStore';
 import { getWeekCondition, getWeatherForWeek } from '@/lib/gameEngine';
 import { getCachedDialogue } from '@/lib/weeklyDialogueCache';
+import { generateRumors } from '@/lib/rumorSystem';
 import Image from 'next/image';
 import GlassPanel from '@/components/ui/GlassPanel';
 
@@ -256,6 +257,29 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
             </span>
           )}
         </div>
+
+        {/* Campus rumors — what people are saying about you */}
+        {(() => {
+          const allRels = useGameStore.getState().relationships;
+          const rumors = generateRumors(currentWeek, stats, allRels);
+          if (rumors.length === 0) return null;
+          return (
+            <div className="mb-4">
+              <p className="text-[10px] text-txt-secondary/40 mb-1.5">👂 캠퍼스 소문</p>
+              <div className="flex flex-col gap-1.5">
+                {rumors.map((r) => (
+                  <div key={r.id} className={`text-[11px] px-3 py-1.5 rounded-lg border ${
+                    r.type === 'positive' ? 'bg-teal/5 border-teal/10 text-teal/70'
+                    : r.type === 'negative' ? 'bg-coral/5 border-coral/10 text-coral/70'
+                    : 'bg-white/[0.02] border-white/5 text-txt-secondary/50'
+                  } italic`}>
+                    {r.text}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Continue button */}
         <button
