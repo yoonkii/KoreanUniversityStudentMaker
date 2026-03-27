@@ -624,6 +624,53 @@ export default function EndingPage() {
             </div>
           )}
 
+          {/* Relationship ranking — who were you closest to? */}
+          {(() => {
+            const NPC_DISPLAY: Record<string, { name: string; emoji: string }> = {
+              jaemin: { name: '이재민', emoji: '🏠' },
+              minji: { name: '한민지', emoji: '📚' },
+              soyeon: { name: '박소연', emoji: '💛' },
+              hyunwoo: { name: '정현우', emoji: '🎸' },
+            };
+            const TIER_LABELS_SHORT: Record<string, string> = {
+              soulmate: '💕 소울메이트',
+              close_friend: '💛 절친',
+              friend: '😊 친구',
+              acquaintance: '🤝 아는 사이',
+              stranger: '👤 모르는 사이',
+            };
+            function tier(aff: number) {
+              if (aff >= 90) return 'soulmate';
+              if (aff >= 70) return 'close_friend';
+              if (aff >= 50) return 'friend';
+              if (aff >= 25) return 'acquaintance';
+              return 'stranger';
+            }
+            const ranked = Object.entries(NPC_DISPLAY)
+              .map(([id, info]) => ({ id, ...info, affection: relationships[id]?.affection ?? 0 }))
+              .filter(r => r.affection > 0)
+              .sort((a, b) => b.affection - a.affection);
+            if (ranked.length === 0) return null;
+            return (
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <p className="text-xs text-white/40 mb-2">👥 최종 인간관계</p>
+                <div className="flex flex-col gap-1.5">
+                  {ranked.map((npc, i) => (
+                    <div key={npc.id} className="flex items-center gap-2">
+                      <span className="text-sm w-5 text-center text-white/30">{i + 1}</span>
+                      <span>{npc.emoji}</span>
+                      <span className="text-xs text-white/70 flex-1">{npc.name}</span>
+                      <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div className="h-full bg-pink rounded-full" style={{ width: `${npc.affection}%` }} />
+                      </div>
+                      <span className="text-[9px] text-white/40 w-20 text-right">{TIER_LABELS_SHORT[tier(npc.affection)]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* NPC-specific memories */}
           {(() => {
             const NPC_MEMORIES: Record<string, { high: string; mid: string }> = {
