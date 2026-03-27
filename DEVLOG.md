@@ -1092,5 +1092,7 @@ Complete rewrite of core game mechanics across 59 files (+1496/-707 lines):
 - Content: heartfelt stat-gated finale, post-exam reactions, campus rumors, semester awards
 - Polish: dream selection previews, week rating tags, activity streaks, relationship ranking
 - UX: NPC portraits in encounters, send animation, exam countdown, loading tips, calendar view
+- More: consequence text (14 scenes), streaks, stat descriptions, ending gallery, music moods
+- Total: 86 commits, 75 AUTOPLAY cycles, zero regressions, 48 tests passing throughout
 
 ---
