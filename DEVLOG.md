@@ -1109,7 +1109,8 @@ Complete rewrite of core game mechanics across 59 files (+1496/-707 lines):
 - C92-C93: weekly reflection mood choice, last-week memory flash in title cards
 - C94-C97: context-aware backgrounds, dynamic NPC expressions, memory flash, reflection
   choice, epilogue letter, affection bonus dialogue (16 lines), relationship-gated exams
-- **FINAL: 111 session commits, 98 AUTOPLAY cycles, 134 repo commits, 48 tests, ZERO regressions**
+- C98-C100: relationship-gated exam strategies, replay hints, epilogue letter, 100 cycle milestone
+- **GRAND TOTAL: 114 session commits, 100 AUTOPLAY cycles, 137 repo commits, 48 tests, ZERO regressions**
 - 8,800+ lines across game libraries + components, 13 activities, 28 achievements,
   14 endings, 70+ events, 27 NPCs, 120+ text variants, dozens of interconnected systems
 
