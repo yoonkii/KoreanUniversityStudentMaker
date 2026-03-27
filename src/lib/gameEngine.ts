@@ -42,7 +42,9 @@ interface WeeklyEventDef {
   description: string;
   effects: Partial<PlayerStats>;
   probability: number;
-  condition?: (stats: PlayerStats, week: number) => boolean;
+  condition?: (stats: PlayerStats, week: number, rels?: Record<string, CharacterRelationship>) => boolean;
+  /** Higher priority events are checked first (default 0) */
+  priority?: number;
 }
 
 const WEEKLY_EVENT_POOL: WeeklyEventDef[] = [
@@ -218,6 +220,80 @@ const WEEKLY_EVENT_POOL: WeeklyEventDef[] = [
     probability: 0.08,
     condition: (stats) => stats.money < 200000,
   },
+  // ─── Narrative Arc Events (relationship-dependent) ───
+  // These fire based on relationship depth + timing, creating story progression
+  {
+    id: 'minji_vulnerability',
+    name: '민지의 고민',
+    description: '민지가 처음으로 속마음을 털어놓았다. "사실 나도 불안해... 잘하고 싶은데."',
+    effects: { social: 5, stress: -3 },
+    probability: 0.2,
+    priority: 2,
+    condition: (_, w, rels) => w >= 6 && (rels?.['minji']?.affection ?? 0) >= 50 && (rels?.['minji']?.encounters ?? 0) >= 3,
+  },
+  {
+    id: 'jaemin_dream_talk',
+    name: '재민이의 꿈',
+    description: '새벽에 재민이가 "나 사실 요리사가 되고 싶어" 라고 말했다. 진지한 눈이었다.',
+    effects: { social: 4, stress: -5 },
+    probability: 0.2,
+    priority: 2,
+    condition: (_, w, rels) => w >= 8 && (rels?.['jaemin']?.affection ?? 0) >= 60,
+  },
+  {
+    id: 'soyeon_graduation_worry',
+    name: '소연 선배의 고민',
+    description: '소연 선배: "졸업하면 너희 못 보잖아... 벌써 아쉽다."',
+    effects: { social: 3, stress: 2 },
+    probability: 0.15,
+    priority: 2,
+    condition: (_, w, rels) => w >= 12 && (rels?.['soyeon']?.affection ?? 0) >= 60,
+  },
+  {
+    id: 'hyunwoo_band_crisis',
+    name: '밴드 해체 위기',
+    description: '현우가 심각한 표정으로 말했다. "드러머가 빠진대... 공연 어떡하지?"',
+    effects: { stress: 8, social: 3 },
+    probability: 0.15,
+    priority: 2,
+    condition: (_, w, rels) => w >= 7 && (rels?.['hyunwoo']?.affection ?? 0) >= 45,
+  },
+  {
+    id: 'study_group_formed',
+    name: '스터디 그룹 결성',
+    description: '민지가 "우리 셋이서 스터디 하자" 라고 제안했다. 은근 기대된다.',
+    effects: { knowledge: 4, social: 5, stress: 2 },
+    probability: 0.15,
+    priority: 1,
+    condition: (stats, w, rels) => w >= 5 && stats.knowledge >= 35 && (rels?.['minji']?.affection ?? 0) >= 40,
+  },
+  {
+    id: 'confession_received',
+    name: '고백을 받았다',
+    description: '같은 과 누군가가 편지를 남겼다. "좋아하게 됐어요. 만날 수 있을까요?"',
+    effects: { charm: 5, stress: 5, social: 3 },
+    probability: 0.08,
+    priority: 3,
+    condition: (stats, w) => stats.charm >= 55 && stats.social >= 45 && w >= 6,
+  },
+  {
+    id: 'family_call',
+    name: '부모님 전화',
+    description: '"공부는 잘 하고 있어? 밥은 먹고 다니고?" 목소리에 걱정이 가득하다.',
+    effects: { stress: -8, money: 50000 },
+    probability: 0.12,
+    priority: 1,
+    condition: (_, w) => w === 5 || w === 10 || w === 15,
+  },
+  {
+    id: 'internship_offer',
+    name: '인턴십 제안',
+    description: '교수님이 아는 회사에서 방학 인턴을 찾는다고 추천해주셨다!',
+    effects: { knowledge: 3, charm: 5, stress: 5 },
+    probability: 0.1,
+    priority: 3,
+    condition: (stats, w, rels) => w >= 12 && stats.knowledge >= 65 && (rels?.['prof-kim']?.affection ?? 0) >= 50,
+  },
 ];
 
 // ─── Weather System ───
@@ -242,10 +318,20 @@ export function getWeatherForWeek(week: number): WeatherCondition {
   return WEATHER_POOL[hash];
 }
 
-function rollWeeklyEvent(stats: PlayerStats, week: number): WeeklyEvent | null {
-  const shuffled = [...WEEKLY_EVENT_POOL].sort(() => Math.random() - 0.5);
-  for (const def of shuffled) {
-    if (def.condition && !def.condition(stats, week)) continue;
+function rollWeeklyEvent(
+  stats: PlayerStats,
+  week: number,
+  relationships?: Record<string, CharacterRelationship>,
+): WeeklyEvent | null {
+  // Sort by priority (higher first), then shuffle within same priority
+  const sorted = [...WEEKLY_EVENT_POOL].sort((a, b) => {
+    const pDiff = (b.priority ?? 0) - (a.priority ?? 0);
+    if (pDiff !== 0) return pDiff;
+    return Math.random() - 0.5;
+  });
+
+  for (const def of sorted) {
+    if (def.condition && !def.condition(stats, week, relationships)) continue;
     if (Math.random() < def.probability) {
       return { id: def.id, name: def.name, description: def.description, effects: { ...def.effects } };
     }
@@ -635,7 +721,7 @@ export function simulateWeek(
     : applyStressPenalties(deltas, schedule, currentStats.stress, jaeminSoulmate);
 
   // ─── Random Weekly Event ───
-  const weeklyEvent = options?.disableRandomEvents ? null : rollWeeklyEvent(currentStats, currentWeek);
+  const weeklyEvent = options?.disableRandomEvents ? null : rollWeeklyEvent(currentStats, currentWeek, options?.relationships);
   if (weeklyEvent) {
     for (const [stat, value] of Object.entries(weeklyEvent.effects)) {
       if (value !== undefined) {
