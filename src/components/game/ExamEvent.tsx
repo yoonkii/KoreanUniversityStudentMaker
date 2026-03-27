@@ -284,12 +284,37 @@ function GradeReveal({
   const grade = getGpaGrade(displayGpa);
   const finalGrade = getGpaGrade(gpa);
 
-  // Reaction text based on GPA
-  const reactionText = gpa >= 4.0 ? '🎉 대박! 최고의 성적이야!'
-    : gpa >= 3.5 ? '😊 잘했어! 노력한 보람이 있다.'
-    : gpa >= 3.0 ? '🙂 나쁘지 않아. 다음엔 더 잘할 수 있어.'
-    : gpa >= 2.0 ? '😅 아슬아슬하다... 다음에는 더 준비하자.'
-    : '😰 위험하다... 2학기에 만회해야 해.';
+  // Strategy + GPA combination reaction text
+  const STRATEGY_REACTIONS: Record<string, Record<string, string>> = {
+    cram: {
+      high: '🎉 벼락치기의 기적! 밤새운 보람이 있었다!',
+      mid: '😊 벼락치기 치고는 나쁘지 않다. 살았다...',
+      low: '😰 밤새웠는데 이 성적이라니... 벼락치기의 한계.',
+    },
+    steady: {
+      high: '🎉 꾸준한 준비가 빛을 발했다! 완벽!',
+      mid: '😊 계획대로 했으니 후회 없다.',
+      low: '😅 꾸준히 했는데도... 범위가 넓었나.',
+    },
+    group_study: {
+      high: '🎉 스터디 그룹 최고! 함께하니까 강하다!',
+      mid: '😊 같이 공부한 덕분에 어려운 문제도 풀었다.',
+      low: '😅 스터디보다 혼자 했으면 나았을까...',
+    },
+    jokbo: {
+      high: '🎉 족보 완벽 적중! 선배님 감사합니다!',
+      mid: '😊 족보가 도움 됐지만 변형 문제에서 헤맸다.',
+      low: '😰 올해는 출제 스타일이 바뀌었나 봐...',
+    },
+    give_up: {
+      high: '😳 어? 포기했는데 이 점수? 운이 좋았나.',
+      mid: '🤷 예상대로... 뭐 포기했으니까.',
+      low: '😴 포기한 결과는 정직하다.',
+    },
+  };
+  const gpaLevel = gpa >= 3.5 ? 'high' : gpa >= 2.5 ? 'mid' : 'low';
+  const reactionText = STRATEGY_REACTIONS[strategy.id]?.[gpaLevel]
+    ?? (gpa >= 3.5 ? '😊 잘했어!' : gpa >= 2.5 ? '🙂 나쁘지 않아.' : '😅 다음엔 더 잘하자.');
 
   return (
     <GlassPanel variant="strong" className="p-6 text-center animate-modal-enter">
