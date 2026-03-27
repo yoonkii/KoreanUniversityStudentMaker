@@ -466,6 +466,28 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
         })}
       </div>
 
+      {/* Smart suggestion — what to focus on this week */}
+      {totalScheduled === 0 && (() => {
+        const tips: { emoji: string; text: string }[] = [];
+        if (stats.stress > 65) tips.push({ emoji: '😰', text: '스트레스가 높아요. 휴식이나 운동을 넣어보세요.' });
+        else if (stats.health < 35) tips.push({ emoji: '💔', text: '체력이 위험해요. 운동과 휴식을 우선하세요.' });
+        else if (stats.money < 80000) tips.push({ emoji: '💸', text: '잔고가 부족해요. 알바를 좀 넣어야 할 것 같아요.' });
+        else if (stats.knowledge < 30 && currentWeek >= 5) tips.push({ emoji: '📚', text: '시험 준비가 부족해요. 공부를 늘려보세요.' });
+        else if (stats.social < 25 && currentWeek >= 3) tips.push({ emoji: '😔', text: '인맥이 적어요. 친구를 만나보는 건 어때요?' });
+        else tips.push({ emoji: '💡', text: '균형 잡힌 스케줄을 짜보세요!' });
+
+        if (currentWeek >= 6 && currentWeek <= 8) tips.push({ emoji: '📝', text: '중간고사 시즌! 준비도를 올릴 마지막 기회.' });
+        if (currentWeek >= 13) tips.push({ emoji: '📚', text: '기말이 다가와요. 준비도에 집중하세요.' });
+
+        return tips.length > 0 ? (
+          <div className="mb-2 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/5">
+            {tips.slice(0, 1).map((t, i) => (
+              <p key={i} className="text-[11px] text-txt-secondary/70">{t.emoji} {t.text}</p>
+            ))}
+          </div>
+        ) : null;
+      })()}
+
       {/* Hint + Quick Templates */}
       {totalScheduled === 0 && !selectedActivity && (
         <div>
