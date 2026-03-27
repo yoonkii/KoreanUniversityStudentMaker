@@ -1099,7 +1099,10 @@ Complete rewrite of core game mechanics across 59 files (+1496/-707 lines):
 - Latest (C76-C82): NPC gifts in KakaoTalk, ending trajectory hints, reciprocal NPC gifts,
   ending collection gallery, secret achievements (28 total), trajectory-aware Soyeon,
   activity result messages (40 outcomes), dynamic exam reactions
-- Final stats: 94 commits, 83 AUTOPLAY cycles, 28 achievements, 14 endings, 65+ events,
-  27 NPCs, 12 mid-activity choices, 80+ flavor/result texts, zero regressions
+- C83-C85: memory callback injection in scenes, activity result messages, new ending celebration
+- Final stats: 97 commits, 86 AUTOPLAY cycles, 28 achievements, 14 endings, 70+ events,
+  27 NPCs, 12 mid-activity choices, 120+ flavor/result/memory texts, zero regressions
+- PM/VN systems: gift giving, trajectory hints, reciprocal NPC gifts, memory callbacks,
+  ending collection gallery, streak system, jealousy, secret achievements, music moods
 
 ---
