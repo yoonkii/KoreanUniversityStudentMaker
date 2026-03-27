@@ -1020,13 +1020,27 @@ Complete rewrite of core game mechanics across 59 files (+1496/-707 lines):
 | C32 | Persistent diary system | PM-style journal in pause menu |
 | C33 | NPC special days + calendar events | Birthdays, 벚꽃, 졸업 준비 |
 
-**Session totals:**
-- 41 commits
-- 33 AUTOPLAY cycles + realism overhaul + QA fixes + Gemini fix
+### AUTOPLAY Cycles C34-C39 (final batch)
+
+| Cycle | Feature | Key Impact |
+|-------|---------|-----------|
+| C34 | Weekend visual differentiation | Pink-tinted weekend columns |
+| C35 | Stress/health screen effects | Screen shake + desaturation |
+| C36 | Danger alerts in schedule planner | Predictive stat warnings |
+| C37 | Activity count badges | Visual diminishing returns indicator |
+| C38 | Relationship-aware dialogue modifiers | 20 tone variants (5 tiers × 4 NPCs) |
+| C39 | Semester awards ceremony | 10 awards based on performance |
+
+**Final session totals:**
+- 49 commits
+- 39 AUTOPLAY cycles + realism overhaul + QA fixes + Gemini fix
 - 48 tests passing, build clean
-- 13 activities, 14 endings, 50+ events, 27 NPCs
+- 13 activities, 14 endings, 55+ events, 27 NPCs
 - Inner monologue, diary, energy budget, mid-activity choices
 - Stat-gated + relationship-gated choices
+- Relationship-aware dialogue tone modifiers
 - Gemini weekly dialogue cache (1 API call/week)
+- Semester awards, growth chart, personalized narrative in ending
+- Screen effects, time-of-day atmosphere, campus gossip
 
 ---
