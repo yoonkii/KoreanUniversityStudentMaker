@@ -294,6 +294,52 @@ const WEEKLY_EVENT_POOL: WeeklyEventDef[] = [
     priority: 3,
     condition: (stats, w, rels) => w >= 12 && stats.knowledge >= 65 && (rels?.['prof-kim']?.affection ?? 0) >= 50,
   },
+  // ─── Relationship Milestone Events ───
+  {
+    id: 'minji_smile',
+    name: '민지의 미소',
+    description: '민지가 처음으로 진심 어린 미소를 보여줬다. "너 덕분에 학교가 좀 재밌어졌어."',
+    effects: { social: 5, charm: 3, stress: -5 },
+    probability: 0.25,
+    priority: 4,
+    condition: (_, w, rels) => w >= 8 && (rels?.['minji']?.affection ?? 0) >= 70 && (rels?.['minji']?.affection ?? 0) < 85,
+  },
+  {
+    id: 'jaemin_night_talk',
+    name: '재민이와의 밤',
+    description: '새벽 3시. 재민이가 "야, 잠 안 와?" 하며 진지한 이야기를 시작했다. 대학 와서 가장 깊은 대화를 나눴다.',
+    effects: { social: 8, stress: -10 },
+    probability: 0.2,
+    priority: 4,
+    condition: (_, w, rels) => w >= 6 && (rels?.['jaemin']?.affection ?? 0) >= 70 && (rels?.['jaemin']?.encounters ?? 0) >= 5,
+  },
+  {
+    id: 'soyeon_letter',
+    name: '소연 선배의 편지',
+    description: '로커에서 소연 선배의 손편지를 발견했다. "네가 후배라서 다행이야. 남은 학기도 화이팅!"',
+    effects: { social: 5, charm: 3, stress: -8 },
+    probability: 0.2,
+    priority: 4,
+    condition: (_, w, rels) => w >= 10 && (rels?.['soyeon']?.affection ?? 0) >= 75,
+  },
+  {
+    id: 'hyunwoo_acknowledgment',
+    name: '현우 선배의 인정',
+    description: '현우: "솔직히 처음엔 그냥 후배인 줄 알았는데... 너 진짜 멋있는 사람이야."',
+    effects: { charm: 6, social: 4, stress: -3 },
+    probability: 0.2,
+    priority: 4,
+    condition: (_, w, rels) => w >= 9 && (rels?.['hyunwoo']?.affection ?? 0) >= 70,
+  },
+  {
+    id: 'loneliness_crisis',
+    name: '외로움',
+    description: '기숙사에 혼자 누워 있는데, 핸드폰에 연락 온 사람이 아무도 없다. 눈물이 났다.',
+    effects: { stress: 12, health: -5, social: -3 },
+    probability: 0.15,
+    priority: 4,
+    condition: (stats, w) => w >= 6 && stats.social < 15 && stats.stress > 50,
+  },
 ];
 
 // ─── Weather System ───
