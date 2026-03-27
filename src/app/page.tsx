@@ -119,21 +119,38 @@ export default function Home() {
             const combos = JSON.parse(localStorage.getItem('kusm-discovered-combos') ?? '[]') as string[];
             if (completions === 0) return null;
             return (
-              <div className="mt-4 sm:mt-6 px-4 py-3 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 w-64 sm:w-72">
-                <p className="text-[10px] text-white/40 mb-2 text-center">📊 수집 현황</p>
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div>
-                    <div className="text-sm font-bold text-gold">{completions}</div>
-                    <div className="text-[8px] text-white/30">클리어</div>
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-pink">{archetypes.length}/14</div>
-                    <div className="text-[8px] text-white/30">엔딩</div>
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-teal">{combos.length}/7</div>
-                    <div className="text-[8px] text-white/30">콤보</div>
-                  </div>
+              <div className="mt-4 sm:mt-6 px-4 py-3 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 w-72 sm:w-80">
+                <p className="text-[10px] text-white/40 mb-2 text-center">📊 수집 현황 · {completions}회 클리어</p>
+                <div className="grid grid-cols-3 gap-1 text-center mb-2">
+                  <div className="text-[9px] text-white/30">엔딩 {archetypes.length}/14</div>
+                  <div className="text-[9px] text-white/30">콤보 {combos.length}/7</div>
+                  <div className="text-[9px] text-white/30">NG+{completions}</div>
+                </div>
+                {/* Ending gallery — which endings have you found? */}
+                <div className="grid grid-cols-7 gap-1">
+                  {[
+                    { id: 'scholar', emoji: '📚', name: '학점러' },
+                    { id: 'social', emoji: '🦋', name: '인싸' },
+                    { id: 'hustler', emoji: '💰', name: '알바왕' },
+                    { id: 'wellness', emoji: '💪', name: '건강왕' },
+                    { id: 'chill', emoji: '🌊', name: '마이웨이' },
+                    { id: 'charm', emoji: '✨', name: '매력쟁이' },
+                    { id: 'balanced', emoji: '⚖️', name: '밸런스' },
+                    { id: 'burnout', emoji: '🔥', name: '번아웃' },
+                    { id: 'broke', emoji: '🍜', name: '철학자' },
+                    { id: 'campus_couple', emoji: '💑', name: '커플' },
+                    { id: 'professors_protege', emoji: '🎓', name: '제자' },
+                    { id: 'club_star', emoji: '🎸', name: '스타' },
+                    { id: 'perfect_mentorship', emoji: '🤝', name: '선후배' },
+                    { id: 'bromance', emoji: '🏠', name: '룸메' },
+                  ].map(ending => {
+                    const found = archetypes.includes(ending.id);
+                    return (
+                      <div key={ending.id} className={`text-center py-1 rounded ${found ? 'bg-white/10' : 'bg-white/[0.02]'}`} title={found ? ending.name : '???'}>
+                        <span className={`text-sm ${found ? '' : 'grayscale opacity-20'}`}>{ending.emoji}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
