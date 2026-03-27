@@ -160,6 +160,9 @@ export default function Home() {
           <p className="text-[10px] sm:text-xs text-white/30 mt-4 sm:mt-6 tracking-wider">
             AI-DRIVEN EMERGENT UNIVERSITY LIFE SIMULATOR
           </p>
+          <p className="text-[8px] text-white/15 mt-1">
+            14 endings · 28 achievements · 70+ events · 27 NPCs
+          </p>
         </div>
       </div>
 
