@@ -217,9 +217,28 @@ export const useGameStore = create<GameStore>()(
           ? { ...existing, affection: newAffection, encounters: existing.encounters + 1, lastInteraction: currentWeek }
           : { characterId, affection: newAffection, encounters: 1, lastInteraction: currentWeek };
 
-        const tierNotification = oldTier !== newTier
+        const tierNotification = oldTier !== newTier && newTier !== 'stranger'
           ? { characterId, newTier, label: TIER_LABELS[newTier] }
           : null;
+
+        // Tier-up bonus — small stat reward for deepening relationships
+        if (tierNotification && oldTier !== newTier) {
+          const { stats } = get();
+          const TIER_BONUSES: Record<string, Partial<PlayerStats>> = {
+            acquaintance: { social: 2 },
+            friend: { social: 3, stress: -3 },
+            close_friend: { social: 5, charm: 3, stress: -5 },
+            soulmate: { social: 8, charm: 5, stress: -10, health: 5 },
+          };
+          const bonus = TIER_BONUSES[newTier];
+          if (bonus) {
+            const updated2 = { ...stats };
+            for (const [k, v] of Object.entries(bonus)) {
+              if (v !== undefined) updated2[k as keyof PlayerStats] = clampStat(k as keyof PlayerStats, updated2[k as keyof PlayerStats] + v);
+            }
+            set({ stats: updated2 });
+          }
+        }
 
         set({ relationships: { ...relationships, [characterId]: updated }, ...(tierNotification ? { tierNotification } : {}) });
       },
