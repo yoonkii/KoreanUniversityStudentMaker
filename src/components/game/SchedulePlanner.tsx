@@ -344,19 +344,28 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
         {ACTIVITY_LIST.map((activity) => {
           const colorHex = ACTIVITY_COLOR_HEX[activity.color] ?? '#8B95A8';
           const isSelected = selectedActivity === activity.id;
+          // Check unlock requirements
+          const statLocked = activity.unlockRequirement && stats[activity.unlockRequirement.stat] < activity.unlockRequirement.min;
+          const weekLocked = activity.unlockWeek && currentWeek < activity.unlockWeek;
+          const isLocked = !!(statLocked || weekLocked);
+          const lockReason = statLocked ? `🔒 ${activity.unlockRequirement!.label}` : weekLocked ? `🔒 ${activity.unlockWeek}주차부터` : '';
           return (
             <button
               key={activity.id}
-              onClick={() => handleActivityTap(activity.id)}
-              className={`flex flex-col items-center gap-1 px-1.5 py-2.5 rounded-xl transition-all duration-150 cursor-pointer active:scale-[0.95] ${isSelected ? '' : 'bg-white/5 hover:bg-white/10 border border-transparent'}`}
+              onClick={() => !isLocked && handleActivityTap(activity.id)}
+              disabled={isLocked}
+              title={isLocked ? lockReason : activity.description}
+              className={`flex flex-col items-center gap-1 px-1.5 py-2.5 rounded-xl transition-all duration-150 cursor-pointer active:scale-[0.95] ${isLocked ? 'opacity-40 cursor-not-allowed' : ''} ${isSelected ? '' : 'bg-white/5 hover:bg-white/10 border border-transparent'}`}
               style={isSelected ? { backgroundColor: `${colorHex}20`, border: `2px solid ${colorHex}` } : undefined}
             >
-              <span style={{ color: colorHex }}>
-                <iconify-icon icon={activity.icon} width="22" height="22" />
+              <span style={{ color: isLocked ? '#555' : colorHex }}>
+                <iconify-icon icon={isLocked ? 'solar:lock-bold' : activity.icon} width="22" height="22" />
               </span>
-              <span className="text-[11px] font-medium text-txt-primary leading-tight">{activity.name}</span>
+              <span className={`text-[11px] font-medium leading-tight ${isLocked ? 'text-txt-secondary/40' : 'text-txt-primary'}`}>
+                {isLocked ? '???' : activity.name}
+              </span>
               <span className="text-[9px] text-txt-secondary/60 leading-tight text-center">
-                {Object.entries(activity.statEffects)
+                {isLocked ? lockReason : Object.entries(activity.statEffects)
                   .filter(([, v]) => v !== 0)
                   .slice(0, 2)
                   .map(([k, v]) => `${STAT_LABELS[k] ?? k}${v! > 0 ? '+' : ''}${k === 'money' ? `${(v! / 1000).toFixed(0)}K` : v}`)

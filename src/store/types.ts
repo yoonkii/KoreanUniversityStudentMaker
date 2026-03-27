@@ -88,6 +88,10 @@ export interface ActivityDef {
   description: string;
   requiresNpcTarget?: boolean; // If true, show NPC picker
   npcVariants?: NpcActivityVariant[];
+  /** Stat requirements to unlock this activity */
+  unlockRequirement?: { stat: keyof PlayerStats; min: number; label: string };
+  /** Minimum week to unlock */
+  unlockWeek?: number;
 }
 
 export interface CharacterDef {

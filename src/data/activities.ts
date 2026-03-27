@@ -79,6 +79,36 @@ export const ACTIVITIES: Record<string, ActivityDef> = {
       { npcId: 'hyunwoo', npcName: '정현우', statEffects: { social: 6, charm: 5, money: -20000 }, description: '현우 선배와 분위기 좋은 곳.', requiredTier: 'acquaintance' },
     ],
   },
+  // ─── Unlockable Activities ───
+  tutoring: {
+    id: 'tutoring',
+    name: '과외하기',
+    icon: 'solar:pen-new-square-bold',
+    color: 'gold',
+    statEffects: { money: 60000, knowledge: 2, stress: 6, charm: 2 },
+    description: '후배에게 과외를 해주며 돈도 벌고 복습도 한다.',
+    unlockRequirement: { stat: 'knowledge', min: 50, label: '준비도 50 이상' },
+    unlockWeek: 4,
+  },
+  networking: {
+    id: 'networking',
+    name: '네트워킹',
+    icon: 'solar:global-bold',
+    color: 'lavender',
+    statEffects: { social: 12, charm: 5, stress: 5, money: -20000 },
+    description: '업계 선배들과의 네트워킹 모임에 참석한다.',
+    unlockRequirement: { stat: 'social', min: 50, label: '인맥 50 이상' },
+    unlockWeek: 8,
+  },
+  selfcare: {
+    id: 'selfcare',
+    name: '자기관리',
+    icon: 'solar:shield-bold',
+    color: 'pink',
+    statEffects: { health: 12, charm: 4, stress: -8, money: -15000 },
+    description: '피부관리, 헤어, 쇼핑... 자신에게 투자하는 시간.',
+    unlockRequirement: { stat: 'charm', min: 40, label: '매력 40 이상' },
+  },
 };
 
 export const ACTIVITY_LIST: ActivityDef[] = Object.values(ACTIVITIES);
