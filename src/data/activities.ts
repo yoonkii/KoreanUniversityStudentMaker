@@ -40,6 +40,7 @@ export const ACTIVITIES: Record<string, ActivityDef> = {
     color: 'pink',
     statEffects: { money: -30000, social: 5, stress: -10, charm: 5, knowledge: -2 },
     description: '좋아하는 사람과 함께 시간을 보낸다. 공부는 뒷전.',
+    unlockRequirement: { stat: 'charm', min: 40, label: '매력 40 이상' },
     requiresNpcTarget: true,
     npcVariants: [
       { npcId: 'jaemin', npcName: '이재민', statEffects: { social: 8, charm: 4, stress: -12, money: -25000, knowledge: -2 }, description: '재민이랑 놀러 간다.', requiredTier: 'friend' },

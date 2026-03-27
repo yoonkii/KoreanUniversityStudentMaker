@@ -777,14 +777,34 @@ export function simulateWeek(
       if (slot.targetNpcId && activity.npcVariants) {
         const variant = activity.npcVariants.find(v => v.npcId === slot.targetNpcId);
         effects = variant?.statEffects ?? activity.statEffects;
-        // Auto-bump NPC affection (+3 per slot for friends, +5 for date)
-        const affBump = slot.activityId === 'date' ? 5 : 3;
-        npcInteractions[slot.targetNpcId] = (npcInteractions[slot.targetNpcId] || 0) + affBump;
+
+        // Relationship affection with randomness (PM3-style)
+        const baseAff = slot.activityId === 'date' ? 2 : 1; // Reduced from 5/3
+        let affGain = baseAff;
+
+        // 20% chance: awkward silence, no affection gain
+        // 10% chance: great chemistry, double affection
+        // 15% chance (date only): awkward moment, -1 affection
+        const roll = Math.random();
+        if (roll < 0.10) {
+          affGain = baseAff * 2; // Great chemistry!
+        } else if (roll < 0.30) {
+          affGain = 0; // Didn't click today
+        } else if (slot.activityId === 'date' && roll > 0.85) {
+          affGain = -1; // Awkward date moment
+        }
+
+        // Weekly cap: max +5 affection per NPC from activities
+        const currentGain = npcInteractions[slot.targetNpcId] ?? 0;
+        if (currentGain + affGain > 5) affGain = Math.max(0, 5 - currentGain);
+
+        npcInteractions[slot.targetNpcId] = currentGain + affGain;
       } else {
         effects = activity.statEffects;
-        // Club activity implicitly interacts with Hyunwoo
+        // Club activity implicitly interacts with Hyunwoo (+1, was +2)
         if (slot.activityId === 'club') {
-          npcInteractions['hyunwoo'] = (npcInteractions['hyunwoo'] || 0) + 2;
+          const currentHw = npcInteractions['hyunwoo'] ?? 0;
+          if (currentHw < 5) npcInteractions['hyunwoo'] = currentHw + 1;
         }
       }
 

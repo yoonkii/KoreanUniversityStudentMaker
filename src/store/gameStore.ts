@@ -270,12 +270,12 @@ export const useGameStore = create<GameStore>()(
           }
         }
 
-        // Relationship decay: -2 affection for NPCs not interacted with for 3+ weeks
+        // Relationship decay: -3 affection for NPCs not interacted with for 2+ weeks (PM3-style harsh)
         const decayedRelationships = { ...relationships };
         for (const [charId, rel] of Object.entries(decayedRelationships)) {
           const weeksSinceInteraction = rel.lastInteraction ? currentWeek - rel.lastInteraction : currentWeek;
-          if (weeksSinceInteraction >= 3) {
-            const decayAmount = getRelationshipTier(rel.affection) === 'soulmate' ? 1 : 2;
+          if (weeksSinceInteraction >= 2) {
+            const decayAmount = getRelationshipTier(rel.affection) === 'soulmate' ? 1 : 3;
             decayedRelationships[charId] = {
               ...rel,
               affection: Math.max(0, rel.affection - decayAmount),
