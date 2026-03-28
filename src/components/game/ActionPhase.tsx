@@ -241,7 +241,17 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
 
   // Day transition overlay
   if (phase === 'dayTransition' && dayIndex < days.length - 1) {
-    return <DayTransitionCard dayName={days[dayIndex + 1].dayName} onDone={handleDayTransitionDone} />;
+    const completedToday = currentDay?.activities.filter(a => !a.skipped).map(a => ({ icon: a.icon, name: a.name })) ?? [];
+    const nextDayActs = days[dayIndex + 1]?.activities;
+    const nextFirst = nextDayActs?.[0] ? { icon: nextDayActs[0].icon, name: nextDayActs[0].name } : null;
+    return (
+      <DayTransitionCard
+        dayName={days[dayIndex + 1].dayName}
+        onDone={handleDayTransitionDone}
+        completedActivities={completedToday}
+        nextDayFirstActivity={nextFirst}
+      />
+    );
   }
 
   if (!activity || phase === 'complete') return null;
@@ -250,13 +260,13 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
 
   return (
     <div className="fixed inset-0 z-40 cursor-pointer" onClick={handleAdvance}>
-      {/* Full-screen background */}
-      <div className="absolute inset-0">
+      {/* Full-screen background — key changes trigger crossfade */}
+      <div className="absolute inset-0 animate-fade-in" key={`bg-${dayIndex}-${activityIndex}`}>
         <Image
           src={`/assets/backgrounds/${bg.location}/${bg.variant}.png`}
           alt=""
           fill
-          className="object-cover"
+          className="object-cover transition-opacity duration-500"
           priority
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
@@ -305,7 +315,7 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
       </div>
 
       {/* Activity icon + name — top center */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20" key={`act-${dayIndex}-${activityIndex}`}>
         <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black/50 backdrop-blur-sm">
           <span className="text-2xl">{activity.icon}</span>
           <span className="text-sm font-bold text-white">{activity.skipped ? '😫 빠짐' : activity.name}</span>
@@ -313,12 +323,12 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
         </div>
       </div>
 
-      {/* Skip button — top right */}
+      {/* Skip button — top right, subtle */}
       <button
         onClick={(e) => { e.stopPropagation(); onComplete(); }}
-        className="absolute top-4 right-4 z-20 px-3 py-1.5 rounded-lg bg-black/40 text-white/40 text-xs hover:bg-black/60 transition-colors cursor-pointer"
+        className="absolute top-5 right-4 z-20 px-2 py-1 rounded text-white/20 text-[10px] hover:text-white/50 transition-colors cursor-pointer"
       >
-        건너뛰기 ▸▸
+        ▸▸
       </button>
 
       {/* PM-style stat bars — bottom left, always visible */}
