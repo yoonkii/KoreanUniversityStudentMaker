@@ -1,5 +1,57 @@
 # KUSM Development Log
 
+## Session Summary — 2026-03-28 (Princess Maker Style Overhaul)
+
+**Scope:** 13 files changed, +1,192 / -1,049 lines. 13 commits. Responds to playtest feedback: "스케줄을 진행하는 부분 완전히 다시 만들어줘. 프린세스 메이커가 어떻게 하는지 공부해봐."
+
+### What Was Built
+
+**OrientationEvent Redesign**
+- 4 full VN scenes, one per NPC (was: 6 phases of modal text)
+- 재민(기숙사) → 민지(강의실) → 현우(캠퍼스 부스) → 소연(카페)
+- Each NPC: unique background, portrait, 5 dialogue lines, 1 player choice
+- Progress indicator (1/4 → 4/4) with animated dots
+- Prologue fixed: no classroom scene before course registration
+
+**ActionPhase Full-Screen PM3 Overhaul**
+- One activity at a time, full-screen background per activity
+- Activity → background mapping with time-of-day variety (morning/afternoon/evening)
+- Large character sprites: player (left, expression-reactive) + NPC (right, dynamic emotion)
+- PMStatBars: horizontal bar panel with animated deltas + glowing numbers
+- CalendarDisplay: PM3-style bordered calendar with progress bar
+- Day schedule strip: shows all 3 daily activities with current highlighted
+- Money counter at top-right (PM3's gold display)
+- Background NPC presence indicators (who else is nearby)
+- Ambient location sound text (visual audio substitute)
+- 12 mid-activity random events across all activities (PM3-style interruptions)
+- Week start splash ("3주차 — 월요일부터 시작")
+- Week complete splash ("3주차 완료")
+- Day transition cards with today's summary + tomorrow's preview
+- Activity crossfade between scenes
+- User-driven advance (tap to reveal stats → tap to continue)
+
+**Supporting Screen Updates**
+- WeekSummary: full-screen dark backdrop, "WEEK REPORT" dramatic header
+- WeeklyOverview: Soyeon advisor section enlarged (PM3 butler pattern)
+- Weekly event display: gradient card with "⚡ 이번 주 사건" header
+
+### PM3 Patterns Absorbed
+| Pattern | Implementation |
+|---------|---------------|
+| Full-screen activity scenes | BackgroundLayer + activity mapping |
+| Character always visible | Player sprite on every scene |
+| Stat bars with numbers | PMStatBars horizontal panel |
+| Calendar display | Bordered card with large day number |
+| Random events during activities | 12 mid-activity events with choices |
+| Month bookends | Week start/complete splashes |
+| Day transitions | Summary cards between days |
+| Gold counter | Money display at top-right |
+| Butler advisor | Soyeon advisor section |
+| Background NPCs | Presence indicators per location |
+| Dynamic expressions | Characters react to outcomes |
+
+---
+
 ## Session Summary — 2026-03-27/28 (Friendship/Romance System + Polish)
 
 **Scope:** 63 files changed, +5,322 / -708 lines. 51 tests across 5 files. 7 commits, 25 AUTOPLAY cycles.
