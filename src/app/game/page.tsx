@@ -34,6 +34,7 @@ import type { DayGroup } from '@/components/game/ActionPhase';
 import { checkAchievements } from '@/lib/achievements';
 import { triggerDialogueGeneration } from '@/lib/weeklyDialogueCache';
 import { triggerNarrationGeneration } from '@/lib/activityNarrationCache';
+import { logAIThought } from '@/lib/aiThoughtsLog';
 import { triggerAiCampusGeneration, getOverheardConversation } from '@/lib/livingCampus';
 
 export default function GameScreen() {
@@ -141,6 +142,7 @@ export default function GameScreen() {
 
       if (aiScene) {
         // AI scene succeeded — use it (schedule-contextual, unique each time)
+        logAIThought('scene', `${currentWeek}주차 AI 씬 생성`, aiScene.dialogue?.[0]?.text ?? '(씬 생성됨)');
         setSceneQueue([aiScene]);
         setPhase('simulation');
         return;

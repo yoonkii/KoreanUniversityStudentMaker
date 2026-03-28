@@ -5,6 +5,7 @@
 
 import type { PlayerStats, CharacterRelationship } from '@/store/types';
 import type { DayGroup } from '@/components/game/ActionPhase';
+import { logAIThought } from './aiThoughtsLog';
 
 interface NarrationData {
   narrations: string[];
@@ -68,6 +69,9 @@ export function triggerNarrationGeneration(
     .then(data => {
       if (data?.narrations) {
         cache = { week, data };
+        // Log to AI thoughts
+        const sampleNarration = data.narrations?.[0] ?? '(no narration)';
+        logAIThought('narration', `${week}주차 활동 나레이션 생성 (${data.narrations?.length ?? 0}개)`, sampleNarration);
       }
     })
     .catch(() => {})
