@@ -312,6 +312,7 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
   const [monologue, setMonologue] = useState<string | null>(null);
   const [dayTransition, setDayTransition] = useState<string | null>(null);
   const [fatigueWarning, setFatigueWarning] = useState<string | null>(null);
+  const [statCelebration, setStatCelebration] = useState<string | null>(null);
   const [runningStats, setRunningStats] = useState<PlayerStats>({ ...currentStats });
   // Track activity repetition for diminishing returns display
   const activityCountRef = useRef<Record<string, number>>({});
@@ -396,15 +397,12 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
 
           setRunningStats(prev => {
             const next = { ...prev };
-            // Diminishing returns multiplier: 100% → 100% → 100% → 50%
             const diminish = repeatCount >= 4 ? 0.5 : 1.0;
-            // Random variance: ±25% for non-money stats
             for (const [k, v] of Object.entries(act.statEffects)) {
               if (v !== undefined) {
                 const key = k as keyof PlayerStats;
                 let adjusted = v;
                 if (key !== 'money') {
-                  // Apply variance: ±25%
                   const variance = 0.75 + Math.random() * 0.5;
                   adjusted = Math.round(v * variance * diminish);
                 }
@@ -413,6 +411,23 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
                   : Math.max(0, Math.min(100, next[key] + adjusted));
               }
             }
+            // Check for milestone celebrations
+            const MILESTONES: Record<string, { thresholds: number[]; labels: string[] }> = {
+              knowledge: { thresholds: [30, 50, 70], labels: ['📚 공부 습관이 잡히기 시작했다!', '📚 시험 준비 순조로워!', '📚 A학점을 노려볼 실력!'] },
+              social: { thresholds: [30, 50, 70], labels: ['🤝 아는 사람이 늘고 있다!', '🤝 인싸의 길로!', '🤝 캠퍼스 인기인!'] },
+              charm: { thresholds: [40, 60], labels: ['✨ 분위기가 달라졌다!', '✨ 매력 만점!'] },
+              health: { thresholds: [70, 90], labels: ['💪 체력 충전 완료!', '💪 철인 체력!'] },
+            };
+            for (const [stat, m] of Object.entries(MILESTONES)) {
+              const s = stat as keyof PlayerStats;
+              for (let t = 0; t < m.thresholds.length; t++) {
+                if (prev[s] < m.thresholds[t] && next[s] >= m.thresholds[t]) {
+                  setStatCelebration(m.labels[t]);
+                  setTimeout(() => setStatCelebration(null), 2000);
+                }
+              }
+            }
+
             return next;
           });
         }
@@ -592,6 +607,13 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
           건너뛰기 ⏭️
         </button>
       </div>
+
+      {/* Stat milestone celebration — PM-style growth reward */}
+      {statCelebration && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-6 py-3 glass-strong rounded-xl text-base font-bold text-gold border border-gold/40 animate-bounce-once shadow-2xl">
+          {statCelebration}
+        </div>
+      )}
 
       {/* Fatigue/diminishing returns warning */}
       {fatigueWarning && (
