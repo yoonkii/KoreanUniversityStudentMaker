@@ -18,6 +18,7 @@ interface MTChoice {
   npcEncounter: string;
   npcLine: string;
   memory: string;
+  isRomantic?: boolean;
 }
 
 const MT_CHOICES: MTChoice[] = [
@@ -52,6 +53,17 @@ const MT_CHOICES: MTChoice[] = [
     memory: '새벽 캠프파이어 앞에서 재민이와 진심을 나눴다.',
   },
   {
+    id: 'stargazing',
+    title: '별 보며 둘이서',
+    emoji: '🌟',
+    description: '캠프파이어가 꺼진 새벽, 혼자 별을 보고 있는데 누군가 옆에 앉는다.',
+    statEffects: { charm: 8, stress: -12, social: 4, money: -30000 },
+    npcEncounter: '', // determined dynamically
+    npcLine: '',
+    memory: 'MT 새벽, 별 아래에서 특별한 시간을 보냈다.',
+    isRomantic: true,
+  },
+  {
     id: 'skip',
     title: 'MT 불참',
     emoji: '📚',
@@ -70,14 +82,42 @@ export default function MTEvent({ onComplete }: MTEventProps) {
   const updateRelationship = useGameStore((s) => s.updateRelationship);
   const addEventHistory = useGameStore((s) => s.addEventHistory);
 
+  const relationships = useGameStore((s) => s.relationships);
+
+  // For the romantic stargazing choice, find the NPC with highest friendship
+  const NPC_KO: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연 선배', hyunwoo: '현우 선배' };
+  const NPC_ROMANTIC_LINES: Record<string, string> = {
+    jaemin: '"야... 별 진짜 많다. 근데 지금은 옆에 있는 네가 더 빛나." 재민이가 조용히 웃었다.',
+    minji: '"...별 보러 왔는데 왜 자꾸 네 얼굴을 보게 되지." 민지가 고개를 돌렸지만 귀가 빨갛다.',
+    soyeon: '"이런 밤에는 솔직해져도 되는 거 아닐까?" 소연 선배가 어깨에 기댔다.',
+    hyunwoo: '"이 별 아래서 노래 하나 불러줄까?" 현우 선배가 작게 흥얼거리기 시작했다.',
+  };
+  const bestNpcForRomance = Object.entries(relationships)
+    .filter(([id]) => NPC_KO[id])
+    .sort(([, a], [, b]) => (b.friendship ?? b.affection ?? 0) - (a.friendship ?? a.affection ?? 0))[0];
+  const romanticNpcId = bestNpcForRomance?.[0] ?? 'jaemin';
+  const romanticNpcFriendship = bestNpcForRomance ? (bestNpcForRomance[1].friendship ?? bestNpcForRomance[1].affection ?? 0) : 0;
+  const romanticAvailable = romanticNpcFriendship >= 20;
+
   const handleChoose = useCallback((choice: MTChoice) => {
-    setSelectedChoice(choice);
-    updateStats(choice.statEffects);
-    updateRelationship(choice.npcEncounter, choice.id === 'skip' ? 3 : 8);
+    const actualChoice = { ...choice };
+    if (choice.isRomantic) {
+      actualChoice.npcEncounter = romanticNpcId;
+      actualChoice.npcLine = NPC_ROMANTIC_LINES[romanticNpcId] ?? '별이 참 예쁘다...';
+      actualChoice.memory = `MT 새벽, ${NPC_KO[romanticNpcId]}과(와) 별을 보며 특별한 시간을 보냈다.`;
+    }
+    setSelectedChoice(actualChoice);
+    updateStats(actualChoice.statEffects);
+    if (choice.isRomantic) {
+      updateRelationship(actualChoice.npcEncounter, 3, 'friendship');
+      updateRelationship(actualChoice.npcEncounter, 3, 'romance');
+    } else {
+      updateRelationship(actualChoice.npcEncounter, choice.id === 'skip' ? 3 : 8);
+    }
     addEventHistory({
       week: 4,
-      summary: `MT — ${choice.title}`,
-      npcInvolved: choice.npcEncounter,
+      summary: `MT — ${actualChoice.title}${choice.isRomantic ? ` (${NPC_KO[romanticNpcId]})` : ''}`,
+      npcInvolved: actualChoice.npcEncounter,
       choiceMade: choice.title,
     });
     setPhase('result');
@@ -110,17 +150,27 @@ export default function MTEvent({ onComplete }: MTEventProps) {
         {phase === 'choosing' && (
           <div className="flex flex-col gap-3 animate-fade-in-up">
             <h3 className="text-lg font-bold text-txt-primary text-center mb-1">MT에서 어떻게 할까?</h3>
-            {MT_CHOICES.map((choice) => (
+            {MT_CHOICES.map((choice) => {
+              const isRomanticLocked = choice.isRomantic && !romanticAvailable;
+              return (
               <button
                 key={choice.id}
-                onClick={() => handleChoose(choice)}
-                className="glass-strong px-4 py-4 rounded-xl text-left hover:bg-white/10 transition-all cursor-pointer active:scale-[0.98] group"
+                onClick={() => !isRomanticLocked && handleChoose(choice)}
+                disabled={isRomanticLocked}
+                className={`glass-strong px-4 py-4 rounded-xl text-left transition-all group ${isRomanticLocked ? 'opacity-40 cursor-not-allowed' : 'hover:bg-white/10 cursor-pointer active:scale-[0.98]'}`}
               >
                 <div className="flex items-start gap-3">
                   <span className="text-2xl flex-shrink-0 mt-0.5">{choice.emoji}</span>
                   <div className="flex-1">
-                    <div className="text-sm font-bold text-txt-primary group-hover:text-teal transition-colors">{choice.title}</div>
-                    <div className="text-xs text-txt-secondary mt-0.5">{choice.description}</div>
+                    <div className="text-sm font-bold text-txt-primary group-hover:text-teal transition-colors">
+                      {choice.isRomantic ? `${choice.title} (${NPC_KO[romanticNpcId]})` : choice.title}
+                    </div>
+                    <div className="text-xs text-txt-secondary mt-0.5">
+                      {isRomanticLocked ? `🔒 누군가와 더 친해져야 합니다 (우정 20+)` : choice.description}
+                    </div>
+                    {choice.isRomantic && !isRomanticLocked && (
+                      <span className="text-[9px] text-pink/50 mt-0.5 block">💕 로맨스 +3</span>
+                    )}
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {Object.entries(choice.statEffects).filter(([,v]) => v !== 0).map(([k, v]) => {
                         const labels: Record<string, string> = { knowledge: '준비도', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력' };
@@ -135,7 +185,7 @@ export default function MTEvent({ onComplete }: MTEventProps) {
                   </div>
                 </div>
               </button>
-            ))}
+            );})}
           </div>
         )}
 
