@@ -310,7 +310,7 @@ export interface NpcInvitation {
 
 export function rollNpcInvitation(
   week: number,
-  relationships: Record<string, { affection: number; lastInteraction?: number }>,
+  relationships: Record<string, { affection: number; friendship?: number; romance?: number; lastInteraction?: number }>,
 ): NpcInvitation | null {
   // 30% chance per week of an NPC invitation
   if (Math.random() > 0.3) return null;
@@ -321,42 +321,42 @@ export function rollNpcInvitation(
       message: '야! 오늘 저녁에 치킨 먹으러 갈래? 새로 생긴 데 있는데!',
       activity: '재민이와 치킨 먹기',
       statBonus: { social: 5, stress: -8, money: -12000 },
-      condition: () => (relationships['jaemin']?.affection ?? 0) >= 30,
+      condition: () => (relationships['jaemin']?.friendship ?? relationships['jaemin']?.affection ?? 0) >= 30,
     },
     {
       npcId: 'minji', npcName: '한민지',
       message: '...내일 도서관에서 같이 공부할래? 혼자 하니까 졸려서.',
       activity: '민지와 스터디',
       statBonus: { knowledge: 5, social: 3, stress: 2 },
-      condition: () => (relationships['minji']?.affection ?? 0) >= 35,
+      condition: () => (relationships['minji']?.friendship ?? relationships['minji']?.affection ?? 0) >= 35,
     },
     {
       npcId: 'soyeon', npcName: '박소연',
       message: '후배야~ 이번 주에 맛집 하나 알려줄까? 학교 앞에 새로 생겼어!',
       activity: '소연 선배와 맛집 탐방',
       statBonus: { social: 4, charm: 3, stress: -5, money: -15000 },
-      condition: () => (relationships['soyeon']?.affection ?? 0) >= 30,
+      condition: () => (relationships['soyeon']?.friendship ?? relationships['soyeon']?.affection ?? 0) >= 30,
     },
     {
       npcId: 'hyunwoo', npcName: '정현우',
       message: '후배! 이번 주 합주 끝나고 노래방 갈 건데, 같이 가자!',
       activity: '현우 선배와 노래방',
       statBonus: { social: 6, charm: 4, stress: -6, money: -10000 },
-      condition: () => (relationships['hyunwoo']?.affection ?? 0) >= 30,
+      condition: () => (relationships['hyunwoo']?.friendship ?? relationships['hyunwoo']?.affection ?? 0) >= 30,
     },
     {
       npcId: 'jaemin', npcName: '이재민',
       message: '야 PC방 갈래? 새 게임 나왔는데 같이 하자!',
       activity: '재민이와 PC방',
       statBonus: { social: 5, stress: -10, money: -5000, knowledge: -1 },
-      condition: () => (relationships['jaemin']?.affection ?? 0) >= 25 && week <= 6,
+      condition: () => (relationships['jaemin']?.friendship ?? relationships['jaemin']?.affection ?? 0) >= 25 && week <= 6,
     },
     {
       npcId: 'minji', npcName: '한민지',
       message: '카페 가서 과제 같이 하지 않을래? 혼자 하기 싫어서...',
       activity: '민지와 카페 과제',
       statBonus: { knowledge: 4, social: 4, money: -5000 },
-      condition: () => (relationships['minji']?.affection ?? 0) >= 40 && week >= 3,
+      condition: () => (relationships['minji']?.friendship ?? relationships['minji']?.affection ?? 0) >= 40 && week >= 3,
     },
   ];
 

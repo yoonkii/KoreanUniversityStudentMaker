@@ -419,7 +419,7 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
           );
         })()}
 
-        {/* NPC invitation — someone wants to hang out! */}
+        {/* NPC invitation — someone wants to hang out! Accept/Decline */}
         {(() => {
           const rels = useGameStore.getState().relationships;
           const invitation = rollNpcInvitation(nextWeek, rels);
@@ -430,16 +430,55 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
             soyeon: '/assets/characters/soyeon/happy.png',
             hyunwoo: '/assets/characters/hyunwoo/cool.png',
           };
+          const rom = rels[invitation.npcId]?.romance ?? 0;
+          const isRomantic = rom >= 10;
           return (
-            <div className="mb-4 px-3 py-3 rounded-xl bg-pink/5 border border-pink/15 animate-fade-in">
+            <div className={`mb-4 px-3 py-3 rounded-xl border animate-fade-in ${isRomantic ? 'bg-pink/5 border-pink/15' : 'bg-teal/5 border-teal/15'}`}>
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full overflow-hidden border border-pink/30 flex-shrink-0">
+                <div className={`w-10 h-10 rounded-full overflow-hidden border flex-shrink-0 ${isRomantic ? 'border-pink/30' : 'border-teal/30'}`}>
                   <Image src={NPC_PORTRAITS_SMALL[invitation.npcId] ?? ''} alt="" width={40} height={40} className="object-cover object-top" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs font-bold text-pink">{invitation.npcName}의 초대</p>
+                  <p className={`text-xs font-bold ${isRomantic ? 'text-pink' : 'text-teal'}`}>
+                    {invitation.npcName}의 초대 {isRomantic ? '💕' : '👋'}
+                  </p>
                   <p className="text-sm text-txt-primary/80 mt-0.5">&ldquo;{invitation.message}&rdquo;</p>
                   <p className="text-[10px] text-txt-secondary/40 mt-1 italic">📍 {invitation.activity}</p>
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {Object.entries(invitation.statBonus).filter(([,v]) => v !== 0).map(([k, v]) => {
+                      const labels: Record<string, string> = { knowledge: '준비도', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력' };
+                      const isGood = k === 'stress' ? v < 0 : v > 0;
+                      return (
+                        <span key={k} className={`text-[8px] px-1 py-0.5 rounded ${isGood ? 'bg-teal/10 text-teal/70' : 'bg-coral/10 text-coral/70'}`}>
+                          {labels[k] ?? k}{v > 0 ? '+' : ''}{k === 'money' ? `${(v/1000).toFixed(0)}K` : v}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        useGameStore.getState().updateStats(invitation.statBonus);
+                        useGameStore.getState().updateRelationship(invitation.npcId, 3, isRomantic ? 'romance' : 'friendship');
+                        useGameStore.getState().addEventHistory({ week: nextWeek, summary: `${invitation.npcName}의 초대 수락 — ${invitation.activity}`, npcInvolved: invitation.npcId, choiceMade: '수락' });
+                        onContinue();
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 ${isRomantic ? 'bg-pink/20 text-pink hover:bg-pink/30' : 'bg-teal/20 text-teal hover:bg-teal/30'}`}
+                    >
+                      수락! 😊
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        useGameStore.getState().updateRelationship(invitation.npcId, -1);
+                        onContinue();
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-xs text-txt-secondary/50 bg-white/5 hover:bg-white/10 transition-all cursor-pointer active:scale-95"
+                    >
+                      다음에...
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
