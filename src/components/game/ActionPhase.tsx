@@ -320,9 +320,10 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
   const [isSkipping, setIsSkipping] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Pacing: enough time to read each activity + encounters
-  const dayDelay = gameSpeed === 2 ? 3500 : 5000;
-  const actRevealDelay = gameSpeed === 2 ? 700 : 1100;
+  // PM-style pacing: each activity gets its own moment
+  // Show one activity at a time with full narration
+  const dayDelay = gameSpeed === 2 ? 4000 : 6000;
+  const actRevealDelay = gameSpeed === 2 ? 1200 : 2000;
 
   // processDay ref for use in choice handler (avoids block-scope issue)
   const processDayRef = useRef<(idx: number) => void>(() => {});
@@ -636,26 +637,27 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
             </p>
           )}
 
-          {/* 3 activity rows — each is a mini-story card */}
+          {/* Activities — each gets its own moment (PM-style) */}
           <div className="flex flex-col gap-3">
             {currentDay.activities.map((activity, i) => (
               <div
                 key={i}
-                className={`glass-strong rounded-xl px-4 py-3 transition-all duration-500 ${
-                  i < revealedActivities ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-                } ${activity.skipped ? 'opacity-50' : ''}`}
+                className={`glass-strong rounded-2xl px-5 py-4 transition-all duration-700 ${
+                  i < revealedActivities ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'
+                } ${activity.skipped ? 'opacity-40' : ''}`}
+                style={{ transitionDelay: `${i * 200}ms` }}
               >
-                {/* Header row: time + icon + name + NPC */}
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] text-txt-secondary/50 w-10">
+                {/* Header: time badge + activity name */}
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-txt-secondary/60">
                     {TIME_LABELS[activity.timeSlot] ?? activity.timeSlot}
                   </span>
-                  <span className="text-base">{activity.icon}</span>
-                  <span className="text-sm font-medium text-txt-primary">
+                  <span className="text-xl">{activity.icon}</span>
+                  <span className="text-base font-bold text-txt-primary">
                     {activity.skipped ? '😫 빠짐' : activity.name}
                   </span>
                   {activity.targetNpcName && !activity.skipped && (
-                    <span className="text-[10px] text-pink ml-auto">with {activity.targetNpcName}</span>
+                    <span className="text-xs text-pink ml-auto">with {activity.targetNpcName}</span>
                   )}
                 </div>
 
@@ -664,13 +666,13 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
                   const globalIdx = currentDayIndex * 3 + i;
                   const aiNarration = getNarration(currentWeek, globalIdx);
                   if (aiNarration) {
-                    return <p className="text-xs text-txt-primary/60 leading-relaxed pl-12 mb-1.5 animate-fade-in">{aiNarration}</p>;
+                    return <p className="text-sm text-txt-primary/70 leading-relaxed mb-2 animate-fade-in">{aiNarration}</p>;
                   }
                   const flavor = activity.targetNpcName ? null : getActivityFlavorText(activity.name, currentWeek);
                   const result = getActivityResult(activity.name, currentWeek, i);
                   const ambience = getCampusAmbience(activity.name, currentWeek, i);
                   const text = flavor || result || ambience;
-                  return text ? <p className="text-[11px] text-txt-secondary/50 italic pl-12 mb-1">{text}</p> : null;
+                  return text ? <p className="text-xs text-txt-secondary/60 italic mb-1.5 leading-relaxed">{text}</p> : null;
                 })()}
 
                 {/* NPC portrait + affection indicator (if targeted) */}
