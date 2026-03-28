@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import type { PlayerStats, KakaoReplyOption } from '@/store/types';
+import { useGameStore } from '@/store/gameStore';
+import { logAIThought } from '@/lib/aiThoughtsLog';
 
 interface KakaoMessage {
   senderId: string;
@@ -66,6 +68,9 @@ interface SelectedReply {
 export default function KakaoMessages({ messages, onDismiss }: KakaoMessagesProps) {
   const [visibleCount, setVisibleCount] = useState(0);
   const [replyPhase, setReplyPhase] = useState(false);
+  const [freeformInput, setFreeformInput] = useState('');
+  const [aiChatting, setAiChatting] = useState(false);
+  const [chatMessages, setChatMessages] = useState<{ from: 'me' | 'npc'; text: string; npcId?: string }[]>([]);
   const [selectedReply, setSelectedReply] = useState<SelectedReply | null>(null);
   const [sendingAnimation, setSendingAnimation] = useState<{ myMessage: string; npcResponse: string } | null>(null);
 
@@ -125,6 +130,56 @@ export default function KakaoMessages({ messages, onDismiss }: KakaoMessagesProp
 
   const truncate = (text: string, max: number) =>
     text.length > max ? text.slice(0, max) + '...' : text;
+
+  // Free-form AI chat with NPC
+  const handleFreeformSend = async () => {
+    if (!freeformInput.trim() || aiChatting) return;
+    const msg = freeformInput.trim();
+    setFreeformInput('');
+
+    // Find which NPC to chat with (first message sender)
+    const targetNpc = messages[0];
+    if (!targetNpc) return;
+
+    setChatMessages(prev => [...prev, { from: 'me', text: msg }]);
+    setAiChatting(true);
+
+    const rels = useGameStore.getState().relationships;
+    const rel = rels[targetNpc.senderId];
+    const fr = rel?.friendship ?? rel?.affection ?? 0;
+    const rom = rel?.romance ?? 0;
+    const getFTier = (f: number) => f >= 80 ? '베프' : f >= 60 ? '절친' : f >= 40 ? '친구' : f >= 20 ? '아는사이' : '모르는사이';
+    const getRTier = (r: number) => r >= 45 ? '연인' : r >= 25 ? '설렘' : r >= 10 ? '관심' : '없음';
+    const stats = useGameStore.getState().stats;
+    const week = useGameStore.getState().currentWeek;
+    const player = useGameStore.getState().player;
+
+    try {
+      const res = await fetch('/api/ai/npc-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          npcId: targetNpc.senderId,
+          playerMessage: msg,
+          playerName: player?.name ?? '학생',
+          friendshipTier: getFTier(fr),
+          romanceTier: getRTier(rom),
+          playerStats: { knowledge: stats.knowledge, stress: stats.stress, charm: stats.charm },
+          currentWeek: week,
+          recentMemories: rel?.memories?.slice(-3),
+        }),
+        signal: AbortSignal.timeout(6000),
+      });
+      const data = await res.json();
+      if (data.reply) {
+        setChatMessages(prev => [...prev, { from: 'npc', text: data.reply, npcId: targetNpc.senderId }]);
+        logAIThought('npc-brain', `${targetNpc.senderName}와 자유 대화`, `"${msg}" → "${data.reply}"`);
+      }
+    } catch {
+      setChatMessages(prev => [...prev, { from: 'npc', text: '...', npcId: targetNpc.senderId }]);
+    }
+    setAiChatting(false);
+  };
 
   // Filter NPCs that have reply options (exclude prof-kim)
   const replyableMessages = messages.filter(m => NPC_REPLY_OPTIONS[m.senderId]);
@@ -215,11 +270,42 @@ export default function KakaoMessages({ messages, onDismiss }: KakaoMessagesProp
               )}
             </div>
 
-            {/* Bottom bar - message phase */}
-            <div className="bg-[#1a1030] border-t border-white/10 px-4 py-3 flex items-center gap-2">
-              <div className="flex-1 bg-white/5 rounded-full px-4 py-2 text-sm text-white/30 border border-white/10">
-                메시지를 입력하세요...
+            {/* AI chat messages (free-form conversation) */}
+            {chatMessages.length > 0 && (
+              <div className="bg-[#1a1030] px-4 py-2 border-t border-white/5">
+                {chatMessages.map((cm, i) => (
+                  <div key={i} className={`flex ${cm.from === 'me' ? 'justify-end' : 'justify-start'} mb-2`}>
+                    <div className={`px-3 py-2 rounded-xl max-w-[240px] text-sm ${
+                      cm.from === 'me'
+                        ? 'bg-teal/20 text-white/90 rounded-br-none'
+                        : 'bg-white/10 text-white/80 rounded-bl-none'
+                    }`}>
+                      {cm.text}
+                    </div>
+                  </div>
+                ))}
+                {aiChatting && (
+                  <div className="flex gap-1.5 py-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                )}
               </div>
+            )}
+
+            {/* Bottom bar - real input for free-form AI chat */}
+            <div className="bg-[#1a1030] border-t border-white/10 px-4 py-3 flex items-center gap-2">
+              <input
+                type="text"
+                value={freeformInput}
+                onChange={(e) => setFreeformInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleFreeformSend(); }}
+                placeholder="자유롭게 메시지를 입력하세요..."
+                className="flex-1 bg-white/5 rounded-full px-4 py-2 text-sm text-white/90 border border-white/10 outline-none focus:border-teal/40 placeholder:text-white/30"
+                disabled={aiChatting}
+                onClick={(e) => e.stopPropagation()}
+              />
               <button
                 onClick={handleDismissOrReply}
                 className="bg-teal/80 text-white px-5 py-2 rounded-full text-sm font-bold hover:bg-teal transition-colors active:scale-[0.96]"
