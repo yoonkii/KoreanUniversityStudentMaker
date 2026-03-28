@@ -256,25 +256,22 @@ export default function EndingPage() {
   const [montageIndex, setMontageIndex] = useState(0);
   const [isNewEnding, setIsNewEnding] = useState(false);
 
+  const archetypeKey = determineArchetype(stats, relationships);
+  const archetype = ARCHETYPES[archetypeKey] ?? (archetypeKey.startsWith('campus_couple_') ? ARCHETYPES.campus_couple : null) ?? ARCHETYPES.balanced;
+  const collectionKey = archetypeKey.startsWith('campus_couple_') ? 'campus_couple' : archetypeKey;
+
   // Track completion count for New Game+ bonus
   useEffect(() => {
     if (!hydrated || !player) return;
     const count = parseInt(localStorage.getItem('kusm-completions') ?? '0', 10);
     localStorage.setItem('kusm-completions', String(count + 1));
-    // Also store the archetype for collection tracking
     const collection = JSON.parse(localStorage.getItem('kusm-archetypes') ?? '[]') as string[];
     if (!collection.includes(collectionKey)) {
       collection.push(collectionKey);
       localStorage.setItem('kusm-archetypes', JSON.stringify(collection));
       setIsNewEnding(true);
     }
-  }, [hydrated, player]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const archetypeKey = determineArchetype(stats, relationships);
-  // For campus_couple_* keys, fall back to generic campus_couple if specific variant not found
-  const archetype = ARCHETYPES[archetypeKey] ?? (archetypeKey.startsWith('campus_couple_') ? ARCHETYPES.campus_couple : null) ?? ARCHETYPES.balanced;
-  // Normalize key for collection tracking (campus_couple_jaemin → campus_couple)
-  const collectionKey = archetypeKey.startsWith('campus_couple_') ? 'campus_couple' : archetypeKey;
+  }, [hydrated, player, collectionKey]);
 
   // Memory montage — show event highlights before main reveal
   useEffect(() => {
