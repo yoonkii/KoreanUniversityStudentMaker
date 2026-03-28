@@ -30,17 +30,19 @@ NPCs:
 For each NPC, write specific activities and ONE line of natural Korean dialogue they'd say if the player bumped into them. Make dialogue feel real — not generic.
 
 Also write:
-- One "overheard conversation" — a snippet the player might hear walking across campus
-- One "campus atmosphere" line describing the vibe today
+- 3 "overheard" conversations — snippets the player might hear walking across campus. Include conversations BETWEEN the NPCs (not just random students). Example: "재민이가 민지한테 '야 노트 좀 빌려줘' 하고 있다. 민지가 한숨을 쉬며 건넸다."
+- One "npcDrama" — something interesting happening between 2 NPCs this week (a small story/conflict/bonding moment)
+- One "atmosphere" — campus vibe description
 
 Respond in JSON:
 {
   "routines": [
-    {"npcId": "jaemin", "morning": {"location": "cafeteria", "doing": "학식 줄 서있는 중. 핸드폰으로 게임 하면서 대기", "dialogue": "야 여기서 만나네ㅋㅋ 돈까스 나왔대!"}, "afternoon": {...}, "evening": {...}},
+    {"npcId": "jaemin", "morning": {"location": "cafeteria", "doing": "specific activity", "dialogue": "specific dialogue"}, "afternoon": {...}, "evening": {...}},
     ...
   ],
-  "overheard": "두 학생이 시험 범위 얘기하며 지나간다. '이번에 50페이지라던데...' '미쳤어 진짜?'",
-  "atmosphere": "도서관 앞 벤치에서 학생들이 봄 햇살을 즐기고 있다."
+  "overheard": ["snippet1", "snippet2", "snippet3"],
+  "npcDrama": "재민이와 민지가 조별과제 역할 분담 때문에 복도에서 말다툼을 했다. 결국 민지가 양보했다.",
+  "atmosphere": "campus vibe description"
 }
 
 IMPORTANT: Write in natural, casual Korean. Each dialogue should feel like something a real Korean university student would actually say. Reference SPECIFIC things (menu items, game names, song names, etc).`;

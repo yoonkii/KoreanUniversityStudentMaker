@@ -492,7 +492,7 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
 
       // Show gossip/overheard on first day only
       if (dayIdx === 0) {
-        const overheard = getOverheardConversation(currentWeek);
+        const overheard = getOverheardConversation(currentWeek, dayIdx);
         if (overheard) {
           setGossip(overheard);
         } else {

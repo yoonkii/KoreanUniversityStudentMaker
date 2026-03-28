@@ -21,7 +21,8 @@ interface AiCampusData {
     afternoon: { location: string; doing: string; dialogue: string };
     evening: { location: string; doing: string; dialogue: string };
   }>;
-  overheard?: string;
+  overheard?: string | string[];
+  npcDrama?: string;
   atmosphere?: string;
 }
 
@@ -32,8 +33,19 @@ export function getCachedAiCampus(): AiCampusData | null {
   return aiCampusCache;
 }
 
-export function getOverheardConversation(week: number): string | null {
-  if (aiCampusCache?.week === week && aiCampusCache.overheard) return aiCampusCache.overheard;
+export function getNpcDrama(week: number): string | null {
+  if (aiCampusCache?.week === week && aiCampusCache.npcDrama) return aiCampusCache.npcDrama;
+  return null;
+}
+
+export function getOverheardConversation(week: number, index?: number): string | null {
+  if (aiCampusCache?.week === week && aiCampusCache.overheard) {
+    if (Array.isArray(aiCampusCache.overheard)) {
+      const idx = index ?? 0;
+      return aiCampusCache.overheard[idx % aiCampusCache.overheard.length] ?? null;
+    }
+    return aiCampusCache.overheard;
+  }
   // Fallback overheard conversations
   const FALLBACKS: Record<number, string> = {
     1: '"야 OT 언제야?" "내일인데 뭐 입지?" — 신입생들의 대화',

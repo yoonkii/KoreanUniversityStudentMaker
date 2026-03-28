@@ -5,7 +5,7 @@ import { getRelationshipTier } from '@/store/gameStore';
 import { getWeekCondition, getWeatherForWeek } from '@/lib/gameEngine';
 import { getCachedDialogue } from '@/lib/weeklyDialogueCache';
 import { generateRumors } from '@/lib/rumorSystem';
-import { getNpcLocationSummary, rollNpcInvitation, getNpcSocialEvent } from '@/lib/livingCampus';
+import { getNpcLocationSummary, rollNpcInvitation, getNpcSocialEvent, getNpcDrama } from '@/lib/livingCampus';
 import Image from 'next/image';
 import GlassPanel from '@/components/ui/GlassPanel';
 
@@ -255,12 +255,15 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
 
         {/* NPC-to-NPC social event — the world moves without you */}
         {(() => {
+          // Prefer AI-generated NPC drama, fall back to hardcoded
+          const aiDrama = getNpcDrama(nextWeek);
           const socialEvent = getNpcSocialEvent(nextWeek);
-          if (!socialEvent) return null;
+          const displayText = aiDrama ?? socialEvent?.text;
+          if (!displayText) return null;
           return (
             <div className="mb-3 px-3 py-2.5 rounded-xl bg-lavender/5 border border-lavender/10">
-              <p className="text-[10px] text-lavender/50 mb-1">👀 캠퍼스에서 목격</p>
-              <p className="text-xs text-txt-secondary/60 italic leading-relaxed">{socialEvent.text}</p>
+              <p className="text-[10px] text-lavender/50 mb-1">{aiDrama ? '🎭 이번 주 소식' : '👀 캠퍼스에서 목격'}</p>
+              <p className="text-xs text-txt-primary/60 leading-relaxed">{displayText}</p>
             </div>
           );
         })()}
