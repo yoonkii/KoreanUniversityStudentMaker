@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import type { PlayerStats, CharacterRelationship } from '@/store/types';
 import { generateEncounters, generateGossip, type CampusEncounter } from '@/lib/campusSimulation';
-import { findNpcsAtLocation, getOverheardConversation } from '@/lib/livingCampus';
+import { findNpcsAtLocation, getOverheardConversation, getWeeklyRoutines } from '@/lib/livingCampus';
 import { getSpecificLocation, getLocationFlavor } from '@/lib/campusLocations';
 import { getNpcContextualLine } from '@/lib/weeklyDialogueCache';
 import { getInnerMonologue } from '@/lib/innerMonologue';
@@ -342,23 +342,23 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
     setChoiceFlavor(null);
     setMonologue(null);
 
-    // Day transition — brief atmospheric connector between days
+    // Day transition — show what NPCs are doing this morning (living campus)
     if (dayIdx > 0) {
-      const DAY_TRANSITIONS = [
-        '다음 날 아침이 밝았다.',
-        '하루가 지나고...',
-        '알람 소리에 눈을 떴다.',
-        '또 하루가 시작된다.',
-        '어느새 다음 날.',
+      const campus = getWeeklyRoutines(currentWeek);
+      const timeSlot = dayIdx < 5 ? 'morning' : 'afternoon';
+      // Pick 2 NPCs to highlight
+      const npc1 = campus.routines[dayIdx % campus.routines.length];
+      const npc2 = campus.routines[(dayIdx + 1) % campus.routines.length];
+      const npc1Slot = npc1[timeSlot];
+      const npc2Slot = npc2[timeSlot];
+
+      const transitions = [
+        `다음 날 — ${npc1.npcName}는 ${npc1Slot.activity}. ${npc2.npcName}는 ${npc2Slot.activity}.`,
+        `아침이 밝았다. ${npc1.npcName}: "${npc1Slot.dialogue.slice(0, 30)}..."`,
+        `새로운 하루. 캠퍼스에서 ${npc2.npcName}를 스쳐 지나갔다. ${npc2Slot.activity}.`,
       ];
-      const EVENING_TO_MORNING = [
-        '밤새 뒤척이다 겨우 잠들었다. 일어나니 벌써 아침.',
-        '어젯밤 늦게까지 깨어 있었다. 오늘은 일찍 자야지.',
-        '기숙사 창문으로 아침 햇살이 들어온다.',
-      ];
-      const pool = dayIdx === 1 || dayIdx === 4 ? EVENING_TO_MORNING : DAY_TRANSITIONS;
-      setDayTransition(pool[dayIdx % pool.length]);
-      setTimeout(() => setDayTransition(null), 800);
+      setDayTransition(transitions[dayIdx % transitions.length]);
+      setTimeout(() => setDayTransition(null), 1500); // Longer to read NPC info
     }
 
     const day = days[dayIdx];
