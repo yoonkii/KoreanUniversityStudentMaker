@@ -1,5 +1,73 @@
 # KUSM Development Log
 
+## Session Summary — 2026-03-27/28 (Friendship/Romance System + Polish)
+
+**Scope:** 63 files changed, +5,322 / -708 lines. 51 tests across 5 files. 7 commits, 25 AUTOPLAY cycles.
+
+### What Was Built
+
+**Friendship/Romance Split (Cycles 1-11)**
+- Two-track relationship: friendship (우정, 0-100) and romance (사랑, 0-100) as separate stats
+- Friendship: slow (+1/interaction, halved for <3 encounters, cap +4/week, decay -3/2weeks)
+- Romance: very hard (+1/date with 30% failure, NPC chemistry gates, cap +3/week, decay -2/2weeks)
+- NPC chemistry gates: 민지(knowledge≥50+respect≥60), 재민(charm≥30), 소연(stress<40), 현우(charm≥50)
+- Date outcome feedback (gate_fail/awkward/success/great_chemistry with narration)
+- Friendship outcome feedback (great/normal/awkward)
+- Romance-aware Gemini narrations (tier + outcome in API prompt)
+- Romance-aware dialogue tones (16 NPC×tier combinations)
+- Romance-specific memory callbacks and bonus lines (24 lines)
+- Relationship-aware diary entries
+- Weekly relationship summary with decay warnings
+- KakaoTalk: 40+ romance-tier messages + jealousy system
+- HUD romance partner indicator (clickable → RelationshipPanel)
+- RelationshipPanel: dual bars + chemistry hints
+- SchedulePlanner date picker: romance bar + chemistry gate status
+- NPC-personalized campus_couple ending (4 variants)
+- 7 new romance achievements (첫 설렘 through 하트브레이커, 33 total)
+
+**Interactive Events (Cycles 12-13, 23-25)**
+- Crisis events rewritten with 2-4 choices per crisis, NPC-gated options
+- MT stargazing romance choice (week 4, romance +3)
+- Festival fireworks date choice (week 9, romance +5)
+- Actionable NPC invitations with accept/decline in WeeklyOverview
+- 4 romance scene choices (weeks 8, 10, 13)
+- 12 romance weekly events (confessions, jealousy, couple moments)
+- Romance partner exam support strategy
+
+**Bug Fixes (Cycles 20-22)**
+- CharacterPortrait: validate expression against character data, reset imgError on change
+- AI contextual-scene: list valid expressions per character in prompt
+- ChoiceList: fix tier thresholds and gate check to use friendship
+- rumorSystem: use friendship/romance instead of generic affection
+- innerMonologue: add romance-aware NPC-specific thoughts
+- livingCampus: fix invitation conditions to use friendship
+
+### Game Quality Scorecard
+
+| Dimension | Before | After | Delta |
+|-----------|--------|-------|-------|
+| Build Health | 10 | 10 | — |
+| Test Pass Rate | 10 | 10 | — |
+| Playability | 7 | 9 | +2 |
+| Visual Polish | 7 | 7.5 | +0.5 |
+| Narrative Depth | 7 | 9.5 | +2.5 |
+| Mechanical Depth | 7 | 9.5 | +2.5 |
+| Cultural Auth. | 8 | 9 | +1 |
+| Engagement Loop | 7 | 9.5 | +2.5 |
+| **Composite** | **7.9** | **9.3** | **+1.4** |
+
+### Romance Arc Timeline
+- Week 1: Meet NPCs at OT
+- Week 4 (MT): Stargazing → romance seed (+3)
+- Weeks 5-8: Date activities → romance +1~2/week
+- Week 8 (Midterm): Scene choice → romance +2
+- Week 9 (Festival): Fireworks date → romance +5 (climax!)
+- Week 10: Scene choices → romance +2
+- Weeks 10-15: Continued dates → approach dating tier (45)
+- Week 16: NPC-personalized ending
+
+---
+
 ## Session Summary — 2026-03-26 (Princess Maker Overhaul)
 
 **Scope:** 19 modified files + 35 new files = 54 total. +2,532 / -734 lines. 48 tests across 5 files.
