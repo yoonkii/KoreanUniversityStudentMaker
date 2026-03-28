@@ -255,10 +255,38 @@ export default function EndingPage() {
   const [showMontage, setShowMontage] = useState(true);
   const [montageIndex, setMontageIndex] = useState(0);
   const [isNewEnding, setIsNewEnding] = useState(false);
+  const [aiEnding, setAIEnding] = useState<string | null>(null);
 
   const archetypeKey = determineArchetype(stats, relationships);
   const archetype = ARCHETYPES[archetypeKey] ?? (archetypeKey.startsWith('campus_couple_') ? ARCHETYPES.campus_couple : null) ?? ARCHETYPES.balanced;
   const collectionKey = archetypeKey.startsWith('campus_couple_') ? 'campus_couple' : archetypeKey;
+
+  // Fetch AI-generated ending narration from Gemini
+  useEffect(() => {
+    if (!hydrated || !player) return;
+    const NPC_KO: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연 선배', hyunwoo: '현우 선배' };
+    const romPartner = Object.entries(relationships).find(([, r]) => (r.romance ?? 0) >= 45);
+    const bestFriend = Object.entries(relationships)
+      .filter(([id]) => NPC_KO[id])
+      .sort(([, a], [, b]) => (b.friendship ?? b.affection ?? 0) - (a.friendship ?? a.affection ?? 0))[0];
+    const summaries = eventHistory.map(e => `${e.week}주: ${e.summary}`).join('. ');
+
+    fetch('/api/ai/ending', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        playerName: player.name,
+        major: player.major,
+        stats,
+        rollingSummary: summaries.slice(0, 500),
+        romancePartner: romPartner ? NPC_KO[romPartner[0]] : undefined,
+        bestFriend: bestFriend ? NPC_KO[bestFriend[0]] : undefined,
+      }),
+    })
+      .then(r => r.json())
+      .then(data => { if (data.ending) setAIEnding(data.ending); })
+      .catch(() => {});
+  }, [hydrated, player]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Track completion count for New Game+ bonus
   useEffect(() => {
@@ -693,6 +721,17 @@ export default function EndingPage() {
               </div>
             );
           })()}
+
+          {/* AI-generated semester reflection (Gemini) */}
+          {aiEnding && (
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm">🤖</span>
+                <p className="text-[10px] text-teal/60 tracking-wider">AI가 쓴 학기 회고</p>
+              </div>
+              <p className="text-sm text-white/70 leading-relaxed whitespace-pre-line">{aiEnding}</p>
+            </div>
+          )}
 
           {/* Future flash — what happens next */}
           <div className="mt-4 pt-4 border-t border-white/10">
