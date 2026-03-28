@@ -22,6 +22,7 @@ interface DayActivity {
   name: string;
   icon: string;
   timeSlot: string;
+  activityId?: string;
   statEffects: Partial<PlayerStats>;
   targetNpcId?: string;
   targetNpcName?: string;
@@ -178,7 +179,7 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
   const outcome = activity ? getOutcomeFeedback(activity) : null;
 
   // Background for current activity
-  const activityId = activity ? (ACTIVITY_NAME_TO_ID[activity.name] ?? 'rest') : 'rest';
+  const activityId = activity ? (activity.activityId ?? ACTIVITY_NAME_TO_ID[activity.name] ?? 'rest') : 'rest';
   const bg = getActivityBackground(activityId, activity?.timeSlot);
 
   // Next activity preview

@@ -228,6 +228,7 @@ export default function GameScreen() {
         return {
           name: act?.name ?? slot.activityId,
           icon: ACTIVITY_EMOJI[slot.activityId] ?? '📋',
+          activityId: slot.activityId,
           timeSlot: slot.timeSlot,
           statEffects: effects,
           targetNpcId: slot.targetNpcId,
