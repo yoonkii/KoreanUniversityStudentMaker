@@ -87,17 +87,17 @@ export function generateRumors(
     });
   }
 
-  // Relationship-based rumors
-  const highAffectionNpcs = Object.entries(relationships)
-    .filter(([, r]) => r.affection >= 70)
+  // Friendship-based rumors
+  const closeFriends = Object.entries(relationships)
+    .filter(([, r]) => (r.friendship ?? r.affection ?? 0) >= 60)
     .map(([id]) => id);
 
   const NPC_NAMES: Record<string, string> = {
     jaemin: '재민이', minji: '민지', soyeon: '소연 선배', hyunwoo: '현우 선배',
   };
 
-  if (highAffectionNpcs.length >= 2) {
-    const names = highAffectionNpcs.slice(0, 2).map(id => NPC_NAMES[id] ?? id).join('이랑 ');
+  if (closeFriends.length >= 2) {
+    const names = closeFriends.slice(0, 2).map(id => NPC_NAMES[id] ?? id).join('이랑 ');
     rumors.push({
       id: 'popular_friend',
       text: `"${names} 진짜 친하더라. 부러워." — 동기들 사이`,
@@ -106,15 +106,36 @@ export function generateRumors(
     });
   }
 
-  // Date-related rumors
-  const datePartner = Object.entries(relationships).find(([, r]) => r.affection >= 80 && (r.memories ?? []).some(m => m.startsWith('date')));
-  if (datePartner) {
-    const name = NPC_NAMES[datePartner[0]] ?? datePartner[0];
+  // Romance-based rumors (uses romance, not affection)
+  const romancePartner = Object.entries(relationships).find(([, r]) => (r.romance ?? 0) >= 25);
+  if (romancePartner) {
+    const name = NPC_NAMES[romancePartner[0]] ?? romancePartner[0];
+    const romLevel = romancePartner[1].romance ?? 0;
+    if (romLevel >= 45) {
+      rumors.push({
+        id: 'dating_rumor',
+        text: `"${name}이랑 사귀는 거 맞지? 완전 캠퍼스 커플이던데!" — 에브리타임`,
+        type: 'positive',
+        source: '에브리타임',
+      });
+    } else {
+      rumors.push({
+        id: 'dating_rumor',
+        text: `"${name}이랑 뭔가 있는 거 아냐? 같이 다니는 거 봤는데..." — 익명 게시판`,
+        type: 'neutral',
+        source: '에브리타임 익명',
+      });
+    }
+  }
+
+  // Multiple romance rumors
+  const multiRomance = Object.entries(relationships).filter(([, r]) => (r.romance ?? 0) >= 10);
+  if (multiRomance.length >= 2) {
     rumors.push({
-      id: 'dating_rumor',
-      text: `"${name}이랑 사귀는 거 아냐? 같이 다니는 거 봤는데..." — 익명 게시판`,
-      type: 'neutral',
-      source: '에브리타임 익명',
+      id: 'player_rumor',
+      text: '"걔 여기저기 다니더라... 양다리 아냐?" — 학과 단톡방',
+      type: 'negative',
+      source: '학과 단톡',
     });
   }
 

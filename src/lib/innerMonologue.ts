@@ -7,6 +7,7 @@
  */
 
 import type { PlayerStats } from '@/store/types';
+import { useGameStore } from '@/store/gameStore';
 
 interface MonologueEntry {
   text: string;
@@ -31,6 +32,12 @@ const MONOLOGUE_POOL: MonologueEntry[] = [
   { text: '사람들이랑 있으면 에너지를 받는 것 같아.', activityKeyword: '친구', condition: (s) => s.social >= 50 },
   { text: '두근두근... 오늘 뭘 하면 좋을까.', activityKeyword: '데이트', condition: () => true },
   { text: '합주하니까 스트레스가 확 풀린다.', activityKeyword: '동아리', condition: (s) => s.stress > 30 },
+
+  // ─── Romance-reactive thoughts ───
+  // These use charm as a proxy — actual romance checks happen in getInnerMonologue()
+  { text: '같이 있는 시간이 너무 빨리 간다... 아쉽다.', activityKeyword: '데이트', condition: (s) => s.charm >= 40 },
+  { text: '손 잡고 싶은데... 아직 그럴 용기가 안 난다.', activityKeyword: '데이트', condition: (s) => s.charm >= 30 },
+  { text: '옆에서 웃는 모습이 너무 예쁘다. 자꾸 쳐다보게 돼.', activityKeyword: '데이트', condition: (s) => s.charm >= 40 },
 
   // ─── Stat-reactive thoughts (no activity keyword — can appear anytime) ───
   { text: '통장 잔고가 걱정이다... 이번 달 버틸 수 있을까.', condition: (s) => s.money < 50000 },
@@ -69,6 +76,30 @@ export function getInnerMonologue(
 ): string | null {
   // 50% chance to show any monologue (keeps it special)
   if (Math.random() > 0.5) return null;
+
+  // 25% chance of romance-aware monologue (when in a romance)
+  const rels = useGameStore.getState().relationships;
+  const NPC_KO: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연 선배', hyunwoo: '현우 선배' };
+  const romPartner = Object.entries(rels)
+    .filter(([id, r]) => (r.romance ?? 0) >= 10 && NPC_KO[id])
+    .sort(([, a], [, b]) => (b.romance ?? 0) - (a.romance ?? 0))[0];
+
+  if (romPartner && Math.random() < 0.25) {
+    const name = NPC_KO[romPartner[0]];
+    const rom = romPartner[1].romance ?? 0;
+    const ROMANCE_THOUGHTS: string[] = rom >= 45
+      ? [`${name}... 보고 싶다. 빨리 수업 끝났으면.`,
+         `${name}이(가) 웃는 얼굴이 자꾸 떠오른다. 집중이 안 돼.`,
+         `내일은 ${name}이(가)랑 뭐 하지? 벌써 설레.`]
+      : rom >= 25
+      ? [`${name} 생각하면 심장이 뛴다. 이게 뭐지...`,
+         `자꾸 ${name} 쪽을 보게 된다. 들키면 어쩌지.`,
+         `${name}이(가) 나한테 웃어줬는데... 그게 자꾸 생각나.`]
+      : [`${name}이(가) 왜 자꾸 신경 쓰이지?`,
+         `오늘 ${name}을(를) 마주치면 좋겠다.`];
+    const seed = week * 17 + Math.round(stats.charm);
+    return ROMANCE_THOUGHTS[seed % ROMANCE_THOUGHTS.length];
+  }
 
   // 20% chance of memory-based monologue (references past events)
   if (eventHistory && eventHistory.length > 0 && Math.random() < 0.2) {
