@@ -227,6 +227,42 @@ const MID_EVENTS: MidEvent[] = [
     condition: (a) => a === 'rest',
     probability: 0.2,
   },
+  {
+    text: '과외 학생이 갑자기 "선생님, 왜 이게 이해가 안 될까요?" 하고 울기 시작했다.',
+    choices: [
+      { label: '천천히 다시 설명해준다', effects: { knowledge: 2, charm: 3, stress: 3 } },
+      { label: '잠깐 쉬고 다시 하자고 한다', effects: { stress: -2, social: 2 } },
+    ],
+    condition: (a) => a === 'tutoring',
+    probability: 0.3,
+  },
+  {
+    text: '네트워킹 모임에서 유명한 스타트업 대표가 옆자리에 앉았다!',
+    choices: [
+      { label: '용기내서 말을 건다', effects: { charm: 5, social: 4, stress: 3 } },
+      { label: '명함만 슬쩍 놓는다', effects: { social: 2 } },
+    ],
+    condition: (a) => a === 'networking',
+    probability: 0.25,
+  },
+  {
+    text: '캠퍼스를 탐험하다가 숨겨진 옥상 정원을 발견했다!',
+    choices: [
+      { label: '여기서 한숨 돌린다', effects: { stress: -8, health: 3, charm: 2 } },
+      { label: '사진 찍어서 SNS에 올린다', effects: { social: 4, charm: 3 } },
+    ],
+    condition: (a) => a === 'explore',
+    probability: 0.35,
+  },
+  {
+    text: '친구와 이야기하다가 서로의 고민을 나누게 되었다.',
+    choices: [
+      { label: '진심으로 들어준다', effects: { social: 4, stress: -3 } },
+      { label: '밝은 쪽으로 화제를 돌린다', effects: { charm: 2, stress: -1 } },
+    ],
+    condition: (a) => a === 'friends',
+    probability: 0.2,
+  },
 ];
 
 function rollMidEvent(activityId: string, week: number, stats: PlayerStats): MidEvent | null {
@@ -597,6 +633,32 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
       <div className="absolute bottom-20 sm:bottom-24 right-4 sm:right-6 z-20">
         <UpcomingPreview nextActivity={nextActivity} nextDayName={nextDayName ?? undefined} />
       </div>
+
+      {/* Day schedule strip — shows all activities for today with current highlighted */}
+      {currentDay && (
+        <div className="absolute bottom-[72px] sm:bottom-[80px] left-1/2 -translate-x-1/2 z-20">
+          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-black/40 backdrop-blur-sm">
+            {currentDay.activities.map((act, i) => {
+              const isCurrent = i === activityIndex;
+              const isDone = i < activityIndex;
+              const TIME_ICONS: Record<string, string> = { morning: '🌅', afternoon: '☀️', evening: '🌙' };
+              return (
+                <div
+                  key={i}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
+                    isCurrent ? 'bg-white/15 scale-110 border border-white/20' :
+                    isDone ? 'opacity-40' : 'opacity-60'
+                  }`}
+                >
+                  <span className="text-[9px]">{TIME_ICONS[act.timeSlot] ?? '📋'}</span>
+                  <span className="text-lg">{act.icon}</span>
+                  {isCurrent && <span className="text-[8px] text-white/60 hidden sm:inline">{act.name}</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Bottom narration area — compact, VN-style */}
       <div className="absolute bottom-0 left-0 right-0 z-20">
