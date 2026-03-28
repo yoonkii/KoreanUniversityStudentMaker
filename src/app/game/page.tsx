@@ -366,6 +366,15 @@ export default function GameScreen() {
 
   return (
     <div className={`min-h-[100dvh] bg-navy relative ${stressShake}`} style={healthDesaturation ? { filter: healthDesaturation } : undefined}>
+      {/* Semester phase ambient glow — subtle color shift by season */}
+      <div className="fixed inset-0 pointer-events-none z-0 transition-all duration-1000" style={{
+        background: currentWeek <= 3 ? 'radial-gradient(ellipse at 50% 0%, rgba(245,160,181,0.04) 0%, transparent 60%)' // 봄 — cherry blossom pink
+          : currentWeek <= 6 ? 'radial-gradient(ellipse at 50% 0%, rgba(78,205,196,0.03) 0%, transparent 60%)' // 초여름 — fresh teal
+          : currentWeek <= 8 ? 'radial-gradient(ellipse at 50% 0%, rgba(255,107,107,0.04) 0%, transparent 60%)' // 시험 — tense red
+          : currentWeek === 9 ? 'radial-gradient(ellipse at 50% 0%, rgba(255,209,102,0.05) 0%, transparent 60%)' // 축제 — warm gold
+          : currentWeek <= 13 ? 'radial-gradient(ellipse at 50% 0%, rgba(167,139,250,0.03) 0%, transparent 60%)' // 가을 — lavender
+          : 'radial-gradient(ellipse at 50% 0%, rgba(255,107,107,0.05) 0%, transparent 60%)', // 기말 — intense red
+      }} />
       {/* Save indicator */}
       {showSaveIndicator && (
         <div className="fixed bottom-4 right-4 z-50 px-3 py-1.5 rounded-lg bg-teal/20 text-teal text-xs font-medium backdrop-blur-sm border border-teal/20 animate-fade-in-up">
