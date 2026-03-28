@@ -40,12 +40,32 @@ Week 16 → Ending: archetype + grades + semester narrative
 
 ## Stats, Activities & NPCs
 
-**Six stats to balance:** GPA · Energy · Social · Finances · Career · Mental
+**Six stats:** 준비도 (knowledge) · 체력 (health) · 인맥 (social) · 매력 (charm) · 스트레스 (stress) · 돈 (money)
 
-**Eight activities:** Attend Class · Study · Part-time Work · Club · Exercise · Rest · Career Prep · Date
+**13 activities:** 수업 · 공부 · 알바 · 동아리 · 데이트 · 운동 · 휴식 · 친구 만나기 · 과외 · 네트워킹 · 자기관리 · 캠퍼스 탐험 · 봉사활동
 
-**Eight NPCs** (each with Big Five personality + 3-tier memory):
-김민수 (roommate) · 이지원 (classmate) · 박현우 (senior) · 정유나 (romantic interest) · 김서영 (professor) · 박준호 (work colleague) · 이영미 (club president) · 최민영 (rival)
+**5 NPCs** with unique personalities and romance-aware dialogue:
+이재민 (룸메이트, 밝고 낙천적) · 한민지 (라이벌, 겉은 차갑지만) · 박소연 (따뜻한 선배) · 정현우 (동아리 선배, 카리스마) · 김 교수 (엄격하지만 따뜻한)
+
+---
+
+## Two-Track Relationship System
+
+**Friendship (우정, 0-100)** — Slow and steady
+- +1/interaction, halved for first 3 encounters, cap +4/week
+- Tiers: 모르는 사이 → 아는 사이(20) → 친구(40) → 절친(60) → 베프(80)
+- Decay: -3 after 2 weeks without meeting
+
+**Romance (사랑, 0-100)** — Very hard by design
+- Date activity only, requires friendship ≥ 40, charm ≥ 40
+- NPC-specific chemistry gates (민지: knowledge≥50+respect≥60, etc.)
+- 30% failure chance early, +1/success, cap +3/week
+- Tiers: 없음 → 관심(10) → 설렘(25) → 연인(45) → 깊은 사랑(70)
+- Decay: -2 after 2 weeks without dating (fragile!)
+- Dating tier (45) achievable with dedicated effort over full semester
+- Deep Love (70) nearly impossible in one playthrough
+
+**14 endings** including 4 NPC-personalized romance endings
 
 ---
 
