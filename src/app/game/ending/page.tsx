@@ -273,10 +273,33 @@ export default function EndingPage() {
     }
   }, [hydrated, player, collectionKey]);
 
-  // Memory montage — show event highlights before main reveal
+  // Memory montage — show the MOST MEMORABLE events, not just first 6
+  const selectMontageMemories = () => {
+    if (eventHistory.length === 0) return [];
+    // Score each event by drama/importance
+    const scored = eventHistory.map(ev => {
+      let score = 0;
+      const s = ev.summary.toLowerCase();
+      if (s.includes('위기') || s.includes('번아웃')) score += 10;
+      if (s.includes('mt') || s.includes('축제')) score += 8;
+      if (s.includes('고백') || s.includes('연인') || s.includes('설렘') || s.includes('불꽃놀이') || s.includes('별 보며')) score += 9;
+      if (s.includes('초대 수락')) score += 5;
+      if (s.includes('중간고사') || s.includes('기말고사')) score += 7;
+      if (s.includes('시험') || s.includes('gpa')) score += 6;
+      if (ev.npcInvolved) score += 3;
+      if (ev.choiceMade) score += 2;
+      return { ev, score };
+    });
+    return scored
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 6)
+      .sort((a, b) => a.ev.week - b.ev.week) // re-sort chronologically
+      .map(s => s.ev);
+  };
+
   useEffect(() => {
     if (!hydrated || !player || !showMontage) return;
-    const memories = eventHistory.slice(0, 6); // max 6 memories
+    const memories = selectMontageMemories();
     if (memories.length === 0) {
       setShowMontage(false);
       return;
@@ -396,7 +419,7 @@ export default function EndingPage() {
 
   // Memory montage screen
   if (showMontage) {
-    const memories = eventHistory.slice(0, 6);
+    const memories = selectMontageMemories();
     return (
       <div className="min-h-[100dvh] bg-[#0a0e1a] flex items-center justify-center p-4" onClick={() => setShowMontage(false)}>
         <div className="text-center max-w-md">
