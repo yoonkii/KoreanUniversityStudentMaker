@@ -64,8 +64,10 @@ CRITICAL: When an activity involves an NPC, adapt the tone based on the relation
 
 Also for each pair of consecutive activities in the same day, write a brief connector sentence (how the player moved from one activity to the next).
 
+Also generate 2-3 random mid-activity events — unexpected things that happen during activities. Each event has a situation description and exactly 2 choices with different stat trade-offs. Make them specific, dramatic, and contextual to the week/activities. Use Korean.
+
 Respond ONLY in JSON:
-{"narrations":["narration1","narration2",...], "connectors":["connector between act 1→2","connector between act 2→3",...]}
+{"narrations":["narration1","narration2",...], "connectors":["connector1→2","connector2→3",...], "events":[{"activityIndex":0,"text":"상황 설명","choices":[{"label":"선택1","effects":{"knowledge":2,"stress":3}},{"label":"선택2","effects":{"stress":-2}}]}]}
 
 IMPORTANT: Write natural, casual Korean. Each narration must be unique and specific to the activity+week+relationship combination.`;
 

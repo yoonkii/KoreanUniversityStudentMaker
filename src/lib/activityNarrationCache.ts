@@ -7,9 +7,16 @@ import type { PlayerStats, CharacterRelationship } from '@/store/types';
 import type { DayGroup } from '@/components/game/ActionPhase';
 import { logAIThought } from './aiThoughtsLog';
 
+export interface AIEvent {
+  activityIndex: number;
+  text: string;
+  choices: { label: string; effects: Record<string, number> }[];
+}
+
 interface NarrationData {
   narrations: string[];
   connectors: string[];
+  events?: AIEvent[];
 }
 
 let cache: { week: number; data: NarrationData } | null = null;
@@ -72,6 +79,9 @@ export function triggerNarrationGeneration(
         // Log to AI thoughts
         const sampleNarration = data.narrations?.[0] ?? '(no narration)';
         logAIThought('narration', `${week}주차 활동 나레이션 생성 (${data.narrations?.length ?? 0}개)`, sampleNarration);
+        if (data.events?.length) {
+          logAIThought('director', `${week}주차 AI 이벤트 생성 (${data.events.length}개)`, data.events[0]?.text ?? '(event)');
+        }
       }
     })
     .catch(() => {})
@@ -84,6 +94,15 @@ export function triggerNarrationGeneration(
 export function getNarration(week: number, activityIndex: number): string | null {
   const data = getCachedNarrations(week);
   return data?.narrations?.[activityIndex] ?? null;
+}
+
+/**
+ * Get AI-generated event for a specific activity index.
+ * Returns null if no event was generated for this activity.
+ */
+export function getAIEvent(week: number, activityIndex: number): AIEvent | null {
+  const data = getCachedNarrations(week);
+  return data?.events?.find(e => e.activityIndex === activityIndex) ?? null;
 }
 
 /**

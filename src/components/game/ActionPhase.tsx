@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import type { PlayerStats } from '@/store/types';
-import { getNarration } from '@/lib/activityNarrationCache';
+import { getNarration, getAIEvent } from '@/lib/activityNarrationCache';
 import { getActivityFlavorText } from '@/lib/activityFlavor';
 import { getActivityResult } from '@/lib/activityResults';
 import { getNpcReaction } from '@/lib/npcReactions';
@@ -384,14 +384,29 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
     if (!showStats) {
       // First tap: reveal stat changes + check for mid-event
       setShowStats(true);
-      // Roll for a random mid-event (PM-style interruption)
+      // Check for mid-event: AI-generated first, then canned fallback
       if (activity && !activity.skipped) {
-        const midEvt = rollMidEvent(activityId, currentWeek, runningStats);
-        if (midEvt) {
+        // Try AI-generated event first (unique, contextual)
+        const aiEvt = getAIEvent(currentWeek, globalActivityIndex);
+        if (aiEvt) {
           setTimeout(() => {
-            setCurrentMidEvent(midEvt);
+            setCurrentMidEvent({
+              text: aiEvt.text,
+              choices: aiEvt.choices.map(c => ({ label: c.label, effects: c.effects as Partial<PlayerStats> })),
+              condition: () => true,
+              probability: 1,
+            });
             setPhase('midEvent');
-          }, 800); // Brief delay so player sees stat changes first
+          }, 800);
+        } else {
+          // Fallback: canned mid-event (PM-style interruption)
+          const midEvt = rollMidEvent(activityId, currentWeek, runningStats);
+          if (midEvt) {
+            setTimeout(() => {
+              setCurrentMidEvent(midEvt);
+              setPhase('midEvent');
+            }, 800);
+          }
         }
       }
       return;
