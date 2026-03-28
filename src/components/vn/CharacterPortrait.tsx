@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import { CHARACTERS } from '@/data/characters';
 
 interface CharacterPortraitProps {
   characterId: string;
@@ -78,8 +79,16 @@ export default function CharacterPortrait({
     }
   }, [expression]);
 
+  // Reset imgError when expression changes so valid expressions recover
+  useEffect(() => {
+    setImgError(false);
+  }, [expression]);
+
   const mappedId = NPC_TO_ASSET[characterId] ?? characterId;
-  const src = `/assets/characters/${mappedId}/${expression}.png`;
+  // Validate expression against character's known expressions, fallback to neutral
+  const charDef = CHARACTERS[characterId];
+  const validExpression = charDef?.expressions.includes(expression) ? expression : 'neutral';
+  const src = `/assets/characters/${mappedId}/${validExpression}.png`;
 
   const positionClass = POSITION_CLASSES[position];
   const enterClass = entered ? '' : ENTER_FROM[position];
