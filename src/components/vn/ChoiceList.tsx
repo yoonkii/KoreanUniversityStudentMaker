@@ -4,10 +4,10 @@ import type { Choice, CharacterRelationship } from '@/store/types';
 import type { PlayerStats } from '@/store/types';
 
 function getTierLabel(minAffection: number): string {
-  if (minAffection >= 90) return '소울메이트';
-  if (minAffection >= 70) return '절친';
-  if (minAffection >= 50) return '친구';
-  if (minAffection >= 25) return '아는 사이';
+  if (minAffection >= 80) return '베프';
+  if (minAffection >= 60) return '절친';
+  if (minAffection >= 40) return '친구';
+  if (minAffection >= 20) return '아는 사이';
   return '모르는 사이';
 }
 
@@ -46,7 +46,7 @@ export default function ChoiceList({ choices, onChoose, relationships, stats }: 
 
           // Check relationship requirement
           const req = choice.requiredRelationship;
-          const meetsRelReq = !req || (relationships?.[req.characterId]?.affection ?? 0) >= req.minAffection;
+          const meetsRelReq = !req || (relationships?.[req.characterId]?.friendship ?? relationships?.[req.characterId]?.affection ?? 0) >= req.minAffection;
           const requiredTierLabel = req ? getTierLabel(req.minAffection) : '';
 
           // Check stat requirement

@@ -24,9 +24,18 @@ export async function POST(request: Request) {
       }
     }
 
+    const getFTier = (f: number) => f >= 80 ? '베프' : f >= 60 ? '절친' : f >= 40 ? '친구' : f >= 20 ? '아는사이' : '';
+    const getRTier = (r: number) => r >= 45 ? '연인' : r >= 25 ? '설렘' : r >= 10 ? '관심' : '';
     const relSummary = Object.entries(relationships)
-      .filter(([, r]) => r && typeof r === 'object')
-      .map(([id, r]) => `${id}:${r.affection ?? 0}`)
+      .filter(([, r]) => r && typeof r === 'object' && (r.encounters ?? 0) > 0)
+      .map(([id, r]) => {
+        const fr = r.friendship ?? r.affection ?? 0;
+        const rom = r.romance ?? 0;
+        const parts = [id, getFTier(fr)];
+        const rTier = getRTier(rom);
+        if (rTier) parts.push(rTier);
+        return parts.filter(Boolean).join(':');
+      })
       .join(', ');
 
     const prompt = `You are a Korean university life game scene writer.
@@ -34,11 +43,18 @@ export async function POST(request: Request) {
 Week ${currentWeek}/16.
 Player: 준비도=${playerStats.knowledge ?? 50}, 체력=${playerStats.health ?? 70}, 스트레스=${playerStats.stress ?? 20}, 인맥=${playerStats.social ?? 40}, 돈=${playerStats.money ?? 300000}
 Schedule: ${scheduleEntries.slice(0, 10).join(', ')}
-Relationships: ${relSummary || 'none'}
+Relationships: ${relSummary || 'none yet'}
 
-Write a short VN scene (4-6 lines of dialogue) about what happened this week, based on the schedule. Use Korean.
+Write a short VN scene (4-6 lines of dialogue) about what happened this week, based on the schedule and relationships. Use Korean. If a character has a romance tier (관심/설렘/연인), add subtle romantic tension.
 
-Characters available: jaemin (이재민, roommate), minji (한민지, rival), soyeon (박소연, senior), hyunwoo (정현우, club senior), prof-kim (김교수)
+Characters and their VALID expressions (ONLY use these exact values):
+- jaemin (이재민, roommate): neutral, happy, anxious, laughing, concerned, supportive
+- minji (한민지, rival): neutral, competitive, friendly, frustrated, triumphant
+- soyeon (박소연, senior): neutral, happy, teasing, blushing, worried, sad
+- hyunwoo (정현우, club senior): neutral, cool, scheming, helpful, surprised
+- prof-kim (김교수): neutral, stern, approving, disappointed, thoughtful
+
+CRITICAL: Only use the expressions listed above. Do NOT invent new expressions.
 
 Respond ONLY with valid JSON (no markdown, no explanation):
 {"id":"ai_w${currentWeek}","location":"campus","backgroundVariant":"day","characters":[{"characterId":"jaemin","expression":"happy","position":"center"}],"dialogue":[{"characterId":null,"text":"나레이션"},{"characterId":"jaemin","text":"대사"}],"choices":[{"id":"c1","text":"선택1","statEffects":{"knowledge":2}},{"id":"c2","text":"선택2","statEffects":{"social":3,"stress":2}}]}`;
