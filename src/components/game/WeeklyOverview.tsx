@@ -285,7 +285,8 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
               const TIER_EMOJI: Record<string, string> = { stranger: '👤', acquaintance: '🤝', friend: '😊', close_friend: '💛', soulmate: '💕' };
               const weeksSince = rel.lastInteraction ? currentWeek - rel.lastInteraction : 99;
               const decaying = weeksSince >= 3;
-              return { id, ...info, affection: rel.affection, tierEmoji: TIER_EMOJI[tier] ?? '👤', decaying };
+              const MOOD_EMOJI: Record<string, string> = { happy: '😊', annoyed: '😤', worried: '😟', impressed: '🤩', jealous: '😒', neutral: '😐' };
+              return { id, ...info, affection: rel.affection, tierEmoji: TIER_EMOJI[tier] ?? '👤', decaying, mood: rel.mood ?? 'neutral', moodEmoji: MOOD_EMOJI[rel.mood ?? 'neutral'] ?? '😐', opinion: rel.opinion };
             })
             .filter(Boolean);
 
@@ -302,8 +303,12 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1">
                         <span className="text-[11px] font-medium text-txt-primary">{npc.name}</span>
+                        <span className="text-[10px]">{npc.moodEmoji}</span>
                         <span className="text-[10px]">{npc.tierEmoji}</span>
                       </div>
+                      {npc.opinion && (
+                        <p className="text-[9px] text-txt-secondary/40 italic truncate mt-0.5" title={npc.opinion}>&ldquo;{npc.opinion}&rdquo;</p>
+                      )}
                       <div className="w-full h-1 bg-white/10 rounded-full mt-0.5">
                         <div className="h-full bg-pink rounded-full transition-all" style={{ width: `${npc.affection}%` }} />
                       </div>

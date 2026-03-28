@@ -9,6 +9,7 @@ import type {
   GamePhase,
   ExamResults,
 } from './types';
+import { calculateNpcMood } from '@/lib/npcEmotions';
 import type { ActiveCombo, WeeklyEvent } from '@/lib/gameEngine';
 
 const INITIAL_STATS: PlayerStats = {
@@ -270,17 +271,29 @@ export const useGameStore = create<GameStore>()(
           }
         }
 
-        // Relationship decay: -3 affection for NPCs not interacted with for 2+ weeks (PM3-style harsh)
+        // Relationship decay + NPC mood updates
         const decayedRelationships = { ...relationships };
         for (const [charId, rel] of Object.entries(decayedRelationships)) {
           const weeksSinceInteraction = rel.lastInteraction ? currentWeek - rel.lastInteraction : currentWeek;
+
+          // Decay: -3 affection for 2+ weeks no interaction
+          let newAffection = rel.affection;
           if (weeksSinceInteraction >= 2) {
             const decayAmount = getRelationshipTier(rel.affection) === 'soulmate' ? 1 : 3;
-            decayedRelationships[charId] = {
-              ...rel,
-              affection: Math.max(0, rel.affection - decayAmount),
-            };
+            newAffection = Math.max(0, rel.affection - decayAmount);
           }
+
+          // Update NPC mood and opinion based on player stats + relationship
+          const moodUpdate = calculateNpcMood(charId, stats, { ...rel, affection: newAffection }, currentWeek);
+          const newRespect = Math.max(0, Math.min(100, (rel.respect ?? 50) + moodUpdate.respectDelta));
+
+          decayedRelationships[charId] = {
+            ...rel,
+            affection: newAffection,
+            mood: moodUpdate.mood,
+            opinion: moodUpdate.opinion,
+            respect: newRespect,
+          };
         }
 
         // Generate goal warnings based on current stats

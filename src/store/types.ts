@@ -27,6 +27,10 @@ export interface CharacterRelationship {
   encounters: number;
   lastInteraction?: number;
   memories?: string[];  // Tags like "studied_together", "mt_campfire", "shared_meal"
+  // NPC emotional state toward the player
+  mood?: 'happy' | 'neutral' | 'annoyed' | 'worried' | 'impressed' | 'jealous';
+  opinion?: string;    // Current one-line opinion about the player
+  respect?: number;    // 0-100, separate from affection (you can respect someone you don't like)
 }
 
 export interface ActivitySlot {
