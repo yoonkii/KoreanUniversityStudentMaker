@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { getRelationshipTier } from '@/store/gameStore';
+import CampusFeed from './CampusFeed';
 import { getWeekCondition, getWeatherForWeek } from '@/lib/gameEngine';
 import { getCachedDialogue } from '@/lib/weeklyDialogueCache';
 import { generateRumors } from '@/lib/rumorSystem';
@@ -89,6 +91,7 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
   const currentWeek = useGameStore((state) => state.currentWeek);
   const stats = useGameStore((state) => state.stats);
   const eventHistory = useGameStore((state) => state.eventHistory);
+  const [showFeed, setShowFeed] = useState(false);
 
   const nextWeek = currentWeek + 1;
   const mood = getMoodEmoji(stats.stress, stats.health);
@@ -191,6 +194,21 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
             </p>
           );
         })()}
+
+        {/* Campus social feed button */}
+        <button
+          onClick={(e) => { e.stopPropagation(); setShowFeed(true); }}
+          className="w-full mb-4 px-4 py-3 rounded-xl bg-teal/5 border border-teal/15 hover:bg-teal/10 transition-all cursor-pointer text-left"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📱</span>
+            <div>
+              <p className="text-xs font-bold text-teal">에브리타임 확인하기</p>
+              <p className="text-[10px] text-white/40">캠퍼스에서 무슨 일이 일어나고 있을까?</p>
+            </div>
+            <span className="ml-auto text-[10px] text-teal/40">NEW</span>
+          </div>
+        </button>
 
         {/* Soyeon advisor — PM3 butler pattern, prominent display */}
         <div className="mb-5 rounded-xl bg-gradient-to-r from-pink/5 to-lavender/5 border border-pink/15 overflow-hidden">
@@ -504,6 +522,7 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
           아무 곳이나 탭하여 건너뛰기
         </button>
       </GlassPanel>
+      {showFeed && <CampusFeed onClose={() => setShowFeed(false)} />}
     </div>
   );
 }
