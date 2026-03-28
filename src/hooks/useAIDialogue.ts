@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Scene, DialogueLine } from '@/store/types';
 import { useGameStore } from '@/store/gameStore';
+import { logAIThought } from '@/lib/aiThoughtsLog';
 
 interface AIDialogueResult {
   dialogue: DialogueLine[];
@@ -67,8 +68,8 @@ export function useAIDialogue(scene: Scene, enabled: boolean = true): AIDialogue
         const data = await res.json();
         if (data.dialogue && Array.isArray(data.dialogue)) {
           setEnhancedDialogue(data.dialogue);
-          // Cache for replay
           sessionStorage.setItem(cacheKey, JSON.stringify(data.dialogue));
+          logAIThought('dialogue', `씬 "${scene.id}" 대화 강화`, data.dialogue[0]?.text ?? '(enhanced)');
         }
       })
       .catch(() => {

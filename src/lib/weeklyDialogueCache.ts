@@ -7,6 +7,7 @@
  */
 
 import type { PlayerStats, CharacterRelationship } from '@/store/types';
+import { logAIThought } from './aiThoughtsLog';
 
 export interface WeeklyDialogue {
   week: number;
@@ -43,7 +44,13 @@ export function triggerDialogueGeneration(
 
   fetchPromise = generateWeeklyDialogue(week, stats, relationships)
     .then((result) => {
-      if (result) cachedDialogue = result;
+      if (result) {
+        cachedDialogue = result;
+        const npcCount = Object.keys(result.npcLines).length;
+        const sample = Object.values(result.npcLines)[0]?.[0] ?? '';
+        logAIThought('dialogue', `${week}주차 NPC 대화 생성 (${npcCount}명)`, sample);
+        if (result.campusAtmosphere) logAIThought('campus', '주간 캠퍼스 분위기', result.campusAtmosphere);
+      }
       fetchPromise = null;
       return result;
     })

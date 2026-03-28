@@ -11,6 +11,7 @@
  */
 
 import type { PlayerStats, CharacterRelationship } from '@/store/types';
+import { logAIThought } from './aiThoughtsLog';
 
 // ─── Gemini-powered campus life cache ───
 interface AiCampusData {
@@ -91,6 +92,12 @@ export function triggerAiCampusGeneration(
     .then(data => {
       if (data?.routines) {
         aiCampusCache = { week, ...data };
+        // Log campus generation to AI thoughts
+        const routinePreview = data.routines?.[0];
+        const preview = routinePreview ? `${routinePreview.npcId}: ${routinePreview.morning?.doing ?? '?'}` : '루틴 생성됨';
+        logAIThought('campus', `${week}주차 캠퍼스 생활 생성`, preview);
+        if (data.npcDrama) logAIThought('campus', 'NPC 드라마', data.npcDrama);
+        if (data.atmosphere) logAIThought('campus', '캠퍼스 분위기', data.atmosphere);
       }
     })
     .catch(() => {})
