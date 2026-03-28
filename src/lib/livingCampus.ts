@@ -411,6 +411,27 @@ export function findNpcsAtLocation(
 }
 
 /**
+ * NPC-to-NPC social dynamics — things happening BETWEEN NPCs
+ * that the player might overhear or learn about.
+ */
+export function getNpcSocialEvent(week: number): { text: string; npcs: string[] } | null {
+  const events: { text: string; npcs: string[]; week: number[] }[] = [
+    { text: '재민이랑 현우 선배가 학식당에서 같이 밥 먹는 걸 봤다. 동아리 얘기를 하는 것 같다.', npcs: ['jaemin', 'hyunwoo'], week: [2, 3, 4] },
+    { text: '민지가 소연 선배한테 공부법을 물어보는 모습을 목격했다. 의외의 조합이다.', npcs: ['minji', 'soyeon'], week: [3, 5, 6] },
+    { text: '재민이가 민지랑 과제 팀이 됐다며 투덜거렸다. "걔 기준이 너무 높아..."', npcs: ['jaemin', 'minji'], week: [4, 5, 8] },
+    { text: '소연 선배가 현우 선배랑 카페에서 진지하게 얘기하고 있었다. 졸업 후 계획인 것 같다.', npcs: ['soyeon', 'hyunwoo'], week: [10, 11, 12] },
+    { text: '현우 선배가 재민이한테 기타 가르쳐주고 있었다. 재민이 표정이 진지하다.', npcs: ['hyunwoo', 'jaemin'], week: [5, 6, 7] },
+    { text: '민지가 혼자 도서관에서 공부하다가 소연 선배를 만나서 같이 밥 먹으러 간 모양이다.', npcs: ['minji', 'soyeon'], week: [7, 9, 13] },
+    { text: '재민이가 현우 선배 밴드 공연 보러 갔다 왔다며 사진을 보여줬다. 신나 보인다.', npcs: ['jaemin', 'hyunwoo'], week: [8, 9] },
+    { text: '민지가 재민이한테 노트 빌려달라고 했다는 소문을 들었다. 민지가? 믿기 어렵다.', npcs: ['minji', 'jaemin'], week: [6, 10, 14] },
+  ];
+
+  const eligible = events.filter(e => e.week.includes(week));
+  if (eligible.length === 0 || Math.random() > 0.4) return null;
+  return eligible[week % eligible.length];
+}
+
+/**
  * Get a brief "where is everyone?" summary for the weekly overview.
  */
 export function getNpcLocationSummary(week: number, timeOfDay: 'morning' | 'afternoon' | 'evening'): string[] {
