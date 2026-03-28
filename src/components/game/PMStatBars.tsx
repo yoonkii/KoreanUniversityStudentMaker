@@ -67,12 +67,15 @@ export default function PMStatBars({ stats, previousStats, showDelta = false }: 
               />
             </div>
             {/* Value + delta */}
-            <div className="w-14 text-right flex items-center justify-end gap-0.5">
+            <div className="w-16 text-right flex items-center justify-end gap-0.5">
               <span className="text-[10px] text-white/60 font-mono">
                 {key === 'money' ? `${Math.round(current / 10000)}만` : current}
               </span>
               {hasDelta && animated && (
-                <span className={`text-[9px] font-bold ${isGood ? 'text-teal' : 'text-coral'} animate-fade-in-up`}>
+                <span
+                  className={`text-xs font-black ${isGood ? 'text-teal' : 'text-coral'} animate-fade-in-up`}
+                  style={{ textShadow: isGood ? '0 0 8px rgba(78,205,196,0.5)' : '0 0 8px rgba(255,107,107,0.5)' }}
+                >
                   {delta > 0 ? '+' : ''}{key === 'money' ? `${Math.round(delta / 1000)}K` : delta}
                 </span>
               )}

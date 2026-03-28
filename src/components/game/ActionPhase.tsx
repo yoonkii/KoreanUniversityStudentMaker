@@ -52,12 +52,51 @@ interface ActionPhaseProps {
 
 // ─── NPC Portraits ───
 
-const NPC_PORTRAITS: Record<string, string> = {
-  jaemin: '/assets/characters/jaemin/happy.png',
-  minji: '/assets/characters/minji/neutral.png',
-  soyeon: '/assets/characters/soyeon/happy.png',
-  hyunwoo: '/assets/characters/hyunwoo/cool.png',
+// ─── Dynamic NPC expressions ───
+
+const NPC_DEFAULT_EXPR: Record<string, string> = {
+  jaemin: 'happy', minji: 'neutral', soyeon: 'happy', hyunwoo: 'cool',
 };
+
+function getNpcExpression(npcId: string, activity: DayActivity, showingStats: boolean): string {
+  if (!showingStats) return NPC_DEFAULT_EXPR[npcId] ?? 'neutral';
+
+  // Date outcome → expression
+  if (activity.dateOutcome) {
+    const exprMap: Record<string, Record<string, string>> = {
+      jaemin:  { success: 'happy', great_chemistry: 'laughing', awkward: 'anxious', gate_fail: 'concerned' },
+      minji:   { success: 'friendly', great_chemistry: 'friendly', awkward: 'frustrated', gate_fail: 'competitive' },
+      soyeon:  { success: 'happy', great_chemistry: 'blushing', awkward: 'worried', gate_fail: 'sad' },
+      hyunwoo: { success: 'cool', great_chemistry: 'surprised', awkward: 'neutral', gate_fail: 'neutral' },
+    };
+    return exprMap[npcId]?.[activity.dateOutcome.type] ?? 'neutral';
+  }
+
+  // Friend outcome → expression
+  if (activity.friendOutcome) {
+    if (activity.friendOutcome.type === 'great') {
+      const happyExpr: Record<string, string> = { jaemin: 'laughing', minji: 'friendly', soyeon: 'teasing', hyunwoo: 'helpful' };
+      return happyExpr[npcId] ?? 'happy';
+    }
+    if (activity.friendOutcome.type === 'awkward') {
+      const awkExpr: Record<string, string> = { jaemin: 'anxious', minji: 'frustrated', soyeon: 'worried', hyunwoo: 'neutral' };
+      return awkExpr[npcId] ?? 'neutral';
+    }
+  }
+
+  // Default activity expressions
+  const activityExpr: Record<string, Record<string, string>> = {
+    jaemin:  { friends: 'supportive', club: 'happy', date: 'happy' },
+    minji:   { friends: 'friendly', study: 'competitive', date: 'friendly' },
+    soyeon:  { friends: 'teasing', date: 'blushing' },
+    hyunwoo: { friends: 'helpful', club: 'cool', date: 'cool' },
+  };
+  return activityExpr[npcId]?.[activity.activityId ?? ''] ?? NPC_DEFAULT_EXPR[npcId] ?? 'neutral';
+}
+
+function getNpcPortraitPath(npcId: string, expression: string): string {
+  return `/assets/characters/${npcId}/${expression}.png`;
+}
 
 // ─── Activity ID extraction ───
 
@@ -95,7 +134,18 @@ function getOutcomeFeedback(activity: DayActivity): { emoji: string; text: strin
 
 // ─── Player Portrait ───
 
-function getPlayerExpression(stats: PlayerStats, activityId: string): string {
+function getPlayerExpression(stats: PlayerStats, activityId: string, activity?: DayActivity, showingStats?: boolean): string {
+  // After stats revealed: react to what happened
+  if (showingStats && activity) {
+    if (activity.dateOutcome?.type === 'great_chemistry') return 'romantic';
+    if (activity.dateOutcome?.type === 'success') return 'happy';
+    if (activity.dateOutcome?.type === 'awkward') return 'embarrassed';
+    if (activity.dateOutcome?.type === 'gate_fail') return 'stressed';
+    if (activity.friendOutcome?.type === 'great') return 'happy';
+    if (activity.friendOutcome?.type === 'awkward') return 'embarrassed';
+  }
+
+  // During activity: expression based on what you're doing
   if (stats.stress >= 80) return 'stressed';
   if (activityId === 'date') return 'romantic';
   if (activityId === 'study' || activityId === 'lecture') return 'determined';
@@ -421,7 +471,7 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
       {!activity.skipped && (
         <div className="absolute bottom-28 sm:bottom-32 left-2 sm:left-8 z-10 opacity-70" key={`player-${dayIndex}-${activityIndex}`}>
           <Image
-            src={`/assets/characters/player/${getPlayerExpression(runningStats, activityId)}-${playerGender}.png`}
+            src={`/assets/characters/player/${getPlayerExpression(runningStats, activityId, activity, showStats)}-${playerGender}.png`}
             alt="나"
             width={180}
             height={280}
@@ -430,15 +480,15 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
         </div>
       )}
 
-      {/* NPC character — large display on right side */}
-      {activity.targetNpcId && NPC_PORTRAITS[activity.targetNpcId] && !activity.skipped && (
+      {/* NPC character — large display with dynamic expression */}
+      {activity.targetNpcId && !activity.skipped && (
         <div className="absolute bottom-28 sm:bottom-32 right-2 sm:right-8 z-10 opacity-80" key={`npc-${dayIndex}-${activityIndex}`}>
           <Image
-            src={NPC_PORTRAITS[activity.targetNpcId]}
+            src={getNpcPortraitPath(activity.targetNpcId, getNpcExpression(activity.targetNpcId, activity, showStats))}
             alt={activity.targetNpcName ?? ''}
             width={160}
             height={250}
-            className="object-contain object-bottom drop-shadow-[0_0_20px_rgba(0,0,0,0.5)] animate-fade-in"
+            className="object-contain object-bottom drop-shadow-[0_0_20px_rgba(0,0,0,0.5)] animate-fade-in transition-all duration-300"
           />
           <p className="text-center text-xs text-white/70 mt-1 font-medium drop-shadow-lg">{activity.targetNpcName}</p>
         </div>
