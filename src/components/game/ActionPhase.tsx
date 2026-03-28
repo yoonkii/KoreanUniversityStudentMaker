@@ -465,6 +465,24 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
           priority
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
+        {/* Ambient location sound indicator — visual substitute for audio */}
+        {(() => {
+          const AMBIENT: Record<string, string> = {
+            classroom: '📢 강의 소리가 울려 퍼진다...',
+            library: '📖 페이지 넘기는 소리만 들린다...',
+            cafe: '☕ 커피 머신 소리와 잔잔한 대화...',
+            'club-room': '🎵 악기 소리가 새어 나온다...',
+            campus: '🌿 바람 소리와 학생들의 웃음...',
+            dorm: '🛏️ 조용한 방. 시계 소리만 째깍...',
+          };
+          const text = AMBIENT[bg.location];
+          if (!text) return null;
+          return (
+            <div className="absolute top-14 left-1/2 -translate-x-1/2 z-5">
+              <p className="text-[9px] text-white/15 italic tracking-wider">{text}</p>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Player character — large semi-transparent display (PM-style full sprite) */}
@@ -514,13 +532,61 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
         </div>
       </div>
 
-      {/* Skip button — top right, subtle */}
-      <button
-        onClick={(e) => { e.stopPropagation(); onComplete(); }}
-        className="absolute top-5 right-4 z-20 px-2 py-1 rounded text-white/20 text-[10px] hover:text-white/50 transition-colors cursor-pointer"
-      >
-        ▸▸
-      </button>
+      {/* Money counter — top right (PM3 style) */}
+      <div className="absolute top-4 right-4 z-20 flex items-center gap-3">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10">
+          <span className="text-sm">💰</span>
+          <span className="text-sm font-bold text-gold font-mono">
+            ₩{runningStats.money >= 10000 ? `${Math.floor(runningStats.money / 10000)}만` : runningStats.money.toLocaleString()}
+          </span>
+        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); onComplete(); }}
+          className="px-2 py-1 rounded text-white/20 text-[10px] hover:text-white/50 transition-colors cursor-pointer"
+        >
+          ▸▸
+        </button>
+      </div>
+
+      {/* Background NPC presence — shows who else is at this location */}
+      {!activity.skipped && (() => {
+        // Determine which NPCs would be at this location
+        const LOCATION_NPCS: Record<string, { id: string; name: string; emoji: string }[]> = {
+          classroom: [
+            { id: 'minji', name: '민지', emoji: '📚' },
+            { id: 'prof-kim', name: '김교수', emoji: '👨‍🏫' },
+          ],
+          'club-room': [
+            { id: 'hyunwoo', name: '현우', emoji: '🎸' },
+          ],
+          library: [
+            { id: 'minji', name: '민지', emoji: '📖' },
+          ],
+          cafe: [
+            { id: 'soyeon', name: '소연', emoji: '☕' },
+          ],
+          campus: [
+            { id: 'jaemin', name: '재민', emoji: '🏃' },
+          ],
+        };
+        const locationNpcs = LOCATION_NPCS[bg.location] ?? [];
+        // Don't show the targeted NPC again (they're already displayed as portrait)
+        const bgNpcs = locationNpcs.filter(n => n.id !== activity.targetNpcId);
+        if (bgNpcs.length === 0) return null;
+        // Only show 30% of the time per NPC to feel natural
+        const visibleNpcs = bgNpcs.filter((_, i) => ((dayIndex * 7 + activityIndex * 3 + i) % 3) === 0);
+        if (visibleNpcs.length === 0) return null;
+        return (
+          <div className="absolute top-16 right-4 z-15 flex flex-col gap-1">
+            {visibleNpcs.map(npc => (
+              <div key={npc.id} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-black/30 backdrop-blur-sm animate-fade-in">
+                <span className="text-[10px]">{npc.emoji}</span>
+                <span className="text-[9px] text-white/40">{npc.name} 근처에 있다</span>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
       {/* PM-style stat bars — bottom left, always visible */}
       <div className="absolute bottom-20 sm:bottom-24 left-4 sm:left-6 z-20">
