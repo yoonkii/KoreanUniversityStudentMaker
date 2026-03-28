@@ -17,6 +17,7 @@ interface FestivalChoice {
   statEffects: Record<string, number>;
   npcEncounter: string;
   npcLine: string;
+  isRomantic?: boolean;
 }
 
 const FESTIVAL_CHOICES: FestivalChoice[] = [
@@ -57,6 +58,16 @@ const FESTIVAL_CHOICES: FestivalChoice[] = [
     npcLine: '봉사 와줘서 고마워! 이런 경험이 나중에 큰 도움 돼.',
   },
   {
+    id: 'fireworks_date',
+    title: '불꽃놀이 데이트',
+    emoji: '🎆💕',
+    description: '특별한 사람과 함께 불꽃놀이를 본다. 캠퍼스 뒷산이 명당이라던데...',
+    statEffects: { charm: 8, stress: -15, social: 3, money: -15000 },
+    npcEncounter: '', // dynamic
+    npcLine: '',
+    isRomantic: true,
+  },
+  {
     id: 'study',
     title: '축제 무시하고 공부',
     emoji: '📚',
@@ -73,19 +84,44 @@ export default function FestivalEvent({ onComplete }: FestivalEventProps) {
   const updateStats = useGameStore((s) => s.updateStats);
   const updateRelationship = useGameStore((s) => s.updateRelationship);
   const addEventHistory = useGameStore((s) => s.addEventHistory);
+  const relationships = useGameStore((s) => s.relationships);
+
+  // Find romance partner for fireworks date
+  const NPC_KO: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연 선배', hyunwoo: '현우 선배' };
+  const NPC_FIREWORK_LINES: Record<string, string> = {
+    jaemin: '"야... 불꽃놀이 진짜 예쁘다. 근데 옆에 있는 네가 더..." 재민이가 말끝을 흐렸다.',
+    minji: '"...예쁘다." 민지가 하늘을 보며 말했다. 근데 불꽃놀이를 본 건 아닌 것 같았다.',
+    soyeon: '"이런 밤이면 솔직해져도 되지?" 소연 선배가 손을 잡았다. 불꽃이 두 사람을 비췄다.',
+    hyunwoo: '"이 순간을 노래로 만들고 싶어. 제목은... 너." 현우가 하늘을 가리키며 웃었다.',
+  };
+  const romPartner = Object.entries(relationships)
+    .filter(([id, r]) => (r.romance ?? 0) >= 15 && NPC_KO[id])
+    .sort(([, a], [, b]) => (b.romance ?? 0) - (a.romance ?? 0))[0];
+  const romanticNpcId = romPartner?.[0] ?? '';
+  const romanticAvailable = !!romPartner;
 
   const handleChoose = useCallback((choice: FestivalChoice) => {
-    setSelectedChoice(choice);
-    updateStats(choice.statEffects);
-    updateRelationship(choice.npcEncounter, 5);
+    const actualChoice = { ...choice };
+    if (choice.isRomantic && romanticNpcId) {
+      actualChoice.npcEncounter = romanticNpcId;
+      actualChoice.npcLine = NPC_FIREWORK_LINES[romanticNpcId] ?? '불꽃이 하늘을 수놓았다.';
+    }
+    setSelectedChoice(actualChoice);
+    updateStats(actualChoice.statEffects);
+    if (choice.isRomantic && romanticNpcId) {
+      updateRelationship(romanticNpcId, 3, 'friendship');
+      updateRelationship(romanticNpcId, 5, 'romance');
+    } else {
+      updateRelationship(actualChoice.npcEncounter, 5);
+    }
     addEventHistory({
       week: 9,
-      summary: `축제 — ${choice.title}`,
-      npcInvolved: choice.npcEncounter,
-      choiceMade: choice.title,
+      summary: `축제 — ${actualChoice.title}${choice.isRomantic ? ` (${NPC_KO[romanticNpcId]})` : ''}`,
+      npcInvolved: actualChoice.npcEncounter,
+      choiceMade: actualChoice.title,
     });
     setPhase('result');
-  }, [updateStats, updateRelationship, addEventHistory]);
+  }, [updateStats, updateRelationship, addEventHistory, romanticNpcId]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 overflow-y-auto py-8">
@@ -121,17 +157,27 @@ export default function FestivalEvent({ onComplete }: FestivalEventProps) {
         {phase === 'choosing' && (
           <div className="flex flex-col gap-3 animate-fade-in-up">
             <h3 className="text-lg font-bold text-txt-primary text-center mb-1">축제에서 뭘 할까?</h3>
-            {FESTIVAL_CHOICES.map((choice) => (
+            {FESTIVAL_CHOICES.map((choice) => {
+              const isRomanticLocked = choice.isRomantic && !romanticAvailable;
+              return (
               <button
                 key={choice.id}
-                onClick={() => handleChoose(choice)}
-                className="glass-strong px-4 py-4 rounded-xl text-left hover:bg-white/10 transition-all cursor-pointer active:scale-[0.98] group"
+                onClick={() => !isRomanticLocked && handleChoose(choice)}
+                disabled={isRomanticLocked}
+                className={`glass-strong px-4 py-4 rounded-xl text-left transition-all group ${isRomanticLocked ? 'opacity-40 cursor-not-allowed' : 'hover:bg-white/10 cursor-pointer active:scale-[0.98]'}`}
               >
                 <div className="flex items-start gap-3">
                   <span className="text-2xl flex-shrink-0 mt-0.5">{choice.emoji}</span>
                   <div className="flex-1">
-                    <div className="text-sm font-bold text-txt-primary group-hover:text-teal transition-colors">{choice.title}</div>
-                    <div className="text-xs text-txt-secondary mt-0.5">{choice.description}</div>
+                    <div className="text-sm font-bold text-txt-primary group-hover:text-teal transition-colors">
+                      {choice.isRomantic && romanticNpcId ? `${choice.title} (${NPC_KO[romanticNpcId]})` : choice.title}
+                    </div>
+                    <div className="text-xs text-txt-secondary mt-0.5">
+                      {isRomanticLocked ? '🔒 누군가와 설렘 이상의 관계가 필요합니다 (사랑 15+)' : choice.description}
+                    </div>
+                    {choice.isRomantic && !isRomanticLocked && (
+                      <span className="text-[9px] text-pink/50 mt-0.5 block">💕 사랑 +5 — 불꽃놀이 아래 특별한 순간</span>
+                    )}
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {Object.entries(choice.statEffects).map(([k, v]) => {
                         const labels: Record<string, string> = { knowledge: '준비도', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력' };
@@ -146,7 +192,7 @@ export default function FestivalEvent({ onComplete }: FestivalEventProps) {
                   </div>
                 </div>
               </button>
-            ))}
+            );})}
           </div>
         )}
 
