@@ -488,7 +488,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'kusm-save',
-      version: 3,
+      version: 4,
       migrate(persisted: unknown, version: number) {
         const state = persisted as Record<string, unknown>;
         if (version < 2) {
@@ -502,6 +502,20 @@ export const useGameStore = create<GameStore>()(
             delete stats.gpa;
           }
           return { ...state, stats, examResults: {} } as unknown as GameStore;
+        }
+        if (version < 4) {
+          // Migrate affection → friendship/romance split
+          const rels = state.relationships as Record<string, Record<string, unknown>> | undefined;
+          if (rels) {
+            for (const rel of Object.values(rels)) {
+              if (rel && typeof rel === 'object') {
+                const aff = (rel.affection as number) ?? 0;
+                if (rel.friendship === undefined) rel.friendship = aff;
+                if (rel.romance === undefined) rel.romance = 0;
+              }
+            }
+          }
+          return { ...state, relationships: rels ?? {}, previousRelationships: {} } as unknown as GameStore;
         }
         return persisted as GameStore;
       },
