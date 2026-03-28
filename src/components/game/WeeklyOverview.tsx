@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { getRelationshipTier } from '@/store/gameStore';
 import CampusFeed from './CampusFeed';
+import { generateWeeklyChallenges } from '@/lib/weeklyChallenge';
 import { getWeekCondition, getWeatherForWeek } from '@/lib/gameEngine';
 import { getCachedDialogue } from '@/lib/weeklyDialogueCache';
 import { generateRumors } from '@/lib/rumorSystem';
@@ -192,6 +193,41 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
             <p className="text-xs text-txt-secondary/50 italic text-center mb-3 px-4 leading-relaxed">
               {text}
             </p>
+          );
+        })()}
+
+        {/* AI-generated weekly challenges */}
+        {(() => {
+          const rels = useGameStore.getState().relationships;
+          const challenges = generateWeeklyChallenges(nextWeek, stats, rels);
+          if (challenges.length === 0) return null;
+          return (
+            <div className="mb-4 rounded-xl bg-gradient-to-r from-teal/5 to-gold/5 border border-teal/15 overflow-hidden">
+              <div className="px-3 py-1.5 bg-teal/5 border-b border-teal/10">
+                <p className="text-[9px] text-teal/60 tracking-wider">🎯 이번 주 챌린지</p>
+              </div>
+              <div className="px-4 py-3 flex flex-col gap-2">
+                {challenges.map(c => (
+                  <div key={c.id} className="flex items-center gap-3">
+                    <span className="text-lg">{c.emoji}</span>
+                    <div className="flex-1">
+                      <p className="text-sm text-white/80 font-medium">{c.text}</p>
+                      <div className="flex gap-1 mt-0.5">
+                        {Object.entries(c.reward).filter(([,v]) => v !== 0).map(([k, v]) => {
+                          const labels: Record<string, string> = { knowledge: '준비도', health: '체력', social: '인맥', stress: '스트레스', charm: '매력', money: '돈' };
+                          const isGood = k === 'stress' ? (v ?? 0) < 0 : (v ?? 0) > 0;
+                          return (
+                            <span key={k} className={`text-[8px] px-1 py-0.5 rounded ${isGood ? 'bg-teal/10 text-teal/70' : 'bg-coral/10 text-coral/70'}`}>
+                              보상: {labels[k]}{(v ?? 0) > 0 ? '+' : ''}{v}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           );
         })()}
 

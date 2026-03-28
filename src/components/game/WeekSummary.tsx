@@ -5,6 +5,7 @@ import { useGameStore } from '@/store/gameStore';
 import GlassPanel from '@/components/ui/GlassPanel';
 import ProgressBar from '@/components/ui/ProgressBar';
 import type { PlayerStats } from '@/store/types';
+import { generateWeeklyChallenges, checkChallengeCompletion, type WeeklyChallenge } from '@/lib/weeklyChallenge';
 
 interface WeekSummaryProps {
   onContinue: () => void;
@@ -301,6 +302,45 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
             ))}
           </div>
         )}
+
+        {/* Weekly challenge completion */}
+        {(() => {
+          const rels = useGameStore.getState().relationships;
+          const prevRels = useGameStore.getState().previousRelationships ?? {};
+          const prevStats: PlayerStats = { ...stats };
+          for (const [k, v] of Object.entries(weekStatDeltas)) {
+            if (v !== undefined) prevStats[k as keyof PlayerStats] -= v;
+          }
+          const challenges = generateWeeklyChallenges(currentWeek, prevStats, prevRels);
+          if (challenges.length === 0) return null;
+          const { completed, totalReward } = checkChallengeCompletion(challenges, stats, prevStats, rels, prevRels);
+
+          // Apply rewards
+          if (completed.length > 0 && Object.keys(totalReward).length > 0) {
+            // Rewards applied via store (deferred to avoid render-time mutation)
+            setTimeout(() => useGameStore.getState().updateStats(totalReward), 100);
+          }
+
+          return (
+            <div className="mb-4 animate-stat-reveal" style={{ animationDelay: '780ms' }}>
+              <p className="text-[10px] text-teal/50 mb-2">🎯 챌린지 결과</p>
+              <div className="flex flex-col gap-1.5">
+                {challenges.map(c => {
+                  const done = completed.includes(c);
+                  return (
+                    <div key={c.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg ${done ? 'bg-teal/10 border border-teal/20' : 'bg-white/[0.02] border border-white/5'}`}>
+                      <span className="text-sm">{done ? '✅' : '❌'}</span>
+                      <span className={`text-xs flex-1 ${done ? 'text-teal' : 'text-white/30 line-through'}`}>{c.text}</span>
+                      {done && (
+                        <span className="text-[9px] text-teal/60">보상 획득!</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Achievement unlocks */}
         {newAchievements.length > 0 && (
