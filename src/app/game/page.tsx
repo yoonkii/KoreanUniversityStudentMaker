@@ -88,6 +88,7 @@ export default function GameScreen() {
   const [actionDays, setActionDays] = useState<DayGroup[]>([]);
   const [kakaoMessages, setKakaoMessages] = useState<{senderId:string;senderName:string;text:string;timestamp:string;isRead:boolean}[]>([]);
   const [showKakao, setShowKakao] = useState(false);
+  const [showSemesterEnd, setShowSemesterEnd] = useState(false);
 
   // Redirect if no player (only after hydration)
   useEffect(() => {
@@ -313,7 +314,8 @@ export default function GameScreen() {
     }
 
     if (currentWeek >= 16) {
-      router.push('/game/ending');
+      setShowSemesterEnd(true);
+      setTimeout(() => router.push('/game/ending'), 3500);
     } else {
       setShowWeeklyOverview(true);
     }
@@ -323,7 +325,8 @@ export default function GameScreen() {
   const handleWeekContinue = useCallback(() => {
     const msgs = generateKakaoMessages(currentWeek, relationships, stats);
     if (currentWeek >= 16) {
-      router.push('/game/ending');
+      setShowSemesterEnd(true);
+      setTimeout(() => router.push('/game/ending'), 3500);
     } else if (msgs.length > 0) {
       setKakaoMessages(msgs);
       setShowKakao(true);
@@ -532,6 +535,33 @@ export default function GameScreen() {
       {/* KakaoTalk messages from NPCs after weekly summary */}
       {showKakao && kakaoMessages.length > 0 && (
         <KakaoMessages messages={kakaoMessages} onDismiss={handleKakaoDismiss} />
+      )}
+
+      {/* Semester End transition card */}
+      {showSemesterEnd && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="text-center animate-fade-in-up">
+            <p className="text-txt-secondary/40 text-sm tracking-[0.3em] mb-4 animate-fade-in-up">16주</p>
+            <h1 className="text-4xl sm:text-5xl font-bold text-txt-primary mb-4 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+              종강
+            </h1>
+            <p className="text-lg text-txt-secondary/60 animate-fade-in-up max-w-md px-6" style={{ animationDelay: '0.6s' }}>
+              {(() => {
+                const romPartner = Object.entries(relationships).find(([, r]) => (r.romance ?? 0) >= 45);
+                const NPC_KO: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연 선배', hyunwoo: '현우 선배' };
+                if (romPartner) return `${NPC_KO[romPartner[0]]}과(와) 함께한 1학기... 꿈만 같았다.`;
+                const bestFriend = Object.entries(relationships)
+                  .filter(([id]) => NPC_KO[id])
+                  .sort(([, a], [, b]) => (b.friendship ?? b.affection ?? 0) - (a.friendship ?? a.affection ?? 0))[0];
+                if (bestFriend && (bestFriend[1].friendship ?? bestFriend[1].affection ?? 0) >= 60) return `${NPC_KO[bestFriend[0]]}과(와) 함께한 1학기. 소중한 시간이었다.`;
+                return '1학기가 끝났다. 돌아보면, 많은 것이 변했다.';
+              })()}
+            </p>
+            <p className="text-sm text-txt-secondary/20 mt-8 animate-fade-in-up tracking-wider" style={{ animationDelay: '1.2s' }}>
+              ♪ 에필로그 — 추억의 멜로디
+            </p>
+          </div>
+        </div>
       )}
 
       {/* HUD -- always visible except during scenes */}

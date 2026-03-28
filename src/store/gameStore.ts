@@ -283,12 +283,6 @@ export const useGameStore = create<GameStore>()(
       advanceWeek() {
         const { stats, currentWeek, relationships, schedule, activityStreaks } = get();
 
-        // Snapshot relationships before changes for tier milestone detection
-        const prevRels: Record<string, CharacterRelationship> = {};
-        for (const [id, rel] of Object.entries(relationships)) {
-          prevRels[id] = { ...rel };
-        }
-
         // Update activity streaks based on completed schedule
         const newStreaks: Record<string, number> = {};
         const thisWeekActivities = new Set<string>();
@@ -362,7 +356,6 @@ export const useGameStore = create<GameStore>()(
           weekStatDeltas: {},
           weekCombos: [],
           weeklyEvent: null,
-          previousRelationships: prevRels,
           phase: 'planning',
           goalWarnings: warnings,
           activityStreaks: newStreaks,
