@@ -636,46 +636,42 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
             </p>
           )}
 
-          {/* 3 activity rows */}
-          <div className="flex flex-col gap-2">
+          {/* 3 activity rows — each is a mini-story card */}
+          <div className="flex flex-col gap-3">
             {currentDay.activities.map((activity, i) => (
               <div
                 key={i}
-                className={`glass-strong rounded-xl px-4 py-3 flex items-center gap-3 transition-all duration-300 ${
-                  i < revealedActivities ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                } ${activity.skipped ? 'opacity-50 line-through' : ''}`}
+                className={`glass-strong rounded-xl px-4 py-3 transition-all duration-500 ${
+                  i < revealedActivities ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+                } ${activity.skipped ? 'opacity-50' : ''}`}
               >
-                {/* Time slot */}
-                <span className="text-xs text-txt-secondary w-14 flex-shrink-0">
-                  {TIME_LABELS[activity.timeSlot] ?? activity.timeSlot}
-                </span>
-
-                {/* Activity icon + name */}
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="text-lg">{activity.icon}</span>
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-sm font-medium text-txt-primary truncate">
-                      {activity.skipped ? '😫 빠짐' : activity.name}
-                    </span>
-                    {activity.targetNpcName && !activity.skipped && (
-                      <span className="text-[10px] text-pink">with {activity.targetNpcName}</span>
-                    )}
-                    {!activity.skipped && i < revealedActivities && (() => {
-                      // Gemini narration takes priority
-                      const globalIdx = currentDayIndex * 3 + i;
-                      const aiNarration = getNarration(currentWeek, globalIdx);
-                      if (aiNarration) {
-                        return <span className="text-[10px] text-txt-primary/50 italic leading-tight line-clamp-2">{aiNarration}</span>;
-                      }
-                      // Fallback to hardcoded
-                      const flavor = activity.targetNpcName ? null : getActivityFlavorText(activity.name, currentWeek);
-                      const result = getActivityResult(activity.name, currentWeek, i);
-                      const ambience = getCampusAmbience(activity.name, currentWeek, i);
-                      const text = flavor || result || ambience;
-                      return text ? <span className="text-[9px] text-txt-secondary/40 italic truncate">{text}</span> : null;
-                    })()}
-                  </div>
+                {/* Header row: time + icon + name + NPC */}
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] text-txt-secondary/50 w-10">
+                    {TIME_LABELS[activity.timeSlot] ?? activity.timeSlot}
+                  </span>
+                  <span className="text-base">{activity.icon}</span>
+                  <span className="text-sm font-medium text-txt-primary">
+                    {activity.skipped ? '😫 빠짐' : activity.name}
+                  </span>
+                  {activity.targetNpcName && !activity.skipped && (
+                    <span className="text-[10px] text-pink ml-auto">with {activity.targetNpcName}</span>
+                  )}
                 </div>
+
+                {/* Narration — the MAIN content, prominently displayed */}
+                {!activity.skipped && i < revealedActivities && (() => {
+                  const globalIdx = currentDayIndex * 3 + i;
+                  const aiNarration = getNarration(currentWeek, globalIdx);
+                  if (aiNarration) {
+                    return <p className="text-xs text-txt-primary/60 leading-relaxed pl-12 mb-1.5 animate-fade-in">{aiNarration}</p>;
+                  }
+                  const flavor = activity.targetNpcName ? null : getActivityFlavorText(activity.name, currentWeek);
+                  const result = getActivityResult(activity.name, currentWeek, i);
+                  const ambience = getCampusAmbience(activity.name, currentWeek, i);
+                  const text = flavor || result || ambience;
+                  return text ? <p className="text-[11px] text-txt-secondary/50 italic pl-12 mb-1">{text}</p> : null;
+                })()}
 
                 {/* NPC portrait + affection indicator (if targeted) */}
                 {activity.targetNpcId && NPC_PORTRAITS[activity.targetNpcId] && !activity.skipped ? (
@@ -687,19 +683,19 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
                   </div>
                 ) : null}
 
-                {/* Stat chips */}
+                {/* Stat chips — compact row under narration */}
                 {!activity.skipped && i < revealedActivities && (
-                  <div className="flex gap-1 flex-shrink-0">
+                  <div className="flex gap-1.5 pl-12">
                     {Object.entries(activity.statEffects)
                       .filter(([, v]) => v !== 0)
-                      .slice(0, 3)
+                      .slice(0, 4)
                       .map(([key, value]) => (
                         <span
                           key={key}
-                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                          className={`text-[9px] px-1.5 py-0.5 rounded-full font-mono ${
                             (key === 'stress' ? (value as number) < 0 : (value as number) > 0)
-                              ? 'bg-teal/20 text-teal'
-                              : 'bg-coral/20 text-coral'
+                              ? 'bg-teal/10 text-teal/70'
+                              : 'bg-coral/10 text-coral/70'
                           }`}
                         >
                           {STAT_LABELS[key as keyof PlayerStats]?.[0]}{(value as number) > 0 ? '+' : ''}{value}
@@ -707,6 +703,15 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
                       ))}
                   </div>
                 )}
+
+                {/* Connector to next activity (Gemini-generated) */}
+                {!activity.skipped && i < revealedActivities && i < currentDay.activities.length - 1 && (() => {
+                  const connIdx = currentDayIndex * 2 + i;
+                  const connector = getConnector(currentWeek, connIdx);
+                  return connector ? (
+                    <p className="text-[10px] text-txt-secondary/30 italic text-center mt-2 animate-fade-in">— {connector} —</p>
+                  ) : null;
+                })()}
               </div>
             ))}
           </div>
