@@ -10,6 +10,7 @@ import { getNpcContextualLine } from '@/lib/weeklyDialogueCache';
 import { getInnerMonologue } from '@/lib/innerMonologue';
 import { getActivityFlavorText } from '@/lib/activityFlavor';
 import { getActivityResult } from '@/lib/activityResults';
+import { getNpcReaction } from '@/lib/npcReactions';
 import { getNarration, getConnector } from '@/lib/activityNarrationCache';
 import { getCampusAmbience } from '@/lib/campusAmbience';
 import { useGameStore } from '@/store/gameStore';
@@ -705,6 +706,19 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
                       ))}
                   </div>
                 )}
+
+                {/* NPC reaction — someone comments on what you just did (PM-style) */}
+                {!activity.skipped && i < revealedActivities && (() => {
+                  const reaction = getNpcReaction(activity.name, currentWeek, i);
+                  if (!reaction) return null;
+                  return (
+                    <div className="mt-1.5 flex items-center gap-2 animate-fade-in">
+                      <span className="text-[10px] text-txt-secondary/30">💬</span>
+                      {reaction.npcName && <span className="text-[10px] text-pink/50 font-medium">{reaction.npcName}:</span>}
+                      <span className="text-[11px] text-txt-secondary/50 italic">{reaction.text}</span>
+                    </div>
+                  );
+                })()}
 
                 {/* Connector to next activity (Gemini-generated) */}
                 {!activity.skipped && i < revealedActivities && i < currentDay.activities.length - 1 && (() => {
