@@ -192,7 +192,7 @@ function rollMidEvent(activityId: string, week: number, stats: PlayerStats): Mid
 export default function ActionPhase({ days, currentStats, onComplete }: ActionPhaseProps) {
   const [dayIndex, setDayIndex] = useState(0);
   const [activityIndex, setActivityIndex] = useState(0);
-  const [phase, setPhase] = useState<'activity' | 'midEvent' | 'dayTransition' | 'complete'>('activity');
+  const [phase, setPhase] = useState<'weekStart' | 'activity' | 'midEvent' | 'dayTransition' | 'complete'>('weekStart');
   const [showStats, setShowStats] = useState(false);
   const [currentMidEvent, setCurrentMidEvent] = useState<MidEvent | null>(null);
   const currentWeek = useGameStore((s) => s.currentWeek);
@@ -322,8 +322,8 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
     } else if (dayIndex < days.length - 1) {
       setPhase('dayTransition');
     } else {
+      // All activities done — show week complete splash
       setPhase('complete');
-      onComplete();
     }
   }, [showStats, phase, currentDay, activityIndex, dayIndex, days, onComplete, activity, activityId, currentWeek, runningStats]);
 
@@ -342,6 +342,31 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
     setPhase('activity');
   }, [dayIndex]);
 
+  // Week start splash — brief "이번 주 시작!" before first activity
+  if (phase === 'weekStart') {
+    const firstDay = days[0];
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 cursor-pointer"
+        onClick={() => setPhase('activity')}
+      >
+        <div className="text-center animate-fade-in-up">
+          <p className="text-white/30 text-sm tracking-widest mb-3">{currentWeek}주차</p>
+          <h1 className="text-4xl font-black text-white mb-2">{firstDay?.dayName}부터 시작</h1>
+          <div className="flex items-center justify-center gap-3 mt-4">
+            {firstDay?.activities.slice(0, 3).map((act, i) => (
+              <div key={i} className="flex flex-col items-center gap-1 animate-fade-in-up" style={{ animationDelay: `${0.3 + i * 0.15}s` }}>
+                <span className="text-2xl">{act.icon}</span>
+                <span className="text-[9px] text-white/40">{act.name}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-white/15 mt-6 animate-fade-in-up" style={{ animationDelay: '0.8s' }}>탭하여 시작</p>
+        </div>
+      </div>
+    );
+  }
+
   // Day transition overlay
   if (phase === 'dayTransition' && dayIndex < days.length - 1) {
     const completedToday = currentDay?.activities.filter(a => !a.skipped).map(a => ({ icon: a.icon, name: a.name })) ?? [];
@@ -357,7 +382,24 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
     );
   }
 
-  if (!activity || phase === 'complete') return null;
+  // Week complete splash
+  if (phase === 'complete') {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 cursor-pointer"
+        onClick={onComplete}
+      >
+        <div className="text-center animate-fade-in-up">
+          <span className="text-5xl block mb-4">📋</span>
+          <h2 className="text-2xl font-bold text-white mb-2">{currentWeek}주차 완료</h2>
+          <p className="text-sm text-white/50">7일간의 일정이 모두 끝났습니다</p>
+          <p className="text-[10px] text-white/20 mt-6">탭하여 계속</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!activity) return null;
 
   const { nextActivity, nextDayName } = getNextInfo();
 
