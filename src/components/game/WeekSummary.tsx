@@ -149,6 +149,7 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
   const newAchievements = useGameStore((state) => state.newAchievements);
   const clearNewAchievements = useGameStore((state) => state.clearNewAchievements);
   const [reflectionDone, setReflectionDone] = useState(false);
+  const [challengeRewardApplied, setChallengeRewardApplied] = useState(false);
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
@@ -315,9 +316,9 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
           if (challenges.length === 0) return null;
           const { completed, totalReward } = checkChallengeCompletion(challenges, stats, prevStats, rels, prevRels);
 
-          // Apply rewards
-          if (completed.length > 0 && Object.keys(totalReward).length > 0) {
-            // Rewards applied via store (deferred to avoid render-time mutation)
+          // Apply rewards (only once)
+          if (completed.length > 0 && Object.keys(totalReward).length > 0 && !challengeRewardApplied) {
+            setChallengeRewardApplied(true);
             setTimeout(() => useGameStore.getState().updateStats(totalReward), 100);
           }
 
