@@ -276,7 +276,7 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
 
   // Background for current activity
   const activityId = activity ? (activity.activityId ?? ACTIVITY_NAME_TO_ID[activity.name] ?? 'rest') : 'rest';
-  const bg = getActivityBackground(activityId, activity?.timeSlot);
+  const bg = getActivityBackground(activityId, activity?.timeSlot, activity?.targetNpcId);
 
   // Next activity preview
   const getNextInfo = useCallback(() => {
@@ -417,34 +417,30 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
       </div>
 
-      {/* Player portrait — ALWAYS visible (PM-style: your character is in every scene) */}
+      {/* Player character — large semi-transparent display (PM-style full sprite) */}
       {!activity.skipped && (
-        <div className="absolute bottom-36 sm:bottom-44 left-6 sm:left-12 z-10 animate-fade-in-up">
-          <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-teal/30 shadow-2xl">
-            <Image
-              src={`/assets/characters/player/${getPlayerExpression(runningStats, activityId)}-${playerGender}.png`}
-              alt="나"
-              width={112}
-              height={112}
-              className="object-cover object-top w-full h-full"
-            />
-          </div>
+        <div className="absolute bottom-28 sm:bottom-32 left-2 sm:left-8 z-10 opacity-70" key={`player-${dayIndex}-${activityIndex}`}>
+          <Image
+            src={`/assets/characters/player/${getPlayerExpression(runningStats, activityId)}-${playerGender}.png`}
+            alt="나"
+            width={180}
+            height={280}
+            className="object-contain object-bottom drop-shadow-[0_0_20px_rgba(0,0,0,0.5)] animate-fade-in"
+          />
         </div>
       )}
 
-      {/* NPC portrait (if targeted activity) — right side */}
+      {/* NPC character — large display on right side */}
       {activity.targetNpcId && NPC_PORTRAITS[activity.targetNpcId] && !activity.skipped && (
-        <div className="absolute bottom-36 sm:bottom-44 right-8 sm:right-16 z-10 animate-fade-in-up">
-          <div className="w-24 h-24 sm:w-36 sm:h-36 rounded-full overflow-hidden border-2 border-pink/30 shadow-2xl">
-            <Image
-              src={NPC_PORTRAITS[activity.targetNpcId]}
-              alt={activity.targetNpcName ?? ''}
-              width={144}
-              height={144}
-              className="object-cover object-top w-full h-full"
-            />
-          </div>
-          <p className="text-center text-xs text-white/60 mt-1.5 font-medium">{activity.targetNpcName}</p>
+        <div className="absolute bottom-28 sm:bottom-32 right-2 sm:right-8 z-10 opacity-80" key={`npc-${dayIndex}-${activityIndex}`}>
+          <Image
+            src={NPC_PORTRAITS[activity.targetNpcId]}
+            alt={activity.targetNpcName ?? ''}
+            width={160}
+            height={250}
+            className="object-contain object-bottom drop-shadow-[0_0_20px_rgba(0,0,0,0.5)] animate-fade-in"
+          />
+          <p className="text-center text-xs text-white/70 mt-1 font-medium drop-shadow-lg">{activity.targetNpcName}</p>
         </div>
       )}
 
