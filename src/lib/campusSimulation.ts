@@ -86,7 +86,7 @@ export function generateEncounters(
 
   for (const npc of selected) {
     // Only 40% chance to actually encounter each NPC (keeps it fresh)
-    if (seededRandom(seed + npc.id.charCodeAt(0) + week) > 0.4) continue;
+    if (seededRandom(seed + npc.id.charCodeAt(0) + week) > 0.7) continue; // 70% chance — campus is busy
 
     const mood = getNpcMood(npc, week, stats);
     const dialogue = generateNpcDialogue(npc, location, week, stats, mood);

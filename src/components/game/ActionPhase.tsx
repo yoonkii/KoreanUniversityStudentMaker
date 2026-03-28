@@ -752,13 +752,15 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
           )}
 
           {/* Campus background NPC encounter — shows what they're DOING */}
-          {campusEncounter && !npcEncounter && (
-            <div className="mt-2 px-4 py-2.5 glass rounded-xl border border-white/5 animate-fade-in">
+          {/* Campus encounter — NPCs living their lives nearby */}
+          {campusEncounter && (
+            <div className="mt-2 px-4 py-2.5 glass rounded-xl border border-white/8 animate-fade-in">
               <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] text-txt-secondary/40">👀</span>
                 <span className="text-xs font-medium text-txt-primary/60">{campusEncounter.npcName}</span>
                 <span className="text-[9px] text-txt-secondary/30">· {campusEncounter.npcRole}</span>
               </div>
-              <p className="text-xs text-txt-secondary/70 italic">&ldquo;{campusEncounter.dialogue}&rdquo;</p>
+              <p className="text-xs text-txt-primary/50 leading-relaxed">&ldquo;{campusEncounter.dialogue}&rdquo;</p>
             </div>
           )}
 
