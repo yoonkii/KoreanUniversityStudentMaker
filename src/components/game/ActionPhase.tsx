@@ -294,71 +294,64 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
         건너뛰기 ▸▸
       </button>
 
-      {/* Bottom area: stat bars + narration */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 p-4 sm:p-6">
-        <div className="flex gap-4 items-end max-w-4xl mx-auto">
-          {/* PM-style stat bars — left side */}
-          <div className="flex-shrink-0">
-            <PMStatBars stats={runningStats} previousStats={previousStats} showDelta={showStats} />
-          </div>
+      {/* PM-style stat bars — bottom left, always visible */}
+      <div className="absolute bottom-20 sm:bottom-24 left-4 sm:left-6 z-20">
+        <PMStatBars stats={runningStats} previousStats={previousStats} showDelta={showStats} />
+      </div>
 
-          {/* Narration + outcome — right side */}
-          <div className="flex-1 min-w-0">
-            {/* Outcome feedback (date/friend result) */}
-            {showStats && outcome && (
-              <div className={`mb-2 px-3 py-2 rounded-lg bg-black/40 backdrop-blur-sm animate-fade-in-up`}>
-                <span>{outcome.emoji} </span>
-                <span className={`text-sm ${outcome.color}`}>{outcome.text}</span>
+      {/* Upcoming preview — bottom right above narration */}
+      <div className="absolute bottom-20 sm:bottom-24 right-4 sm:right-6 z-20">
+        <UpcomingPreview nextActivity={nextActivity} nextDayName={nextDayName ?? undefined} />
+      </div>
+
+      {/* Bottom narration area — compact, VN-style */}
+      <div className="absolute bottom-0 left-0 right-0 z-20">
+        {/* Outcome/reaction row — appears above narration when stats shown */}
+        {showStats && (outcome || npcReaction || thought) && (
+          <div className="px-4 sm:px-6 mb-1 animate-fade-in-up">
+            {outcome && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm">
+                <span>{outcome.emoji}</span>
+                <span className={`text-xs ${outcome.color}`}>{outcome.text}</span>
                 {activity.dateOutcome && activity.dateOutcome.romanceGain > 0 && (
-                  <span className="text-[10px] text-pink/60 ml-2">♥ +{activity.dateOutcome.romanceGain}</span>
+                  <span className="text-[9px] text-pink/60">♥+{activity.dateOutcome.romanceGain}</span>
                 )}
               </div>
             )}
-
-            {/* NPC reaction */}
-            {showStats && npcReaction && (
-              <div className="mb-2 px-3 py-1.5 rounded-lg bg-black/30 animate-fade-in-up">
-                <span className="text-[10px] text-white/30">💬 </span>
-                {npcReaction.npcName && <span className="text-[11px] text-pink/50 font-medium">{npcReaction.npcName}: </span>}
+            {!outcome && npcReaction && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/40">
+                <span className="text-[10px]">💬</span>
+                {npcReaction.npcName && <span className="text-[10px] text-pink/50 font-medium">{npcReaction.npcName}:</span>}
                 <span className="text-xs text-white/50 italic">{npcReaction.text}</span>
               </div>
             )}
-
-            {/* Inner monologue */}
-            {showStats && thought && !npcReaction && (
-              <div className="mb-2 px-3 py-1.5 rounded-lg bg-black/20 animate-fade-in-up">
-                <span className="text-[10px] text-white/30">💭 </span>
+            {!outcome && !npcReaction && thought && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/30">
+                <span className="text-[10px]">💭</span>
                 <span className="text-xs text-white/40 italic">{thought}</span>
               </div>
             )}
+          </div>
+        )}
 
-            {/* Main narration text box */}
-            <div className="px-4 py-3 rounded-xl bg-black/60 backdrop-blur-md border border-white/10">
-              <p className="text-sm sm:text-base text-white/90 leading-relaxed">{narration}</p>
+        {/* Main narration box — full width, compact */}
+        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-black/70 backdrop-blur-md border-t border-white/10">
+          <p className="text-sm sm:text-base text-white/90 leading-relaxed max-w-3xl">{narration}</p>
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex gap-1.5">
+              {days.map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-2 h-2 rounded-full transition-all ${
+                    i === dayIndex ? 'bg-teal scale-125' : i < dayIndex ? 'bg-teal/40' : 'bg-white/15'
+                  }`}
+                />
+              ))}
             </div>
-
-            {/* Tap hint */}
-            <p className="text-[9px] text-white/20 text-center mt-1.5">
-              {showStats ? '탭하여 다음으로' : '탭하여 결과 확인'}
+            <p className="text-[9px] text-white/20">
+              {showStats ? '탭 → 다음' : '탭 → 결과'}
             </p>
           </div>
-        </div>
-
-        {/* Upcoming preview — bottom right */}
-        <div className="absolute bottom-2 right-4">
-          <UpcomingPreview nextActivity={nextActivity} nextDayName={nextDayName ?? undefined} />
-        </div>
-
-        {/* Day progress dots */}
-        <div className="flex gap-1.5 justify-center mt-3">
-          {days.map((_, i) => (
-            <div
-              key={i}
-              className={`w-2 h-2 rounded-full transition-all ${
-                i === dayIndex ? 'bg-teal scale-125' : i < dayIndex ? 'bg-teal/40' : 'bg-white/15'
-              }`}
-            />
-          ))}
         </div>
       </div>
     </div>

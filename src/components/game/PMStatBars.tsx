@@ -32,7 +32,7 @@ export default function PMStatBars({ stats, previousStats, showDelta = false }: 
   }, [showDelta, stats]);
 
   return (
-    <div className="flex flex-col gap-1.5 w-48 sm:w-56">
+    <div className="flex flex-col gap-1.5 w-52 sm:w-60 px-3 py-2.5 rounded-xl bg-black/70 backdrop-blur-md border border-white/10">
       {STAT_CONFIG.map(({ key, label, emoji, color, max }) => {
         const current = stats[key];
         const prev = previousStats[key];
@@ -46,7 +46,7 @@ export default function PMStatBars({ stats, previousStats, showDelta = false }: 
           <div key={key} className="flex items-center gap-1.5">
             <span className="text-[10px] w-4 text-center">{emoji}</span>
             <span className="text-[9px] text-white/50 w-12 truncate">{label}</span>
-            <div className="flex-1 h-2.5 bg-black/40 rounded-full overflow-hidden relative">
+            <div className="flex-1 h-3 bg-black/40 rounded-full overflow-hidden relative">
               {/* Delta highlight region */}
               {hasDelta && (
                 <div
