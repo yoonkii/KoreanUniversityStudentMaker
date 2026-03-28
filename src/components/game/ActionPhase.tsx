@@ -104,13 +104,97 @@ function getPlayerExpression(stats: PlayerStats, activityId: string): string {
   return 'neutral';
 }
 
+// ─── Mid-Activity Random Events (PM-style interruptions) ───
+
+interface MidEvent {
+  text: string;
+  choices: { label: string; effects: Partial<PlayerStats> }[];
+  condition: (activityId: string, week: number, stats: PlayerStats) => boolean;
+  probability: number;
+}
+
+const MID_EVENTS: MidEvent[] = [
+  {
+    text: '수업 중에 교수님이 갑자기 질문을 던졌다! "이 문제의 답은?"',
+    choices: [
+      { label: '자신 있게 대답한다', effects: { knowledge: 3, charm: 2, stress: 2 } },
+      { label: '모른 척 고개를 숙인다', effects: { stress: -2 } },
+    ],
+    condition: (a) => a === 'lecture',
+    probability: 0.25,
+  },
+  {
+    text: '도서관에서 집중하던 중, 옆자리 사람이 과자를 먹기 시작했다. 바삭바삭...',
+    choices: [
+      { label: '참고 집중한다', effects: { knowledge: 2, stress: 3 } },
+      { label: '자리를 옮긴다', effects: { stress: -1, knowledge: 1 } },
+    ],
+    condition: (a) => a === 'study',
+    probability: 0.2,
+  },
+  {
+    text: '알바 중에 진상 손님이 왔다. "이거 왜 이렇게 느려요?!"',
+    choices: [
+      { label: '웃으며 대응한다', effects: { charm: 3, stress: 5, money: 5000 } },
+      { label: '매뉴얼대로 대응한다', effects: { stress: 2 } },
+    ],
+    condition: (a) => a === 'parttime',
+    probability: 0.3,
+  },
+  {
+    text: '운동하다가 옆 사람이 "같이 할래요?" 하고 말을 걸었다.',
+    choices: [
+      { label: '좋아요!', effects: { social: 3, health: 2, charm: 1 } },
+      { label: '아, 저 혼자 할게요', effects: { health: 1 } },
+    ],
+    condition: (a) => a === 'exercise',
+    probability: 0.2,
+  },
+  {
+    text: '동아리 연습 중에 선배가 "솔로 한 번 해볼래?" 하고 물었다.',
+    choices: [
+      { label: '도전한다!', effects: { charm: 5, stress: 5, social: 2 } },
+      { label: '아직 준비가 안 됐어요...', effects: { stress: -2, social: 1 } },
+    ],
+    condition: (a) => a === 'club',
+    probability: 0.25,
+  },
+  {
+    text: '데이트 중에 갑자기 비가 내리기 시작했다!',
+    choices: [
+      { label: '우산 없이 뛰어간다 (로맨틱!)', effects: { charm: 4, health: -3, stress: -5 } },
+      { label: '가까운 카페로 대피한다', effects: { money: -5000, stress: -3 } },
+    ],
+    condition: (a) => a === 'date',
+    probability: 0.3,
+  },
+  {
+    text: '쉬고 있는데 갑자기 과제 마감이 내일이라는 알림이 왔다!',
+    choices: [
+      { label: '당장 공부를 시작한다', effects: { knowledge: 4, stress: 8, health: -3 } },
+      { label: '내일 아침에 하자...', effects: { stress: 3, knowledge: -1 } },
+    ],
+    condition: (a) => a === 'rest',
+    probability: 0.2,
+  },
+];
+
+function rollMidEvent(activityId: string, week: number, stats: PlayerStats): MidEvent | null {
+  const eligible = MID_EVENTS.filter(e => e.condition(activityId, week, stats));
+  for (const ev of eligible) {
+    if (Math.random() < ev.probability) return ev;
+  }
+  return null;
+}
+
 // ─── Main Component ───
 
 export default function ActionPhase({ days, currentStats, onComplete }: ActionPhaseProps) {
   const [dayIndex, setDayIndex] = useState(0);
   const [activityIndex, setActivityIndex] = useState(0);
-  const [phase, setPhase] = useState<'activity' | 'dayTransition' | 'complete'>('activity');
+  const [phase, setPhase] = useState<'activity' | 'midEvent' | 'dayTransition' | 'complete'>('activity');
   const [showStats, setShowStats] = useState(false);
+  const [currentMidEvent, setCurrentMidEvent] = useState<MidEvent | null>(null);
   const currentWeek = useGameStore((s) => s.currentWeek);
   const playerGender = useGameStore((s) => s.player?.gender ?? 'male');
 
@@ -209,29 +293,48 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
 
   // Advance to next activity
   const handleAdvance = useCallback(() => {
+    if (phase === 'midEvent') return; // Don't advance during mid-event
+
     if (!showStats) {
-      // First tap: reveal stat changes
+      // First tap: reveal stat changes + check for mid-event
       setShowStats(true);
+      // Roll for a random mid-event (PM-style interruption)
+      if (activity && !activity.skipped) {
+        const midEvt = rollMidEvent(activityId, currentWeek, runningStats);
+        if (midEvt) {
+          setTimeout(() => {
+            setCurrentMidEvent(midEvt);
+            setPhase('midEvent');
+          }, 800); // Brief delay so player sees stat changes first
+        }
+      }
       return;
     }
 
     // Second tap: advance to next
     setShowStats(false);
+    setCurrentMidEvent(null);
 
     if (!currentDay) { onComplete(); return; }
 
     if (activityIndex < currentDay.activities.length - 1) {
-      // Next activity in same day
       setActivityIndex(activityIndex + 1);
     } else if (dayIndex < days.length - 1) {
-      // Next day — show transition
       setPhase('dayTransition');
     } else {
-      // All done
       setPhase('complete');
       onComplete();
     }
-  }, [showStats, currentDay, activityIndex, dayIndex, days, onComplete]);
+  }, [showStats, phase, currentDay, activityIndex, dayIndex, days, onComplete, activity, activityId, currentWeek, runningStats]);
+
+  // Handle mid-event choice
+  const handleMidEventChoice = useCallback((effects: Partial<PlayerStats>) => {
+    // Apply effects to running stats by modifying the current activity's statEffects
+    // (This is a simplification — in a full implementation we'd track bonus effects separately)
+    useGameStore.getState().updateStats(effects);
+    setCurrentMidEvent(null);
+    setPhase('activity');
+  }, []);
 
   const handleDayTransitionDone = useCallback(() => {
     setDayIndex(dayIndex + 1);
@@ -391,6 +494,40 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
           </div>
         </div>
       </div>
+
+      {/* Mid-activity event overlay (PM-style random interruption) */}
+      {phase === 'midEvent' && currentMidEvent && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md px-6 animate-fade-in-up">
+            <div className="bg-black/80 backdrop-blur-md rounded-2xl border border-white/15 p-6">
+              <p className="text-[10px] text-teal/60 tracking-wider mb-2">⚡ 이벤트 발생!</p>
+              <p className="text-sm sm:text-base text-white/90 leading-relaxed mb-5">{currentMidEvent.text}</p>
+              <div className="flex flex-col gap-2">
+                {currentMidEvent.choices.map((choice, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleMidEventChoice(choice.effects)}
+                    className="w-full text-left px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer active:scale-[0.98]"
+                  >
+                    <p className="text-sm text-white font-medium">{choice.label}</p>
+                    <div className="flex gap-1.5 mt-1.5">
+                      {Object.entries(choice.effects).filter(([,v]) => v !== 0).map(([k, v]) => {
+                        const labels: Record<string, string> = { knowledge: '준비도', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력' };
+                        const isGood = k === 'stress' ? (v ?? 0) < 0 : (v ?? 0) > 0;
+                        return (
+                          <span key={k} className={`text-[9px] px-1.5 py-0.5 rounded-full ${isGood ? 'bg-teal/15 text-teal' : 'bg-coral/15 text-coral'}`}>
+                            {labels[k]}{(v ?? 0) > 0 ? '+' : ''}{k === 'money' ? `${((v ?? 0)/1000).toFixed(0)}K` : v}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
