@@ -7,6 +7,8 @@ interface ProgressBarProps {
   label?: string;
   showValue?: boolean;
   size?: 'sm' | 'md';
+  /** Previous value — shows a delta highlight on the bar */
+  prevValue?: number;
 }
 
 const COLOR_GRADIENTS: Record<ProgressBarProps['color'], { from: string; to: string }> = {
@@ -29,9 +31,13 @@ export default function ProgressBar({
   label,
   showValue = false,
   size = 'md',
+  prevValue,
 }: ProgressBarProps) {
   const percentage = Math.min(100, Math.max(0, (value / max) * 100));
+  const prevPercentage = prevValue !== undefined ? Math.min(100, Math.max(0, (prevValue / max) * 100)) : undefined;
   const gradient = COLOR_GRADIENTS[color];
+  const delta = prevValue !== undefined ? value - prevValue : 0;
+  const hasDelta = prevValue !== undefined && delta !== 0;
 
   return (
     <div className="w-full">
@@ -47,9 +53,21 @@ export default function ProgressBar({
           )}
         </div>
       )}
-      <div className={`w-full bg-surface-dark rounded-full ${HEIGHT_CLASSES[size]}`}>
+      <div className={`w-full bg-surface-dark rounded-full ${HEIGHT_CLASSES[size]} relative overflow-hidden`}>
+        {/* Delta highlight — shows the change area */}
+        {hasDelta && prevPercentage !== undefined && (
+          <div
+            className={`absolute top-0 ${HEIGHT_CLASSES[size]} rounded-full ${delta > 0 ? 'bg-teal/20' : 'bg-coral/20'}`}
+            style={{
+              left: delta > 0 ? `${prevPercentage}%` : `${percentage}%`,
+              width: `${Math.abs(percentage - prevPercentage)}%`,
+              animation: 'pulse 1.5s ease-in-out 2',
+            }}
+          />
+        )}
+        {/* Main bar */}
         <div
-          className={`${HEIGHT_CLASSES[size]} rounded-full transition-all duration-500 ease-out`}
+          className={`${HEIGHT_CLASSES[size]} rounded-full transition-all duration-700 ease-out relative z-10`}
           style={{
             width: `${percentage}%`,
             background: `linear-gradient(to right, ${gradient.from}, ${gradient.to})`,

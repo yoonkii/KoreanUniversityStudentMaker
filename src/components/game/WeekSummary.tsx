@@ -248,6 +248,7 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
                 {!isMoney && (
                   <ProgressBar
                     value={isKnowledge ? stats.knowledge : stats[key]}
+                    prevValue={delta !== undefined ? (isKnowledge ? stats.knowledge - delta : stats[key] - delta) : undefined}
                     color={color}
                     size="sm"
                   />
