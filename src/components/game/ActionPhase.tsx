@@ -93,6 +93,17 @@ function getOutcomeFeedback(activity: DayActivity): { emoji: string; text: strin
   return null;
 }
 
+// ─── Player Portrait ───
+
+function getPlayerExpression(stats: PlayerStats, activityId: string): string {
+  if (stats.stress >= 80) return 'stressed';
+  if (activityId === 'date') return 'romantic';
+  if (activityId === 'study' || activityId === 'lecture') return 'determined';
+  if (stats.health < 30) return 'stressed';
+  if (stats.social >= 60 || activityId === 'friends' || activityId === 'club') return 'happy';
+  return 'neutral';
+}
+
 // ─── Main Component ───
 
 export default function ActionPhase({ days, currentStats, onComplete }: ActionPhaseProps) {
@@ -101,6 +112,7 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
   const [phase, setPhase] = useState<'activity' | 'dayTransition' | 'complete'>('activity');
   const [showStats, setShowStats] = useState(false);
   const currentWeek = useGameStore((s) => s.currentWeek);
+  const playerGender = useGameStore((s) => s.player?.gender ?? 'male');
 
   // Flatten all activities for global indexing (needed for narration cache)
   const allActivities = useMemo(() => days.flatMap(d => d.activities), [days]);
@@ -250,15 +262,30 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
       </div>
 
-      {/* NPC portrait (if targeted activity) */}
+      {/* Player portrait — ALWAYS visible (PM-style: your character is in every scene) */}
+      {!activity.skipped && (
+        <div className="absolute bottom-36 sm:bottom-44 left-6 sm:left-12 z-10 animate-fade-in-up">
+          <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-teal/30 shadow-2xl">
+            <Image
+              src={`/assets/characters/player/${getPlayerExpression(runningStats, activityId)}-${playerGender}.png`}
+              alt="나"
+              width={112}
+              height={112}
+              className="object-cover object-top w-full h-full"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* NPC portrait (if targeted activity) — right side */}
       {activity.targetNpcId && NPC_PORTRAITS[activity.targetNpcId] && !activity.skipped && (
-        <div className="absolute bottom-32 sm:bottom-40 right-8 sm:right-16 z-10 animate-fade-in-up">
-          <div className="w-28 h-28 sm:w-40 sm:h-40 rounded-full overflow-hidden border-2 border-white/20 shadow-2xl">
+        <div className="absolute bottom-36 sm:bottom-44 right-8 sm:right-16 z-10 animate-fade-in-up">
+          <div className="w-24 h-24 sm:w-36 sm:h-36 rounded-full overflow-hidden border-2 border-pink/30 shadow-2xl">
             <Image
               src={NPC_PORTRAITS[activity.targetNpcId]}
               alt={activity.targetNpcName ?? ''}
-              width={160}
-              height={160}
+              width={144}
+              height={144}
               className="object-cover object-top w-full h-full"
             />
           </div>
