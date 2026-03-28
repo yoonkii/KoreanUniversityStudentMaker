@@ -48,40 +48,55 @@ describe('gameStore', () => {
   });
 
   describe('updateRelationship', () => {
-    it('should create a new relationship with base affection of 50 + change', () => {
+    it('should create a new relationship with friendship gain (halved for <3 encounters)', () => {
       const { updateRelationship } = useGameStore.getState();
 
       updateRelationship('jaemin', 10);
 
       const { relationships } = useGameStore.getState();
       expect(relationships['jaemin']).toBeDefined();
-      expect(relationships['jaemin'].affection).toBe(60);  // 50 + 10
+      expect(relationships['jaemin'].friendship).toBe(5);  // round(10 * 0.5) — halved for <3 encounters
+      expect(relationships['jaemin'].affection).toBe(5);   // max(friendship, romance)
       expect(relationships['jaemin'].encounters).toBe(1);
     });
 
     it('should update an existing relationship', () => {
       const { updateRelationship } = useGameStore.getState();
 
-      // First encounter
-      updateRelationship('soyeon', 5);
-      // Second encounter
+      // First encounter (halved)
+      updateRelationship('soyeon', 6);
+      // Second encounter (halved)
       updateRelationship('soyeon', 10);
 
       const { relationships } = useGameStore.getState();
-      expect(relationships['soyeon'].affection).toBe(65);   // 50 + 5 + 10
+      expect(relationships['soyeon'].friendship).toBe(8);   // round(6*0.5) + round(10*0.5) = 3 + 5
+      expect(relationships['soyeon'].affection).toBe(8);    // max(friendship, romance)
       expect(relationships['soyeon'].encounters).toBe(2);
     });
 
-    it('should clamp affection to [0, 100]', () => {
+    it('should clamp friendship to [0, 100]', () => {
       const { updateRelationship } = useGameStore.getState();
 
-      // Create with high positive change
-      updateRelationship('test-high', 100);
-      expect(useGameStore.getState().relationships['test-high'].affection).toBe(100); // clamped
+      // Create with high positive change (halved for <3 encounters)
+      updateRelationship('test-high', 200);
+      expect(useGameStore.getState().relationships['test-high'].friendship).toBe(100); // clamped
 
       // Create with very negative change
       updateRelationship('test-low', -100);
-      expect(useGameStore.getState().relationships['test-low'].affection).toBe(0); // clamped
+      expect(useGameStore.getState().relationships['test-low'].friendship).toBe(0); // clamped
+    });
+
+    it('should track romance separately from friendship', () => {
+      const { updateRelationship } = useGameStore.getState();
+
+      // Build some friendship first
+      updateRelationship('minji', 10, 'friendship');
+      updateRelationship('minji', 5, 'romance');
+
+      const { relationships } = useGameStore.getState();
+      expect(relationships['minji'].friendship).toBe(5);   // halved for <3 encounters
+      expect(relationships['minji'].romance).toBe(5);
+      expect(relationships['minji'].affection).toBe(5);    // max(5, 5)
     });
   });
 

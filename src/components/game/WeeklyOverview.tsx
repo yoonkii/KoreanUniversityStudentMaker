@@ -26,26 +26,48 @@ interface EventEntry { week: number; summary: string; npcInvolved?: string; choi
 
 /** Soyeon (caring senior) as our "Cube butler" — personalized weekly advice with memory */
 function getSoyeonAdvice(week: number, stress: number, knowledge: number, social: number, health: number, events?: EventEntry[]): { text: string; expression: string } {
-  // Sometimes reference a past event (memory callback)
+  const rels = useGameStore.getState().relationships;
+  const soyeonRom = rels['soyeon']?.romance ?? 0;
+  const playerDating = Object.entries(rels).find(([, r]) => (r.romance ?? 0) >= 45);
+  const playerCrush = Object.entries(rels).find(([, r]) => (r.romance ?? 0) >= 25);
+  const NPC_KO: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연', hyunwoo: '현우' };
+
+  // ─── Romance with Soyeon — she's your partner, not just advisor ───
+  if (soyeonRom >= 45) {
+    if (stress > 70) return { text: '자기야... 너무 무리하지 마. 오늘은 내가 밥 해줄게. 쉬자.', expression: 'worried' };
+    if (week >= 14) return { text: '기말 끝나면 같이 여행 가자. 약속이야 💕 힘내!', expression: 'happy' };
+    return { text: '오늘도 응원해! 내 후배이자... 내 사람. 화이팅 💕', expression: 'happy' };
+  }
+  if (soyeonRom >= 25) {
+    if (stress > 70) return { text: '요즘 많이 힘들어 보여... 괜찮아? 선배가 옆에 있을게.', expression: 'worried' };
+    return { text: '이번 주도 잘 해보자! ...자꾸 네 생각이 나. 왜 그런지 모르겠어.', expression: 'happy' };
+  }
+
+  // ─── Soyeon notices you're dating someone else ───
+  if (playerDating && playerDating[0] !== 'soyeon') {
+    const partnerName = NPC_KO[playerDating[0]] ?? '그 사람';
+    if (Math.random() < 0.3) return { text: `${partnerName}이(가)랑 잘 지내고 있구나? 좋은 사람 만났네. 선배가 부러워~ ...아 아니, 그냥!`, expression: 'teasing' };
+  }
+  if (playerCrush && playerCrush[0] !== 'soyeon' && Math.random() < 0.2) {
+    const crushName = NPC_KO[playerCrush[0]] ?? '그 사람';
+    return { text: `요즘 ${crushName}이(가)랑 가까워진 것 같은데? ㅋㅋ 선배 눈은 못 속여~`, expression: 'teasing' };
+  }
+
+  // ─── Event memory callbacks ───
   if (events && events.length > 0 && week > 5 && Math.random() < 0.3) {
     const recentEvent = events[events.length - 1];
-    if (recentEvent.npcInvolved === 'soyeon') {
-      return { text: `저번에 같이 보낸 시간 즐거웠어. 또 놀자~`, expression: 'happy' };
-    }
-    if (recentEvent.summary.includes('MT')) {
-      return { text: 'MT 재밌었지? 그때 사진 아직도 보고 웃어.', expression: 'teasing' };
-    }
-    if (recentEvent.summary.includes('축제')) {
-      return { text: '축제 때 기억나? 벌써 그리운데... 다음엔 더 재밌게 놀자!', expression: 'happy' };
-    }
-    if (recentEvent.summary.includes('위기')) {
-      return { text: '저번에 힘들었지? 지금은 좀 괜찮아? 걱정했어...', expression: 'worried' };
-    }
+    if (recentEvent.summary.includes('위기')) return { text: '저번에 힘들었지? 지금은 좀 괜찮아? 걱정했어...', expression: 'worried' };
+    if (recentEvent.summary.includes('MT')) return { text: 'MT 재밌었지? 그때 사진 아직도 보고 웃어.', expression: 'teasing' };
+    if (recentEvent.summary.includes('축제')) return { text: '축제 때 기억나? 벌써 그리운데... 다음엔 더 재밌게 놀자!', expression: 'happy' };
   }
+
+  // ─── Crisis-level stat warnings ───
   if (stress > 80) return { text: '야, 너 요즘 얼굴이 많이 안 좋아 보여. 오늘은 좀 쉬어. 학점보다 건강이 먼저야.', expression: 'worried' };
   if (health < 25) return { text: '밥은 제대로 먹고 다니는 거지? 체력이 떨어지면 아무것도 못 해. 선배 말 들어.', expression: 'worried' };
   if (knowledge < 25) return { text: '공부 준비가 좀 걱정돼... 다음 주는 도서관에서 좀 보자. 내가 노트 빌려줄게.', expression: 'sad' };
   if (social < 20 && week > 4) return { text: '요즘 혼자 다니는 거 같던데... 밥이라도 같이 먹자. 혼밥은 선배가 허락 안 해.', expression: 'teasing' };
+
+  // ─── Week-specific ───
   if (week >= 14) return { text: '기말 화이팅! 여기까지 온 거 대단해. 끝까지 힘내자, 종강이 코앞이야!', expression: 'happy' };
   if (week >= 7 && week <= 8) return { text: '중간고사 기간이네. 긴장되지? 괜찮아, 준비한 만큼 나와. 선배가 응원할게.', expression: 'neutral' };
   if (week === 9) return { text: '축제다! 이번 축제는 같이 돌아다니자. 대학 축제는 1학년 때가 제일 재밌어!', expression: 'happy' };
@@ -53,7 +75,7 @@ function getSoyeonAdvice(week: number, stress: number, knowledge: number, social
   if (knowledge >= 75 && stress <= 30) return { text: '와, 요즘 진짜 잘하고 있다! 이 페이스 유지하면 장학금도 노려볼 만해.', expression: 'happy' };
   if (week <= 3) return { text: '새 학기 잘 적응하고 있지? 모르는 거 있으면 언제든 물어봐. 선배가 다 알려줄게~', expression: 'happy' };
 
-  // Trajectory-aware advice — Soyeon notices your direction
+  // ─── Trajectory-aware ───
   if (week >= 8) {
     if (knowledge >= 60 && social >= 50) return { text: '공부도 인맥도 다 챙기고 있네! 진짜 갓생러다. 선배가 부러워~', expression: 'happy' };
     if (knowledge >= 60 && social < 30) return { text: '공부는 잘하고 있는데... 사람들이랑도 좀 어울려봐. 대학은 사람이야.', expression: 'teasing' };
@@ -111,6 +133,33 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
             </span>
           </div>
         </div>
+
+        {/* Last week recap — "previously on..." */}
+        {(() => {
+          if (eventHistory.length === 0) return null;
+          const last = eventHistory[eventHistory.length - 1];
+          const NPC_KO: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연 선배', hyunwoo: '현우 선배' };
+          // Also check for romance milestones from last week
+          const prevRels = useGameStore.getState().previousRelationships ?? {};
+          const currentRels = useGameStore.getState().relationships;
+          let romanceRecap = '';
+          for (const [id, rel] of Object.entries(currentRels)) {
+            const name = NPC_KO[id];
+            if (!name) continue;
+            const prevRom = prevRels[id]?.romance ?? 0;
+            const curRom = rel.romance ?? 0;
+            if (prevRom < 45 && curRom >= 45) { romanceRecap = `💕 ${name}과(와) 연인이 되었다!`; break; }
+            if (prevRom < 25 && curRom >= 25) { romanceRecap = `💓 ${name}에 대한 설렘이 시작됐다...`; break; }
+            if (prevRom < 10 && curRom >= 10) { romanceRecap = `💭 ${name}이(가) 자꾸 신경 쓰인다.`; break; }
+          }
+          const recap = romanceRecap || (last.summary.length > 30 ? last.summary.slice(0, 30) + '...' : last.summary);
+          return (
+            <div className="mb-4 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/5 animate-fade-in">
+              <p className="text-[9px] text-txt-secondary/30 mb-0.5">지난 주</p>
+              <p className="text-[11px] text-txt-secondary/60 italic">{recap}</p>
+            </div>
+          );
+        })()}
 
         {/* Campus atmosphere — AI-generated or fallback */}
         {(() => {
@@ -281,12 +330,14 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
             .map(([id, info]) => {
               const rel = relationships[id];
               if (!rel || rel.encounters === 0) return null;
-              const tier = getRelationshipTier(rel.affection);
-              const TIER_EMOJI: Record<string, string> = { stranger: '👤', acquaintance: '🤝', friend: '😊', close_friend: '💛', soulmate: '💕' };
+              const fr = rel.friendship ?? rel.affection ?? 0;
+              const rom = rel.romance ?? 0;
+              const tier = getRelationshipTier(fr);
+              const TIER_EMOJI: Record<string, string> = { stranger: '👤', acquaintance: '🤝', friend: '😊', close_friend: '💛', best_friend: '⭐' };
               const weeksSince = rel.lastInteraction ? currentWeek - rel.lastInteraction : 99;
               const decaying = weeksSince >= 3;
               const MOOD_EMOJI: Record<string, string> = { happy: '😊', annoyed: '😤', worried: '😟', impressed: '🤩', jealous: '😒', neutral: '😐' };
-              return { id, ...info, affection: rel.affection, tierEmoji: TIER_EMOJI[tier] ?? '👤', decaying, mood: rel.mood ?? 'neutral', moodEmoji: MOOD_EMOJI[rel.mood ?? 'neutral'] ?? '😐', opinion: rel.opinion };
+              return { id, ...info, friendship: fr, romance: rom, tierEmoji: TIER_EMOJI[tier] ?? '👤', decaying, mood: rel.mood ?? 'neutral', moodEmoji: MOOD_EMOJI[rel.mood ?? 'neutral'] ?? '😐', opinion: rel.opinion };
             })
             .filter(Boolean);
 
@@ -310,8 +361,13 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
                         <p className="text-[9px] text-txt-secondary/40 italic truncate mt-0.5" title={npc.opinion}>&ldquo;{npc.opinion}&rdquo;</p>
                       )}
                       <div className="w-full h-1 bg-white/10 rounded-full mt-0.5">
-                        <div className="h-full bg-pink rounded-full transition-all" style={{ width: `${npc.affection}%` }} />
+                        <div className="h-full bg-sky-400/60 rounded-full transition-all" style={{ width: `${npc.friendship}%` }} />
                       </div>
+                      {npc.romance > 0 && (
+                        <div className="w-full h-1 bg-white/10 rounded-full mt-0.5">
+                          <div className="h-full bg-pink/60 rounded-full transition-all" style={{ width: `${npc.romance}%` }} />
+                        </div>
+                      )}
                     </div>
                     {npc.decaying && <span className="text-[10px] text-coral" title="오래 안 만남">📉</span>}
                   </div>

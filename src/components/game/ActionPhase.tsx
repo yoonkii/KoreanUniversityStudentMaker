@@ -23,6 +23,15 @@ interface DayActivity {
   targetNpcId?: string;
   targetNpcName?: string;
   skipped?: boolean;
+  dateOutcome?: {
+    type: 'gate_fail' | 'awkward' | 'success' | 'great_chemistry';
+    reason?: string;
+    romanceGain: number;
+  };
+  friendOutcome?: {
+    type: 'great' | 'normal' | 'awkward';
+    friendshipGain: number;
+  };
 }
 
 export interface DayGroup {
@@ -728,6 +737,55 @@ export default function ActionPhase({ days, currentStats, onComplete, speed = 1 
                       ))}
                   </div>
                 )}
+
+                {/* Date outcome feedback — romance success/failure narration */}
+                {!activity.skipped && i < revealedActivities && activity.dateOutcome && (() => {
+                  const o = activity.dateOutcome;
+                  const npcName = activity.targetNpcName ?? '상대';
+                  const DATE_FEEDBACK: Record<string, { emoji: string; color: string; text: string }> = {
+                    gate_fail: { emoji: '😅', color: 'text-amber-400/70', text: o.reason ?? '아직 그런 사이는 아닌 것 같아...' },
+                    awkward: { emoji: '😣', color: 'text-coral/60', text: `${npcName}과(와)의 데이트... 어색한 침묵이 길었다. 다음엔 더 잘할 수 있을 거야.` },
+                    success: { emoji: '💕', color: 'text-pink/70', text: `${npcName}과(와) 좋은 시간을 보냈다. 마음이 조금 가까워진 느낌.` },
+                    great_chemistry: { emoji: '💗', color: 'text-pink', text: `${npcName}과(와) 환상의 케미! 심장이 두근두근... 특별한 하루였다.` },
+                  };
+                  const fb = DATE_FEEDBACK[o.type];
+                  return (
+                    <div className={`mt-2 px-3 py-2 rounded-lg animate-fade-in ${o.type === 'great_chemistry' ? 'bg-pink/10 border border-pink/20' : o.type === 'success' ? 'bg-pink/5' : 'bg-white/5'}`}>
+                      <div className="flex items-center gap-2">
+                        <span>{fb.emoji}</span>
+                        <span className={`text-[11px] ${fb.color} italic`}>{fb.text}</span>
+                      </div>
+                      {o.romanceGain > 0 && (
+                        <span className="text-[9px] text-pink/60 mt-1 block ml-6">♥ 사랑 +{o.romanceGain}</span>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Friendship interaction feedback */}
+                {!activity.skipped && i < revealedActivities && activity.friendOutcome && activity.friendOutcome.type !== 'normal' && (() => {
+                  const o = activity.friendOutcome;
+                  const npcName = activity.targetNpcName ?? '친구';
+                  if (o.type === 'great') {
+                    return (
+                      <div className="mt-1.5 px-3 py-1.5 rounded-lg bg-sky-400/5 animate-fade-in">
+                        <div className="flex items-center gap-2">
+                          <span>😄</span>
+                          <span className="text-[11px] text-sky-400/70 italic">{npcName}과(와) 환상의 케미! 진짜 재밌는 시간이었다.</span>
+                        </div>
+                        {o.friendshipGain > 0 && <span className="text-[9px] text-sky-400/50 mt-0.5 block ml-6">🤝 우정 +{o.friendshipGain}</span>}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="mt-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] animate-fade-in">
+                      <div className="flex items-center gap-2">
+                        <span>😐</span>
+                        <span className="text-[11px] text-txt-secondary/40 italic">{npcName}과(와) 어색한 침묵... 오늘은 대화가 잘 안 통했다.</span>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* NPC reaction — someone comments on what you just did (PM-style) */}
                 {!activity.skipped && i < revealedActivities && (() => {

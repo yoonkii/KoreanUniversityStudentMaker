@@ -40,16 +40,27 @@ function clampAllStats(stats: PlayerStats): PlayerStats {
   };
 }
 
-/** Relationship tiers with thresholds */
-export type RelationshipTier = 'stranger' | 'acquaintance' | 'friend' | 'close_friend' | 'soulmate';
-export function getRelationshipTier(affection: number): RelationshipTier {
-  if (affection >= 90) return 'soulmate';
-  if (affection >= 70) return 'close_friend';
-  if (affection >= 50) return 'friend';
-  if (affection >= 25) return 'acquaintance';
+/** Friendship tiers (우정) */
+export type RelationshipTier = 'stranger' | 'acquaintance' | 'friend' | 'close_friend' | 'best_friend';
+export function getRelationshipTier(friendship: number): RelationshipTier {
+  if (friendship >= 80) return 'best_friend';
+  if (friendship >= 60) return 'close_friend';
+  if (friendship >= 40) return 'friend';
+  if (friendship >= 20) return 'acquaintance';
   return 'stranger';
 }
-const TIER_LABELS: Record<RelationshipTier, string> = { stranger: '모르는 사이', acquaintance: '아는 사이', friend: '친구', close_friend: '절친', soulmate: '소울메이트' };
+const TIER_LABELS: Record<RelationshipTier, string> = { stranger: '모르는 사이', acquaintance: '아는 사이', friend: '친구', close_friend: '절친', best_friend: '베프' };
+
+/** Romance tiers (사랑) */
+export type RomanceTier = 'none' | 'interest' | 'crush' | 'dating' | 'deep_love';
+export function getRomanceTier(romance: number): RomanceTier {
+  if (romance >= 70) return 'deep_love';
+  if (romance >= 45) return 'dating';
+  if (romance >= 25) return 'crush';
+  if (romance >= 10) return 'interest';
+  return 'none';
+}
+const ROMANCE_LABELS: Record<RomanceTier, string> = { none: '그냥 친구', interest: '관심', crush: '설렘', dating: '연인', deep_love: '사랑' };
 
 /** Event history entry for AI context */
 interface EventHistoryEntry {
@@ -68,6 +79,7 @@ interface GameStore {
   currentWeek: number;
   currentSceneIndex: number;
   relationships: Record<string, CharacterRelationship>;
+  previousRelationships: Record<string, CharacterRelationship>;
   schedule: WeekSchedule | null;
   currentScene: Scene | null;
   sceneQueue: Scene[];
@@ -90,7 +102,7 @@ interface GameStore {
   setPhase: (phase: GamePhase) => void;
   createPlayer: (profile: PlayerProfile) => void;
   updateStats: (changes: Partial<PlayerStats>) => void;
-  updateRelationship: (characterId: string, change: number) => void;
+  updateRelationship: (characterId: string, change: number, type?: 'friendship' | 'romance') => void;
   setSchedule: (schedule: WeekSchedule) => void;
   advanceWeek: () => void;
   addEventHistory: (entry: EventHistoryEntry) => void;
@@ -122,6 +134,7 @@ export const useGameStore = create<GameStore>()(
       currentWeek: 1,
       currentSceneIndex: 0,
       relationships: {},
+      previousRelationships: {},
       schedule: null,
       currentScene: null,
       sceneQueue: [],
@@ -180,6 +193,7 @@ export const useGameStore = create<GameStore>()(
           currentWeek: 1,
           currentSceneIndex: 0,
           relationships: {},
+          previousRelationships: {},
           schedule: null,
           currentScene: null,
           sceneQueue: [],
@@ -206,30 +220,48 @@ export const useGameStore = create<GameStore>()(
         set({ stats: clampAllStats(updated) });
       },
 
-      updateRelationship(characterId, change) {
+      updateRelationship(characterId, change, type: 'friendship' | 'romance' = 'friendship') {
         const { relationships, currentWeek } = get();
         const existing = relationships[characterId];
-        const oldAffection = existing?.affection ?? 50;
-        const newAffection = Math.max(0, Math.min(100, oldAffection + change));
-        const oldTier = getRelationshipTier(oldAffection);
-        const newTier = getRelationshipTier(newAffection);
+        const oldFriendship = existing?.friendship ?? 0;
+        const oldRomance = existing?.romance ?? 0;
+
+        let newFriendship = oldFriendship;
+        let newRomance = oldRomance;
+
+        if (type === 'romance') {
+          newRomance = Math.max(0, Math.min(100, oldRomance + change));
+        } else {
+          // Friendship only gains if 3+ encounters (can't instant-befriend)
+          const encounters = existing?.encounters ?? 0;
+          if (change > 0 && encounters < 3) {
+            newFriendship = Math.max(0, Math.min(100, oldFriendship + Math.round(change * 0.5)));
+          } else {
+            newFriendship = Math.max(0, Math.min(100, oldFriendship + change));
+          }
+        }
+
+        // affection = max(friendship, romance) for backward compat
+        const newAffection = Math.max(newFriendship, newRomance);
+        const oldTier = getRelationshipTier(oldFriendship);
+        const newTier = getRelationshipTier(newFriendship);
 
         const updated: CharacterRelationship = existing
-          ? { ...existing, affection: newAffection, encounters: existing.encounters + 1, lastInteraction: currentWeek }
-          : { characterId, affection: newAffection, encounters: 1, lastInteraction: currentWeek };
+          ? { ...existing, friendship: newFriendship, romance: newRomance, affection: newAffection, encounters: existing.encounters + 1, lastInteraction: currentWeek, ...(type === 'romance' ? { lastDateWeek: currentWeek } : {}) }
+          : { characterId, friendship: newFriendship, romance: newRomance, affection: newAffection, encounters: 1, lastInteraction: currentWeek, ...(type === 'romance' ? { lastDateWeek: currentWeek } : {}) };
 
         const tierNotification = oldTier !== newTier && newTier !== 'stranger'
           ? { characterId, newTier, label: TIER_LABELS[newTier] }
           : null;
 
-        // Tier-up bonus — small stat reward for deepening relationships
+        // Tier-up bonus
         if (tierNotification && oldTier !== newTier) {
           const { stats } = get();
           const TIER_BONUSES: Record<string, Partial<PlayerStats>> = {
             acquaintance: { social: 2 },
             friend: { social: 3, stress: -3 },
             close_friend: { social: 5, charm: 3, stress: -5 },
-            soulmate: { social: 8, charm: 5, stress: -10, health: 5 },
+            best_friend: { social: 8, charm: 5, stress: -10, health: 5 },
           };
           const bonus = TIER_BONUSES[newTier];
           if (bonus) {
@@ -250,6 +282,12 @@ export const useGameStore = create<GameStore>()(
 
       advanceWeek() {
         const { stats, currentWeek, relationships, schedule, activityStreaks } = get();
+
+        // Snapshot relationships before changes for tier milestone detection
+        const prevRels: Record<string, CharacterRelationship> = {};
+        for (const [id, rel] of Object.entries(relationships)) {
+          prevRels[id] = { ...rel };
+        }
 
         // Update activity streaks based on completed schedule
         const newStreaks: Record<string, number> = {};
@@ -275,13 +313,22 @@ export const useGameStore = create<GameStore>()(
         const decayedRelationships = { ...relationships };
         for (const [charId, rel] of Object.entries(decayedRelationships)) {
           const weeksSinceInteraction = rel.lastInteraction ? currentWeek - rel.lastInteraction : currentWeek;
+          const weeksSinceDate = rel.lastDateWeek ? currentWeek - rel.lastDateWeek : 99;
 
-          // Decay: -3 affection for 2+ weeks no interaction
-          let newAffection = rel.affection;
+          // Friendship decay: -3 for 2+ weeks no interaction
+          let newFriendship = rel.friendship ?? rel.affection ?? 0;
           if (weeksSinceInteraction >= 2) {
-            const decayAmount = getRelationshipTier(rel.affection) === 'soulmate' ? 1 : 3;
-            newAffection = Math.max(0, rel.affection - decayAmount);
+            const decayAmount = getRelationshipTier(newFriendship) === 'best_friend' ? 1 : 3;
+            newFriendship = Math.max(0, newFriendship - decayAmount);
           }
+
+          // Romance decay: -2 for 2+ weeks no date (romance is FRAGILE)
+          let newRomance = rel.romance ?? 0;
+          if (weeksSinceDate >= 2 && newRomance > 0) {
+            newRomance = Math.max(0, newRomance - 2);
+          }
+
+          const newAffection = Math.max(newFriendship, newRomance);
 
           // Update NPC mood and opinion based on player stats + relationship
           const moodUpdate = calculateNpcMood(charId, stats, { ...rel, affection: newAffection }, currentWeek);
@@ -315,6 +362,7 @@ export const useGameStore = create<GameStore>()(
           weekStatDeltas: {},
           weekCombos: [],
           weeklyEvent: null,
+          previousRelationships: prevRels,
           phase: 'planning',
           goalWarnings: warnings,
           activityStreaks: newStreaks,
@@ -418,6 +466,7 @@ export const useGameStore = create<GameStore>()(
           currentWeek: 1,
           currentSceneIndex: 0,
           relationships: {},
+          previousRelationships: {},
           schedule: null,
           currentScene: null,
           sceneQueue: [],

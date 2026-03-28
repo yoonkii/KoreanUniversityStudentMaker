@@ -32,24 +32,24 @@ export const ACHIEVEMENTS: Achievement[] = [
     check: (stats) => stats.knowledge <= 20,
   },
 
-  // Social
+  // ─── Friendship Achievements ───
   {
     id: 'social_butterfly',
     title: '인싸',
-    description: '모든 NPC와 친구 (호감 50+)',
+    description: '모든 NPC와 친구 (우정 40+)',
     emoji: '🦋',
     check: (_, relationships) => {
-      const vals = Object.values(relationships);
-      return vals.length >= 4 && vals.every(r => r.affection >= 50);
+      const main4 = ['jaemin', 'minji', 'soyeon', 'hyunwoo'];
+      return main4.every(id => (relationships[id]?.friendship ?? relationships[id]?.affection ?? 0) >= 40);
     },
   },
   {
     id: 'best_friend',
-    title: '소울메이트',
-    description: 'NPC 호감도 90 달성',
-    emoji: '💕',
+    title: '베프',
+    description: 'NPC 우정 80 달성',
+    emoji: '⭐',
     check: (_, relationships) =>
-      Object.values(relationships).some(r => r.affection >= 90),
+      Object.values(relationships).some(r => (r.friendship ?? r.affection ?? 0) >= 80),
   },
   {
     id: 'loner',
@@ -57,6 +57,55 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: '사회성 15 이하',
     emoji: '🌑',
     check: (stats) => stats.social <= 15,
+  },
+
+  // ─── Romance Achievements ───
+  {
+    id: 'first_flutter',
+    title: '첫 설렘',
+    description: 'NPC와 관심 단계 달성 (사랑 10+)',
+    emoji: '💭',
+    check: (_, relationships) =>
+      Object.values(relationships).some(r => (r.romance ?? 0) >= 10),
+  },
+  {
+    id: 'first_crush',
+    title: '두근두근',
+    description: 'NPC에 대한 설렘 (사랑 25+)',
+    emoji: '💓',
+    check: (_, relationships) =>
+      Object.values(relationships).some(r => (r.romance ?? 0) >= 25),
+  },
+  {
+    id: 'campus_couple',
+    title: '캠퍼스 커플',
+    description: 'NPC와 연인 관계 달성 (사랑 45+)',
+    emoji: '💑',
+    check: (_, relationships) =>
+      Object.values(relationships).some(r => (r.romance ?? 0) >= 45),
+  },
+  {
+    id: 'deep_love',
+    title: '진정한 사랑',
+    description: 'NPC와 깊은 사랑 달성 (사랑 70+)',
+    emoji: '💗',
+    check: (_, relationships) =>
+      Object.values(relationships).some(r => (r.romance ?? 0) >= 70),
+  },
+  {
+    id: 'love_triangle',
+    title: '삼각관계',
+    description: '2명 이상 NPC와 설렘 이상 (사랑 25+)',
+    emoji: '💔',
+    check: (_, rels) => Object.values(rels).filter(r => (r.romance ?? 0) >= 25).length >= 2,
+  },
+  {
+    id: 'friendzoned',
+    title: '프렌드존',
+    description: '우정 80+이지만 사랑은 0인 NPC가 있다',
+    emoji: '😅',
+    check: (_, rels) =>
+      Object.values(rels).some(r => (r.friendship ?? r.affection ?? 0) >= 80 && (r.romance ?? 0) === 0),
   },
 
   // Financial
@@ -79,9 +128,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'burnout',
     title: '번아웃',
-    description: '스트레스 95 이상',
+    description: '스트레스 90 이상',
     emoji: '🔥',
-    check: (stats) => stats.stress >= 95,
+    check: (stats) => stats.stress >= 90,
   },
   {
     id: 'zen_master',
@@ -103,7 +152,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: 'campus_star',
     title: '캠퍼스 스타',
     description: '매력 80 이상',
-    emoji: '⭐',
+    emoji: '✨',
     check: (stats) => stats.charm >= 80,
   },
 
@@ -143,11 +192,11 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'social_climber',
     title: '인맥 부자',
-    description: '모든 NPC 호감 70+',
+    description: '모든 NPC 우정 60+',
     emoji: '👑',
     check: (_, relationships) => {
-      const vals = Object.values(relationships);
-      return vals.length >= 4 && vals.every(r => r.affection >= 70);
+      const main4 = ['jaemin', 'minji', 'soyeon', 'hyunwoo'];
+      return main4.every(id => (relationships[id]?.friendship ?? relationships[id]?.affection ?? 0) >= 60);
     },
   },
   {
@@ -187,15 +236,16 @@ export const ACHIEVEMENTS: Achievement[] = [
     emoji: '👑',
     check: (stats) => stats.money >= 800000 && stats.knowledge >= 70,
   },
+
   // ─── Secret Achievements ───
   {
     id: 'social_butterfly_max',
     title: '사교계의 왕',
-    description: '모든 주요 NPC와 친구 이상',
+    description: '모든 주요 NPC와 절친 이상 (우정 60+)',
     emoji: '🦋',
     check: (_, rels) => {
       const main4 = ['jaemin', 'minji', 'soyeon', 'hyunwoo'];
-      return main4.every(id => (rels[id]?.affection ?? 0) >= 50);
+      return main4.every(id => (rels[id]?.friendship ?? rels[id]?.affection ?? 0) >= 60);
     },
   },
   {
@@ -206,13 +256,6 @@ export const ACHIEVEMENTS: Achievement[] = [
     check: (stats) => stats.stress === 0,
   },
   {
-    id: 'millionaire',
-    title: '대학생 백만장자',
-    description: '₩1,000,000 이상 보유',
-    emoji: '💸',
-    check: (stats) => stats.money >= 1000000,
-  },
-  {
     id: 'all_stats_60',
     title: '만능인',
     description: '준비도, 체력, 인맥, 매력 모두 60 이상',
@@ -220,18 +263,18 @@ export const ACHIEVEMENTS: Achievement[] = [
     check: (stats) => stats.knowledge >= 60 && stats.health >= 60 && stats.social >= 60 && stats.charm >= 60,
   },
   {
-    id: 'love_triangle',
-    title: '삼각관계',
-    description: '2명 이상의 NPC와 절친 이상',
-    emoji: '💔',
-    check: (_, rels) => Object.values(rels).filter(r => r.affection >= 70).length >= 2,
-  },
-  {
     id: 'hermit',
     title: '은둔자',
     description: '인맥 10 이하, 준비도 70 이상',
     emoji: '🏔️',
     check: (stats) => stats.social <= 10 && stats.knowledge >= 70,
+  },
+  {
+    id: 'heartbreaker',
+    title: '하트브레이커',
+    description: '3명 이상 NPC의 관심을 받다 (사랑 10+)',
+    emoji: '💘',
+    check: (_, rels) => Object.values(rels).filter(r => (r.romance ?? 0) >= 10).length >= 3,
   },
 ];
 

@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { getWeatherForWeek } from '@/lib/gameEngine';
 import type { ExamResults } from '@/store/types';
+import RelationshipPanel from './RelationshipPanel';
 
 const SEMESTER_WEEKS = 16;
 
@@ -42,6 +44,8 @@ export default function HUDBar() {
   const currentWeek = useGameStore((state) => state.currentWeek);
   const stats = useGameStore((state) => state.stats);
   const examResults = useGameStore((state) => state.examResults);
+  const relationships = useGameStore((state) => state.relationships);
+  const [showRelPanel, setShowRelPanel] = useState(false);
   const knowledge = stats?.knowledge ?? 50;
   const stress = stats?.stress ?? 0;
   const health = stats?.health ?? 100;
@@ -85,12 +89,45 @@ export default function HUDBar() {
             })()}
           </div>
 
-          {/* Center: Character mood (PM-style persistent mood display) */}
-          <div className="flex items-center gap-1.5 text-sm" title={`스트레스 ${Math.round(stress)} | 체력 ${health}`}>
-            <span className={getStressColor(stress)}>{getStressEmoji(stress)}</span>
-            <span className={`text-[10px] ${getStressColor(stress)}`}>
-              {stress >= 80 ? '한계...' : stress >= 60 ? '힘들다' : stress >= 40 ? '보통' : health >= 60 ? '좋아!' : '괜찮아'}
-            </span>
+          {/* Center: Mood + relationship indicator */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-sm" title={`스트레스 ${Math.round(stress)} | 체력 ${health}`}>
+              <span className={getStressColor(stress)}>{getStressEmoji(stress)}</span>
+              <span className={`text-[10px] ${getStressColor(stress)}`}>
+                {stress >= 80 ? '한계...' : stress >= 60 ? '힘들다' : stress >= 40 ? '보통' : health >= 60 ? '좋아!' : '괜찮아'}
+              </span>
+            </div>
+            {/* Relationship quick indicator — tap to open panel */}
+            {(() => {
+              const NPC_KO: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연', hyunwoo: '현우' };
+              // Find romance partner or closest friend
+              const romantic = Object.entries(relationships)
+                .filter(([, r]) => (r.romance ?? 0) >= 10)
+                .sort(([, a], [, b]) => (b.romance ?? 0) - (a.romance ?? 0))[0];
+              const bestFriend = Object.entries(relationships)
+                .filter(([id]) => NPC_KO[id])
+                .sort(([, a], [, b]) => (b.friendship ?? b.affection ?? 0) - (a.friendship ?? a.affection ?? 0))[0];
+
+              const target = romantic || bestFriend;
+              if (!target) return null;
+              const [npcId, rel] = target;
+              const name = NPC_KO[npcId];
+              if (!name) return null;
+              const rom = rel.romance ?? 0;
+              const isRomantic = rom >= 10;
+              const tierEmoji = rom >= 70 ? '💗' : rom >= 45 ? '💕' : rom >= 25 ? '💓' : rom >= 10 ? '💭' : (rel.friendship ?? rel.affection ?? 0) >= 60 ? '💛' : '🤝';
+
+              return (
+                <button
+                  onClick={() => setShowRelPanel(true)}
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                  title="인간관계 보기"
+                >
+                  <span className="text-[10px]">{tierEmoji}</span>
+                  <span className={`text-[9px] font-medium ${isRomantic ? 'text-pink/70' : 'text-txt-secondary/50'}`}>{name}</span>
+                </button>
+              );
+            })()}
           </div>
 
           {/* Right: Quick-glance mini stat bars (mobile only) */}
@@ -142,6 +179,7 @@ export default function HUDBar() {
           ))}
         </div>
       </div>
+      {showRelPanel && <RelationshipPanel onClose={() => setShowRelPanel(false)} />}
     </>
   );
 }

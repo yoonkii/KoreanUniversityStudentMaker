@@ -54,27 +54,28 @@ const STAT_LABELS: Record<string, string> = {
   knowledge: '준비도', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력',
 };
 
+// Friendship tier thresholds (used for NPC picker requirements)
 const TIER_THRESHOLDS: Record<string, number> = {
   stranger: 0,
-  acquaintance: 25,
-  friend: 50,
-  close_friend: 70,
-  soulmate: 90,
+  acquaintance: 20,
+  friend: 40,
+  close_friend: 60,
+  best_friend: 80,
 };
 
 const TIER_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
-  soulmate: { label: '소울메이트', emoji: '💕', color: 'text-pink' },
-  close_friend: { label: '절친', emoji: '💛', color: 'text-gold' },
-  friend: { label: '친구', emoji: '😊', color: 'text-teal' },
+  best_friend: { label: '베프', emoji: '⭐', color: 'text-gold' },
+  close_friend: { label: '절친', emoji: '💛', color: 'text-teal' },
+  friend: { label: '친구', emoji: '😊', color: 'text-sky-400' },
   acquaintance: { label: '아는 사이', emoji: '🤝', color: 'text-txt-secondary' },
   stranger: { label: '모르는 사이', emoji: '👤', color: 'text-txt-secondary/50' },
 };
 
-function getTierForAffection(affection: number): string {
-  if (affection >= 90) return 'soulmate';
-  if (affection >= 70) return 'close_friend';
-  if (affection >= 50) return 'friend';
-  if (affection >= 25) return 'acquaintance';
+function getTierForFriendship(friendship: number): string {
+  if (friendship >= 80) return 'best_friend';
+  if (friendship >= 60) return 'close_friend';
+  if (friendship >= 40) return 'friend';
+  if (friendship >= 20) return 'acquaintance';
   return 'stranger';
 }
 
@@ -194,18 +195,20 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
   }, []);
 
   // Get available NPCs for an activity, filtered by relationship tier
-  const getAvailableNpcs = useCallback((activityId: string): { variant: NpcActivityVariant; meetsRequirement: boolean; currentAffection: number; currentTier: string }[] => {
+  const getAvailableNpcs = useCallback((activityId: string): { variant: NpcActivityVariant; meetsRequirement: boolean; currentFriendship: number; currentTier: string; currentRomance: number; romanceTier: string }[] => {
     const activity = ACTIVITIES[activityId];
     if (!activity?.npcVariants) return [];
 
     return activity.npcVariants.map((variant) => {
       const rel = relationships[variant.npcId];
-      const currentAffection = rel?.affection ?? 0;
-      const currentTier = getTierForAffection(currentAffection);
+      const currentFriendship = rel?.friendship ?? rel?.affection ?? 0;
+      const currentTier = getTierForFriendship(currentFriendship);
       const requiredThreshold = TIER_THRESHOLDS[variant.requiredTier] ?? 0;
-      const meetsRequirement = currentAffection >= requiredThreshold;
+      const meetsRequirement = currentFriendship >= requiredThreshold;
+      const currentRomance = rel?.romance ?? 0;
+      const romanceTier = currentRomance >= 70 ? '깊은 사랑' : currentRomance >= 45 ? '연인' : currentRomance >= 25 ? '설렘' : currentRomance >= 10 ? '관심' : '';
 
-      return { variant, meetsRequirement, currentAffection, currentTier };
+      return { variant, meetsRequirement, currentFriendship, currentTier, currentRomance, romanceTier };
     });
   }, [relationships]);
 
@@ -753,7 +756,7 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
                   {ACTIVITIES[npcPicker.activityId]?.name} - 누구와?
                 </h3>
                 <p className="text-[10px] text-txt-secondary/60 mt-0.5">
-                  {npcPicker.activityId === 'date' ? '친구 이상만 데이트 가능' : '아는 사이 이상만 만날 수 있어요'}
+                  {npcPicker.activityId === 'date' ? '우정 40+ & 매력 40+ 필요 (사랑 감정은 별도)' : '아는 사이 이상만 만날 수 있어요'}
                 </p>
               </div>
               <button
@@ -788,7 +791,7 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
 
               return (
                 <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto">
-                  {npcOptions.map(({ variant, meetsRequirement, currentAffection, currentTier }) => {
+                  {npcOptions.map(({ variant, meetsRequirement, currentFriendship, currentTier, currentRomance, romanceTier }) => {
                     const character = CHARACTERS[variant.npcId];
                     if (!character) return null;
                     const tierInfo = TIER_LABELS[currentTier] ?? TIER_LABELS.stranger;
@@ -823,12 +826,12 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
                             <span className={`text-[10px] font-medium ${tierInfo.color}`}>
                               {tierInfo.emoji} {tierInfo.label}
                             </span>
-                            {/* Affection bar + decay warning */}
+                            {/* Friendship bar + decay warning */}
                             <div className="flex items-center gap-1 ml-auto">
                               <div className="w-12 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                <div className="h-full bg-pink rounded-full" style={{ width: `${currentAffection}%` }} />
+                                <div className="h-full bg-sky-400/60 rounded-full" style={{ width: `${currentFriendship}%` }} />
                               </div>
-                              <span className="text-[8px] text-txt-secondary/40">{currentAffection}</span>
+                              <span className="text-[8px] text-txt-secondary/40">{currentFriendship}</span>
                               {(() => {
                                 const rel = relationships[variant.npcId];
                                 const weeksSince = rel?.lastInteraction ? currentWeek - rel.lastInteraction : 99;
@@ -838,6 +841,41 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
                               })()}
                             </div>
                           </div>
+                          {/* Romance bar + chemistry gate — only for date activity */}
+                          {npcPicker?.activityId === 'date' && (
+                            <div className="mt-0.5">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[9px] text-pink/50">♥</span>
+                                <div className="w-12 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                  <div className="h-full bg-pink/50 rounded-full" style={{ width: `${currentRomance}%` }} />
+                                </div>
+                                {romanceTier && <span className="text-[9px] text-pink/60 font-medium">{romanceTier}</span>}
+                                {currentRomance === 0 && <span className="text-[9px] text-txt-secondary/30">사랑 없음</span>}
+                                {(() => {
+                                  const rel = relationships[variant.npcId];
+                                  const weeksSinceDate = rel?.lastDateWeek ? currentWeek - rel.lastDateWeek : 99;
+                                  if (currentRomance > 0 && weeksSinceDate >= 2) return <span className="text-[8px] text-amber-400/70" title="사랑 감소 중">💔</span>;
+                                  return null;
+                                })()}
+                              </div>
+                              {/* Chemistry gate hint */}
+                              {(() => {
+                                const s = stats;
+                                const respect = relationships[variant.npcId]?.respect ?? 50;
+                                const GATES: Record<string, { met: boolean; hint: string }> = {
+                                  jaemin: { met: s.charm >= 30, hint: '매력 30+' },
+                                  minji: { met: s.knowledge >= 50 && respect >= 60, hint: '준비도 50+ & 존경 60+' },
+                                  soyeon: { met: s.stress < 40, hint: '스트레스 40 미만' },
+                                  hyunwoo: { met: s.charm >= 50, hint: '매력 50+' },
+                                };
+                                const gate = GATES[variant.npcId];
+                                if (!gate) return null;
+                                return gate.met
+                                  ? <span className="text-[8px] text-pink/40 mt-0.5 block">💕 로맨스 조건 충족</span>
+                                  : <span className="text-[8px] text-txt-secondary/30 mt-0.5 block">🔒 {gate.hint} 필요</span>;
+                              })()}
+                            </div>
+                          )}
                           <p className="text-[11px] text-txt-secondary/70 mt-0.5">{variant.description}</p>
 
                           {/* Stat effects */}
@@ -857,7 +895,7 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
                           {/* Locked message */}
                           {!meetsRequirement && (
                             <p className="text-[9px] text-coral/60 mt-1">
-                              호감도 {TIER_THRESHOLDS[variant.requiredTier] ?? 0} 이상 필요 (현재 {currentAffection})
+                              우정 {TIER_THRESHOLDS[variant.requiredTier] ?? 0} 이상 필요 (현재 {currentFriendship})
                             </p>
                           )}
                         </div>

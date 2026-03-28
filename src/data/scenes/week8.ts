@@ -51,6 +51,18 @@ export const WEEK_8_SCENES: Scene[] = [
         relationshipEffects: [{ characterId: 'minji', change: 2 }],
         consequenceText: '민지가 잠시 망설이더니 노트를 덮고 따라나섰다.',
       },
+      {
+        id: 'midterm_minji_romantic',
+        text: '(민지를 바라보며) ...이 시간에 같이 있어줘서 고마워. 진심으로.',
+        statEffects: { knowledge: 3, stress: -3, charm: 2 },
+        relationshipEffects: [
+          { characterId: 'minji', change: 5 },
+          { characterId: 'minji', change: 2, type: 'romance' as const },
+        ],
+        requiredRelationship: { characterId: 'minji', minAffection: 30 },
+        requiredStat: { stat: 'knowledge', min: 45 },
+        consequenceText: '민지가 멈칫하더니 고개를 숙였다. "...바보. 당연히 같이 하는 거지." 귀 끝이 빨갛다.',
+      },
     ],
   },
 

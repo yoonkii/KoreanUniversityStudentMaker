@@ -52,6 +52,14 @@ export const WEEK_10_VARIANT_B: Scene[] = [
         statEffects: { stress: 5 },
         relationshipEffects: [{ characterId: 'soyeon', change: 3 }],
       },
+      {
+        id: 'discover_soyeon_romantic',
+        text: '사실... 여기 올 때마다 선배 생각했어요. 이런 곳을 알려준 사람이니까.',
+        statEffects: { charm: 3, stress: -8 },
+        relationshipEffects: [{ characterId: 'soyeon', change: 3, type: 'romance' as const }],
+        requiredRelationship: { characterId: 'soyeon', minAffection: 30 },
+        consequenceText: '소연 선배가 잠시 말을 잃더니... 살짝 웃었다. "나도... 여기 혼자 오면 네 생각이 나."',
+      },
     ],
   },
 ];
@@ -114,6 +122,14 @@ export const WEEK_10_SCENES: Scene[] = [
         relationshipEffects: [
           { characterId: 'jaemin', change: 2 },
         ],
+      },
+      {
+        id: 'slump_jaemin_romantic',
+        text: '(재민이 어깨에 기대며) ...너 옆에 있으면 왜 이렇게 편하지.',
+        statEffects: { stress: -10, social: 3 },
+        relationshipEffects: [{ characterId: 'jaemin', change: 2, type: 'romance' as const }],
+        requiredRelationship: { characterId: 'jaemin', minAffection: 30 },
+        consequenceText: '재민이가 멈칫하더니... 조용히 네 머리를 톡톡 쳤다. "바보야, 나도."',
       },
     ],
   },

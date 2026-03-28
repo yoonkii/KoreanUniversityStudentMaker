@@ -18,8 +18,8 @@ describe('detectCrisis', () => {
     expect(crisis!.id).toBe('health_collapse');
   });
 
-  it('should detect mental breakdown when stress >= 95', () => {
-    const stats = { ...DEFAULT_STATS, stress: 95 };
+  it('should detect mental breakdown when stress >= 90', () => {
+    const stats = { ...DEFAULT_STATS, stress: 90 };
     const crisis = detectCrisis(stats, 5);
     expect(crisis).not.toBeNull();
     expect(crisis!.id).toBe('mental_breakdown');
@@ -47,5 +47,25 @@ describe('detectCrisis', () => {
     const stats = { ...DEFAULT_STATS, health: 5, stress: 99 };
     const crisis = detectCrisis(stats, 10);
     expect(crisis!.id).toBe('health_collapse'); // health checked first
+  });
+
+  it('should have interactive choices for each crisis', () => {
+    const healthCrisis = detectCrisis({ ...DEFAULT_STATS, health: 5 }, 5);
+    expect(healthCrisis!.choices.length).toBeGreaterThanOrEqual(2);
+
+    const stressCrisis = detectCrisis({ ...DEFAULT_STATS, stress: 95 }, 5);
+    expect(stressCrisis!.choices.length).toBeGreaterThanOrEqual(2);
+
+    const brokeCrisis = detectCrisis({ ...DEFAULT_STATS, money: 0 }, 5);
+    expect(brokeCrisis!.choices.length).toBe(3);
+  });
+
+  it('should add NPC choices when friendship is high enough', () => {
+    const rels = {
+      soyeon: { characterId: 'soyeon', affection: 50, friendship: 50, romance: 0, encounters: 5 },
+    };
+    const crisis = detectCrisis({ ...DEFAULT_STATS, health: 5 }, 5, rels);
+    const npcChoice = crisis!.choices.find(c => c.requiredNpc?.id === 'soyeon');
+    expect(npcChoice).toBeDefined();
   });
 });

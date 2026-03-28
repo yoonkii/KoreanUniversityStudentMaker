@@ -18,7 +18,7 @@ import SugangsincheongEvent from '@/components/game/SugangsincheongEvent';
 import FestivalEvent from '@/components/game/FestivalEvent';
 import ExamEvent from '@/components/game/ExamEvent';
 import MTEvent from '@/components/game/MTEvent';
-import KakaoMessages from '@/components/game/KakaoMessages';
+import KakaoMessages, { generateKakaoMessages } from '@/components/game/KakaoMessages';
 import WeeklyOverview from '@/components/game/WeeklyOverview';
 import WeekTitleCard from '@/components/game/WeekTitleCard';
 import ScheduleViewer from '@/components/game/ScheduleViewer';
@@ -34,7 +34,7 @@ import type { DayGroup } from '@/components/game/ActionPhase';
 import { checkAchievements } from '@/lib/achievements';
 import { triggerDialogueGeneration } from '@/lib/weeklyDialogueCache';
 import { triggerNarrationGeneration } from '@/lib/activityNarrationCache';
-import { triggerAiCampusGeneration, getOverheardConversation, getWeeklyRoutines } from '@/lib/livingCampus';
+import { triggerAiCampusGeneration, getOverheardConversation } from '@/lib/livingCampus';
 
 export default function GameScreen() {
   const router = useRouter();
@@ -161,7 +161,7 @@ export default function GameScreen() {
   const handleScheduleComplete = useCallback(async (confirmedSchedule: WeekSchedule) => {
     if (isLoadingAI) return; // prevent double-submit
 
-    const { statDeltas, scenes, combos, weeklyEvent, npcInteractions } = simulateWeek(
+    const { statDeltas, scenes, combos, weeklyEvent, npcInteractions, dateOutcomes, friendOutcomes } = simulateWeek(
       confirmedSchedule, currentWeek, stats, { relationships },
     );
     setWeekStatDeltas(statDeltas);
@@ -169,12 +169,21 @@ export default function GameScreen() {
     useGameStore.getState().setWeeklyEvent(weeklyEvent);
     setCurrentSceneIndex(0);
 
-    // Apply NPC affection bumps from social activities + add memories
+    // Snapshot relationships before changes (for tier milestone detection in WeekSummary)
+    const currentRels = useGameStore.getState().relationships;
+    const prevSnapshot: Record<string, import('@/store/types').CharacterRelationship> = {};
+    for (const [id, rel] of Object.entries(currentRels)) {
+      prevSnapshot[id] = { ...rel };
+    }
+    useGameStore.setState({ previousRelationships: prevSnapshot });
+
+    // Apply NPC friendship/romance bumps from social activities + add memories
     const ACTIVITY_MEMORIES: Record<string, string> = {
       friends: 'hangout', date: 'date', club: 'club_together', study: 'studied_together',
     };
-    for (const [npcId, affBump] of Object.entries(npcInteractions)) {
-      updateRelationship(npcId, affBump);
+    for (const [npcId, gains] of Object.entries(npcInteractions)) {
+      if (gains.friendship > 0) updateRelationship(npcId, gains.friendship, 'friendship');
+      if (gains.romance > 0) updateRelationship(npcId, gains.romance, 'romance');
       // Find what activity triggered this interaction
       for (const day of Object.values(confirmedSchedule)) {
         for (const slot of day) {
@@ -208,6 +217,13 @@ export default function GameScreen() {
           const variant = act.npcVariants.find(v => v.npcId === slot.targetNpcId);
           if (variant) effects = variant.statEffects;
         }
+        // Find date/friend outcome for this specific NPC+day combo
+        const dateOutcome = slot.activityId === 'date' && slot.targetNpcId
+          ? dateOutcomes.find(d => d.npcId === slot.targetNpcId && d.day === day)
+          : undefined;
+        const friendOutcome = slot.activityId !== 'date' && slot.targetNpcId
+          ? friendOutcomes.find(f => f.npcId === slot.targetNpcId && f.day === day)
+          : undefined;
         return {
           name: act?.name ?? slot.activityId,
           icon: ACTIVITY_EMOJI[slot.activityId] ?? '📋',
@@ -215,6 +231,8 @@ export default function GameScreen() {
           statEffects: effects,
           targetNpcId: slot.targetNpcId,
           targetNpcName: slot.targetNpcId ? NPC_NAMES[slot.targetNpcId] : undefined,
+          dateOutcome: dateOutcome ? { type: dateOutcome.type, reason: dateOutcome.reason, romanceGain: dateOutcome.romanceGain } : undefined,
+          friendOutcome: friendOutcome ? { type: friendOutcome.type, friendshipGain: friendOutcome.friendshipGain } : undefined,
         };
       });
       dayGroups.push({ dayName: DAY_NAMES[i], activities });
@@ -228,7 +246,7 @@ export default function GameScreen() {
       setActionDays(dayGroups);
       setShowActionPhase(true);
       // Trigger Gemini narration generation in background
-      triggerNarrationGeneration(dayGroups, currentWeek, stats);
+      triggerNarrationGeneration(dayGroups, currentWeek, stats, relationships);
     } else if (scenes.length > 0) {
       setSceneQueue(scenes);
       setPhase('simulation');
@@ -245,8 +263,8 @@ export default function GameScreen() {
     // Apply choice effects
     if (choice) {
       updateStats(choice.statEffects);
-      choice.relationshipEffects?.forEach(({ characterId, change }) => {
-        updateRelationship(characterId, change);
+      choice.relationshipEffects?.forEach(({ characterId, change, type }) => {
+        updateRelationship(characterId, change, type ?? 'friendship');
       });
     }
 
@@ -277,13 +295,13 @@ export default function GameScreen() {
   }, [currentSceneIndex, sceneQueue, currentWeek, setCurrentSceneIndex, updateStats, updateRelationship, setPhase]);
 
   // Handle KakaoTalk dismiss → apply reply effects, then advance week (or go to ending)
-  const handleKakaoDismiss = useCallback((replyData?: { repliedTo: string; affectionChange: number; statEffects?: Partial<import('@/store/types').PlayerStats>; ignoredNpcs: string[] }) => {
+  const handleKakaoDismiss = useCallback((replyData?: { repliedTo: string; affectionChange: number; affectionType: 'friendship' | 'romance'; statEffects?: Partial<import('@/store/types').PlayerStats>; ignoredNpcs: string[] }) => {
     setShowKakao(false);
     setKakaoMessages([]);
 
     if (replyData) {
-      // Apply affection change for the NPC we replied to
-      updateRelationship(replyData.repliedTo, replyData.affectionChange);
+      // Apply friendship or romance change for the NPC we replied to
+      updateRelationship(replyData.repliedTo, replyData.affectionChange, replyData.affectionType);
       // Apply stat effects (e.g. money cost, stress relief)
       if (replyData.statEffects) {
         updateStats(replyData.statEffects);
@@ -301,89 +319,10 @@ export default function GameScreen() {
     }
   }, [currentWeek, router, updateRelationship, updateStats]);
 
-  // Handle week advance — NPC KakaoTalk reacts to player stats and events
+  // Handle week advance — NPC KakaoTalk messages (romance-aware)
   const handleWeekContinue = useCallback(() => {
-    const NPC_NAMES: Record<string, string> = {
-      soyeon: '박소연', jaemin: '이재민', minji: '최민지',
-      hyunwoo: '김현우', 'prof-kim': '김 교수',
-    };
-
-    // NPC messages — they tell you what THEY'VE been doing + react to your condition
-    const allRelationships = useGameStore.getState().relationships;
-    const campusRoutines = getWeeklyRoutines(currentWeek);
-    function getReactiveMsg(charId: string, playerStats: typeof stats): string {
-      const rel = allRelationships[charId];
-      const memories = rel?.memories ?? [];
-
-      // NPC shares what they did today (40% chance — makes them feel autonomous)
-      const routine = campusRoutines.routines.find(r => r.npcId === charId);
-      if (routine && Math.random() < 0.4) {
-        const slot = routine.evening; // What they did this evening
-        return slot.dialogue;
-      }
-
-      // Decay warning messages — NPC notices you've been absent
-      const weeksSince = rel?.lastInteraction ? currentWeek - rel.lastInteraction : 99;
-      if (weeksSince >= 3 && rel && rel.affection >= 40) {
-        const MISS_MSGS: Record<string, string> = {
-          jaemin: '야... 요즘 왜 연락이 없어? 바쁜 거야? 😔',
-          minji: '...요즘 안 보이네. 바쁜가 보다.',
-          soyeon: '후배야, 요즘 얼굴을 못 봤네. 괜찮아? 걱정돼.',
-          hyunwoo: '후배 요즘 어디 갔어? 동아리도 안 나오고.',
-        };
-        if (MISS_MSGS[charId]) return MISS_MSGS[charId];
-      }
-
-      // Memory-based messages (30% chance — references past shared experiences)
-      if (memories.length > 0 && Math.random() < 0.3) {
-        const lastMemory = memories[memories.length - 1];
-        if (lastMemory.startsWith('hangout')) return charId === 'jaemin' ? '저번에 같이 논 거 재밌었어ㅋㅋ 또 놀자!' : '지난번에 같이 시간 보낸 거 좋았어 😊';
-        if (lastMemory.startsWith('date')) return '지난번 데이트 진짜 즐거웠어... 또 가자! 💕';
-        if (lastMemory.startsWith('studied')) return '같이 공부했던 거 도움 많이 됐어. 고마워!';
-        if (lastMemory.startsWith('club')) return '지난 합주 때 진짜 좋았어! 다음에도 같이 하자 🎵';
-      }
-
-      // Soyeon (caring senior) — reacts to health and stress
-      if (charId === 'soyeon') {
-        if (playerStats.stress > 75) return '요즘 너무 무리하는 것 같아... 괜찮아? 밥이라도 같이 먹자 😢';
-        if (playerStats.health < 30) return '얼굴이 안 좋아 보여. 좀 쉬어야 하는 거 아니야?';
-        if (playerStats.knowledge > 75) return '요즘 공부 열심히 하더라! 대단해 😊';
-        return '이번 주도 고생 많았어요! 다음에 같이 밥 먹어요 😊';
-      }
-      // Jaemin (roommate) — reacts to social and stress
-      if (charId === 'jaemin') {
-        if (playerStats.social < 25) return '야 요즘 왜 이렇게 안 보여? 방에만 있지 말고 좀 나와!';
-        if (playerStats.stress > 70) return '야 너 요즘 얼굴이 좀 어두워. 치킨 먹으러 갈래?';
-        if (playerStats.money < 50000) return '야 너 통장 괜찮아? 내가 밥 사줄까ㅋㅋ';
-        return '야 오늘 넘 힘들었다ㅠ 내일 밥은 같이 먹자!';
-      }
-      // Minji (rival) — reacts to GPA
-      if (charId === 'minji') {
-        if (playerStats.knowledge > 80) return '요즘 성적 좋더라... 기말에도 이 페이스 유지할 수 있을까? 😏';
-        if (playerStats.knowledge < 40) return '수업 노트 필요하면 말해. 빌려줄 수 있어.';
-        return '이번 주 수업 노트 공유해줄 수 있어요?';
-      }
-      // Hyunwoo (club senior) — reacts to social and charm
-      if (charId === 'hyunwoo') {
-        if (playerStats.charm > 60) return '요즘 분위기 달라졌다? 동아리에서 인기 많던데ㅋㅋ';
-        if (playerStats.social < 30) return '동아리 모임 좀 나와! 다들 네가 보고 싶대.';
-        return '주말에 같이 농구 한 판 어때?';
-      }
-      return '안녕하세요!';
-    }
-
-    const msgs = Object.entries(relationships)
-      .filter(([, rel]) => rel.affection > 25 && rel.encounters > 0)
-      .slice(0, 3)
-      .map(([charId]) => ({
-        senderId: charId,
-        senderName: NPC_NAMES[charId] ?? charId,
-        text: getReactiveMsg(charId, stats),
-        timestamp: '방금',
-        isRead: false,
-      }));
+    const msgs = generateKakaoMessages(currentWeek, relationships, stats);
     if (currentWeek >= 16) {
-      // Semester over — go to ending (skip KakaoTalk)
       router.push('/game/ending');
     } else if (msgs.length > 0) {
       setKakaoMessages(msgs);
@@ -391,7 +330,7 @@ export default function GameScreen() {
     } else {
       setShowWeeklyOverview(true);
     }
-  }, [relationships, currentWeek, router]);
+  }, [relationships, currentWeek, router, stats]);
 
   const goalWarnings = useGameStore((state) => state.goalWarnings);
   const tierNotification = useGameStore((state) => state.tierNotification);
@@ -415,7 +354,7 @@ export default function GameScreen() {
   const showMT = currentWeek === 4 && !mtDone;
   const showFestival = currentWeek === 9 && !festivalDone;
   const showExam = (currentWeek === 7 || currentWeek === 14) && !examDone;
-  const hasCrisis = !crisisDismissed && detectCrisis(stats, currentWeek) !== null;
+  const hasCrisis = !crisisDismissed && detectCrisis(stats, currentWeek, relationships) !== null;
   const currentScene = sceneQueue[currentSceneIndex];
 
   // Stress visual intensity: subtle red vignette when stress > 60

@@ -23,14 +23,17 @@ export interface PlayerProfile {
 
 export interface CharacterRelationship {
   characterId: string;
-  affection: number;    // 0-100
+  affection: number;    // 0-100, backward compat = max(friendship, romance)
+  friendship: number;   // 0-100, 우정 — built through shared time, slow and steady
+  romance: number;      // 0-100, 사랑 — very hard to build, requires friendship first
   encounters: number;
   lastInteraction?: number;
-  memories?: string[];  // Tags like "studied_together", "mt_campfire", "shared_meal"
-  // NPC emotional state toward the player
+  lastDateWeek?: number; // Track when last date happened (for romance decay)
+  memories?: string[];
+  // NPC emotional state
   mood?: 'happy' | 'neutral' | 'annoyed' | 'worried' | 'impressed' | 'jealous';
-  opinion?: string;    // Current one-line opinion about the player
-  respect?: number;    // 0-100, separate from affection (you can respect someone you don't like)
+  opinion?: string;
+  respect?: number;    // 0-100
 }
 
 export interface ActivitySlot {
@@ -58,7 +61,7 @@ export interface Choice {
   id: string;
   text: string;
   statEffects: Partial<PlayerStats>;
-  relationshipEffects?: { characterId: string; change: number }[];
+  relationshipEffects?: { characterId: string; change: number; type?: 'friendship' | 'romance' }[];
   requiredRelationship?: { characterId: string; minAffection: number }; // Gray out if not met
   requiredStat?: { stat: keyof PlayerStats; min: number }; // Gray out if stat too low
   consequenceText?: string; // Brief aftermath shown after choosing

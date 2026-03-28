@@ -8,24 +8,24 @@ import type { PlayerStats } from "@/store/types";
 import { ACHIEVEMENTS } from "@/lib/achievements";
 
 /** Determine the player archetype from final stats + relationships */
-function determineArchetype(stats: PlayerStats, relationships?: Record<string, { affection: number }>): string {
+function determineArchetype(stats: PlayerStats, relationships?: Record<string, { affection: number; friendship?: number; romance?: number }>): string {
   // ── Hidden/surprise endings (checked first — rare, rewarding) ──
 
-  // "캠퍼스 커플" — dating an NPC to soulmate level
-  const soulmates = relationships ? Object.entries(relationships).filter(([, r]) => r.affection >= 90) : [];
-  if (soulmates.length > 0 && stats.charm >= 60) return "campus_couple";
+  // "캠퍼스 커플" — romance ≥ 45 (dating tier) with any NPC
+  const dating = relationships ? Object.entries(relationships).filter(([, r]) => (r.romance ?? 0) >= 45).sort(([, a], [, b]) => (b.romance ?? 0) - (a.romance ?? 0)) : [];
+  if (dating.length > 0 && stats.charm >= 50) return `campus_couple_${dating[0][0]}`;
 
   // "교수님의 제자" — high knowledge + prof-kim relationship
   if (stats.knowledge >= 80 && (relationships?.['prof-kim']?.affection ?? 0) >= 70) return "professors_protege";
 
-  // "동아리 스타" — high charm + hyunwoo soulmate
-  if (stats.charm >= 70 && (relationships?.['hyunwoo']?.affection ?? 0) >= 80) return "club_star";
+  // "동아리 스타" — high charm + hyunwoo best friend
+  if (stats.charm >= 70 && (relationships?.['hyunwoo']?.friendship ?? relationships?.['hyunwoo']?.affection ?? 0) >= 80) return "club_star";
 
   // "완벽한 선후배" — soyeon close friend + high knowledge
-  if ((relationships?.['soyeon']?.affection ?? 0) >= 80 && stats.knowledge >= 60 && stats.social >= 60) return "perfect_mentorship";
+  if ((relationships?.['soyeon']?.friendship ?? relationships?.['soyeon']?.affection ?? 0) >= 60 && stats.knowledge >= 60 && stats.social >= 60) return "perfect_mentorship";
 
-  // "룸메 브로맨스" — jaemin soulmate + low stress
-  if ((relationships?.['jaemin']?.affection ?? 0) >= 85 && stats.stress < 30) return "bromance";
+  // "룸메 브로맨스" — jaemin best friend + low stress
+  if ((relationships?.['jaemin']?.friendship ?? relationships?.['jaemin']?.affection ?? 0) >= 80 && stats.stress < 30) return "bromance";
 
   // ── Standard checks ──
 
@@ -141,6 +141,34 @@ const ARCHETYPES: Record<string, Archetype> = {
     description: "대학에서 진정한 사랑을 찾았어요. 캠퍼스를 함께 걸으며 추억을 만든 소중한 학기.",
     futureFlash: "2학기에도 함께 수강신청을 하고, 도서관 옆자리에 앉아 공부한다. 졸업 후에도 이어질 인연의 시작이다.",
   },
+  campus_couple_jaemin: {
+    ko: "캠퍼스 커플 — 재민이와 함께",
+    en: "The Campus Couple — With Jaemin",
+    emoji: "💑",
+    description: "룸메이트에서 연인으로. 재민이와 함께한 웃음이 캠퍼스를 가득 채운 한 학기. 가장 가까운 사람이 가장 소중한 사람이었다.",
+    futureFlash: "2학기에도 같은 방을 쓰며 매일 밤 늦게까지 이야기한다. 재민이가 쓴 편지를 가끔 꺼내 읽으며 웃는다. 이건 대학이 준 최고의 선물이다.",
+  },
+  campus_couple_minji: {
+    ko: "캠퍼스 커플 — 민지와 함께",
+    en: "The Campus Couple — With Minji",
+    emoji: "💑",
+    description: "라이벌에서 연인으로. 민지와의 경쟁은 어느새 설렘으로 바뀌었다. 함께 성장한 한 학기, 서로가 서로의 이유가 됐다.",
+    futureFlash: "2학기에도 도서관 맞은편에 앉아 공부한다. 눈이 마주치면 민지가 살짝 웃는다. '바보, 공부해.' 하지만 손은 테이블 아래에서 잡고 있다.",
+  },
+  campus_couple_soyeon: {
+    ko: "캠퍼스 커플 — 소연 선배와 함께",
+    en: "The Campus Couple — With Soyeon",
+    emoji: "💑",
+    description: "선배와 후배 사이의 벽을 넘은 사랑. 소연 선배의 따뜻함이 캠퍼스를 봄으로 만든 한 학기. 졸업이 두려운 건 이별이 아니라 거리 때문이다.",
+    futureFlash: "소연 선배의 졸업식에서 꽃다발을 건넨다. '졸업 축하해요, 선배... 아니, 자기야.' 선배가 눈물을 참으며 안아준다. 먼 거리도 이 사랑은 이어진다.",
+  },
+  campus_couple_hyunwoo: {
+    ko: "캠퍼스 커플 — 현우 선배와 함께",
+    en: "The Campus Couple — With Hyunwoo",
+    emoji: "💑",
+    description: "음악으로 시작된 인연이 사랑이 됐다. 현우 선배의 노래가 가슴을 울린 한 학기. 무대 위의 선배가 부르는 노래는 전부 당신을 위한 것이었다.",
+    futureFlash: "현우 선배의 졸업 공연 마지막 곡. '이 노래는 내가 사랑하는 사람에게.' 객석에서 눈물이 흘렀다. 공연이 끝난 뒤, 무대 뒤에서 오래 안았다.",
+  },
   professors_protege: {
     ko: "교수님의 제자",
     en: "The Professor's Protégé",
@@ -235,15 +263,18 @@ export default function EndingPage() {
     localStorage.setItem('kusm-completions', String(count + 1));
     // Also store the archetype for collection tracking
     const collection = JSON.parse(localStorage.getItem('kusm-archetypes') ?? '[]') as string[];
-    if (!collection.includes(archetypeKey)) {
-      collection.push(archetypeKey);
+    if (!collection.includes(collectionKey)) {
+      collection.push(collectionKey);
       localStorage.setItem('kusm-archetypes', JSON.stringify(collection));
       setIsNewEnding(true);
     }
   }, [hydrated, player]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const archetypeKey = determineArchetype(stats, relationships);
-  const archetype = ARCHETYPES[archetypeKey] ?? ARCHETYPES.balanced;
+  // For campus_couple_* keys, fall back to generic campus_couple if specific variant not found
+  const archetype = ARCHETYPES[archetypeKey] ?? (archetypeKey.startsWith('campus_couple_') ? ARCHETYPES.campus_couple : null) ?? ARCHETYPES.balanced;
+  // Normalize key for collection tracking (campus_couple_jaemin → campus_couple)
+  const collectionKey = archetypeKey.startsWith('campus_couple_') ? 'campus_couple' : archetypeKey;
 
   // Memory montage — show event highlights before main reveal
   useEffect(() => {
@@ -287,10 +318,10 @@ export default function EndingPage() {
 
   // Relationship summary
   const friendCount = Object.values(relationships).filter(
-    (r) => r.affection >= 50
+    (r) => (r.friendship ?? r.affection ?? 0) >= 40
   ).length;
   const closeFriends = Object.values(relationships).filter(
-    (r) => r.affection >= 70
+    (r) => (r.friendship ?? r.affection ?? 0) >= 60
   ).length;
 
   if (!hydrated) {
@@ -598,12 +629,15 @@ export default function EndingPage() {
 
             // Relationship highlights
             const bestFriend = Object.entries(relationships)
-              .filter(([, r]) => r.affection >= 60)
-              .sort(([, a], [, b]) => b.affection - a.affection)[0];
+              .filter(([, r]) => (r.friendship ?? r.affection ?? 0) >= 40)
+              .sort(([, a], [, b]) => (b.friendship ?? b.affection ?? 0) - (a.friendship ?? a.affection ?? 0))[0];
             const NPC_KO: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연 선배', hyunwoo: '현우 선배' };
             if (bestFriend) {
               const bfName = NPC_KO[bestFriend[0]] ?? bestFriend[0];
-              if (bestFriend[1].affection >= 85) {
+              const bfRom = bestFriend[1].romance ?? 0;
+              if (bfRom >= 45) {
+                lines.push(`${bfName}과(와)의 사랑은 이 학기의 가장 소중한 선물이었다.`);
+              } else if ((bestFriend[1].friendship ?? bestFriend[1].affection ?? 0) >= 80) {
                 lines.push(`${bfName}과(와)의 우정은 학기의 가장 소중한 선물이었다.`);
               } else {
                 lines.push(`${bfName}과(와) 함께한 시간이 기억에 남는다.`);
@@ -670,40 +704,69 @@ export default function EndingPage() {
               soyeon: { name: '박소연', emoji: '💛' },
               hyunwoo: { name: '정현우', emoji: '🎸' },
             };
-            const TIER_LABELS_SHORT: Record<string, string> = {
-              soulmate: '💕 소울메이트',
-              close_friend: '💛 절친',
-              friend: '😊 친구',
-              acquaintance: '🤝 아는 사이',
-              stranger: '👤 모르는 사이',
+            const FRIEND_TIER: Record<string, string> = {
+              best_friend: '베프',
+              close_friend: '절친',
+              friend: '친구',
+              acquaintance: '아는 사이',
+              stranger: '모르는 사이',
             };
-            function tier(aff: number) {
-              if (aff >= 90) return 'soulmate';
-              if (aff >= 70) return 'close_friend';
-              if (aff >= 50) return 'friend';
-              if (aff >= 25) return 'acquaintance';
+            const ROMANCE_TIER: Record<string, string> = {
+              deep_love: '사랑',
+              dating: '연인',
+              crush: '설렘',
+              interest: '관심',
+            };
+            function friendTier(f: number) {
+              if (f >= 80) return 'best_friend';
+              if (f >= 60) return 'close_friend';
+              if (f >= 40) return 'friend';
+              if (f >= 20) return 'acquaintance';
               return 'stranger';
             }
+            function romTier(r: number) {
+              if (r >= 70) return 'deep_love';
+              if (r >= 45) return 'dating';
+              if (r >= 25) return 'crush';
+              if (r >= 10) return 'interest';
+              return '';
+            }
             const ranked = Object.entries(NPC_DISPLAY)
-              .map(([id, info]) => ({ id, ...info, affection: relationships[id]?.affection ?? 0 }))
-              .filter(r => r.affection > 0)
-              .sort((a, b) => b.affection - a.affection);
+              .map(([id, info]) => ({
+                id, ...info,
+                friendship: relationships[id]?.friendship ?? relationships[id]?.affection ?? 0,
+                romance: relationships[id]?.romance ?? 0,
+              }))
+              .filter(r => r.friendship > 0 || r.romance > 0)
+              .sort((a, b) => Math.max(b.friendship, b.romance) - Math.max(a.friendship, a.romance));
             if (ranked.length === 0) return null;
             return (
               <div className="mt-4 pt-4 border-t border-white/10">
                 <p className="text-xs text-white/40 mb-2">👥 최종 인간관계</p>
                 <div className="flex flex-col gap-1.5">
-                  {ranked.map((npc, i) => (
+                  {ranked.map((npc, i) => {
+                    const ft = friendTier(npc.friendship);
+                    const rt = romTier(npc.romance);
+                    return (
                     <div key={npc.id} className="flex items-center gap-2">
                       <span className="text-sm w-5 text-center text-white/30">{i + 1}</span>
                       <span>{npc.emoji}</span>
                       <span className="text-xs text-white/70 flex-1">{npc.name}</span>
-                      <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-pink rounded-full" style={{ width: `${npc.affection}%` }} />
+                      <div className="flex gap-1">
+                        <div className="w-10 h-1.5 bg-white/10 rounded-full overflow-hidden" title="우정">
+                          <div className="h-full bg-sky-400 rounded-full" style={{ width: `${npc.friendship}%` }} />
+                        </div>
+                        {npc.romance > 0 && (
+                          <div className="w-10 h-1.5 bg-white/10 rounded-full overflow-hidden" title="사랑">
+                            <div className="h-full bg-pink rounded-full" style={{ width: `${npc.romance}%` }} />
+                          </div>
+                        )}
                       </div>
-                      <span className="text-[9px] text-white/40 w-20 text-right">{TIER_LABELS_SHORT[tier(npc.affection)]}</span>
+                      <span className="text-[9px] text-white/40 w-24 text-right">
+                        {rt ? `${ROMANCE_TIER[rt]} · ` : ''}{FRIEND_TIER[ft]}
+                      </span>
                     </div>
-                  ))}
+                  );})}
                 </div>
               </div>
             );
@@ -721,8 +784,9 @@ export default function EndingPage() {
             for (const [id, texts] of Object.entries(NPC_MEMORIES)) {
               const rel = relationships[id];
               if (!rel) continue;
-              if (rel.affection >= 70) memories.push(texts.high);
-              else if (rel.affection >= 40) memories.push(texts.mid);
+              const relFr = rel.friendship ?? rel.affection ?? 0;
+              if (relFr >= 60) memories.push(texts.high);
+              else if (relFr >= 30) memories.push(texts.mid);
             }
             if (memories.length === 0) return null;
             return (
@@ -867,9 +931,11 @@ export default function EndingPage() {
               if (stats.money >= 800000) awards.push({ emoji: '💰', title: '재테크상', desc: `₩${(stats.money/10000).toFixed(0)}만! 부의 시작.` });
 
               // Relationship awards
-              const soulmates = Object.values(relationships).filter(r => r.affection >= 90);
-              const closeFriends2 = Object.values(relationships).filter(r => r.affection >= 70);
-              if (soulmates.length > 0) awards.push({ emoji: '💕', title: '소울메이트상', desc: `${soulmates.length}명의 소울메이트!` });
+              const lovers = Object.values(relationships).filter(r => (r.romance ?? 0) >= 45);
+              const bestFriends2 = Object.values(relationships).filter(r => (r.friendship ?? r.affection ?? 0) >= 80);
+              const closeFriends2 = Object.values(relationships).filter(r => (r.friendship ?? r.affection ?? 0) >= 60);
+              if (lovers.length > 0) awards.push({ emoji: '💕', title: '캠퍼스 연인상', desc: `진정한 사랑을 찾았다!` });
+              else if (bestFriends2.length > 0) awards.push({ emoji: '💛', title: '베프상', desc: `${bestFriends2.length}명의 베프!` });
               else if (closeFriends2.length >= 3) awards.push({ emoji: '🤝', title: '인간관계상', desc: `${closeFriends2.length}명의 절친!` });
 
               // Event-based awards
@@ -922,7 +988,7 @@ export default function EndingPage() {
                 bromance: '룸메와 최고의 우정을 쌓으면...? 🏠',
               };
               return Object.entries(ARCHETYPES)
-                .filter(([key]) => key !== archetypeKey && !collected.includes(key))
+                .filter(([key]) => key !== collectionKey && !key.startsWith('campus_couple_') && !collected.includes(key))
                 .slice(0, 3)
                 .map(([key, arch]) => (
                   <div key={key} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03]">
@@ -977,7 +1043,7 @@ export default function EndingPage() {
               (achievements2 / 28) * 25 + // achievements: 25%
               (npcsMet2 / 5) * 25 + // NPCs met: 25%
               (eventHistory.length / 20) * 25 + // events: 25%
-              (Object.values(relationships).filter(r => r.affection >= 50).length / 4) * 25 // friendships: 25%
+              (Object.values(relationships).filter(r => (r.friendship ?? r.affection ?? 0) >= 40).length / 4) * 25 // friendships: 25%
             );
             const clampedScore = Math.min(100, completionScore);
             return (
@@ -1003,7 +1069,7 @@ export default function EndingPage() {
 
               const streaks = useGameStore.getState().activityStreaks;
               const maxStreak = Object.entries(streaks).sort(([,a],[,b]) => b - a)[0];
-              const closeFriendsCount = Object.values(allRels).filter(r => r.affection >= 70).length;
+              const closeFriendsCount = Object.values(allRels).filter(r => (r.friendship ?? r.affection ?? 0) >= 60).length;
 
               const statItems = [
                 { value: '16', label: '주차 완료', emoji: '📅' },
@@ -1053,10 +1119,13 @@ export default function EndingPage() {
               const NPC_LETTER: Record<string, string> = { jaemin: '재민이', minji: '민지', soyeon: '소연 선배', hyunwoo: '현우 선배' };
               const bestFriend = Object.entries(relationships)
                 .filter(([id]) => NPC_LETTER[id])
-                .sort(([, a], [, b]) => b.affection - a.affection)[0];
-              const friendCount = Object.values(relationships).filter(r => r.affection >= 50).length;
+                .sort(([, a], [, b]) => (b.friendship ?? b.affection ?? 0) - (a.friendship ?? a.affection ?? 0))[0];
+              const friendCount = Object.values(relationships).filter(r => (r.friendship ?? r.affection ?? 0) >= 40).length;
 
-              if (bestFriend && bestFriend[1].affection >= 70) {
+              if (bestFriend && (bestFriend[1].romance ?? 0) >= 45) {
+                const bfName = NPC_LETTER[bestFriend[0]];
+                lines.push(`${bfName}라는... 소중한 사람이 생겼어요. 방학에 소개할게요.`);
+              } else if (bestFriend && (bestFriend[1].friendship ?? bestFriend[1].affection ?? 0) >= 60) {
                 const bfName = NPC_LETTER[bestFriend[0]];
                 lines.push(`${bfName}라는 정말 좋은 친구를 만났어요. 방학에 소개할게요.`);
               } else if (friendCount >= 3) {
@@ -1099,7 +1168,7 @@ export default function EndingPage() {
           <button
             onClick={() => {
               const er = useGameStore.getState().examResults;
-              const friendCount2 = Object.values(relationships).filter(r => r.affection >= 50).length;
+              const friendCount2 = Object.values(relationships).filter(r => (r.friendship ?? r.affection ?? 0) >= 40).length;
               const shareText = [
                 `🎓 한국 대학생 메이커 — ${archetype.emoji} ${archetype.ko}`,
                 er.semesterGpa ? `📊 GPA: ${er.semesterGpa.toFixed(2)}` : '',
@@ -1129,16 +1198,20 @@ export default function EndingPage() {
           <div className="flex flex-col gap-1 text-[11px] text-white/20">
             {Object.entries(relationships)
               .filter(([, r]) => r.encounters > 0)
-              .sort(([, a], [, b]) => b.affection - a.affection)
+              .sort(([, a], [, b]) => Math.max(b.friendship ?? 0, b.romance ?? 0, b.affection ?? 0) - Math.max(a.friendship ?? 0, a.romance ?? 0, a.affection ?? 0))
               .map(([id, rel]) => {
                 const NPC_NAMES: Record<string, string> = { jaemin: '이재민', minji: '한민지', soyeon: '박소연', hyunwoo: '정현우', 'prof-kim': '김 교수' };
                 const name = NPC_NAMES[id];
                 if (!name) return null;
+                const fr = rel.friendship ?? rel.affection ?? 0;
+                const rom = rel.romance ?? 0;
                 // Dynamic description based on relationship tier
-                const desc = rel.affection >= 90 ? '평생 잊지 못할 소울메이트'
-                  : rel.affection >= 70 ? '가장 소중한 절친'
-                  : rel.affection >= 50 ? '함께 웃고 울었던 친구'
-                  : rel.affection >= 25 ? '캠퍼스에서 마주치면 인사하는 사이'
+                const desc = rom >= 45 ? '진정한 사랑을 나눈 연인'
+                  : rom >= 25 ? '가슴 설레는 특별한 사이'
+                  : fr >= 80 ? '평생 잊지 못할 베프'
+                  : fr >= 60 ? '가장 소중한 절친'
+                  : fr >= 40 ? '함께 웃고 울었던 친구'
+                  : fr >= 20 ? '캠퍼스에서 마주치면 인사하는 사이'
                   : '스쳐 지나간 인연';
                 return <p key={id}>{name} — {desc}</p>;
               })}

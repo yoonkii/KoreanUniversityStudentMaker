@@ -48,7 +48,7 @@ const EXAM_STRATEGIES: ExamStrategy[] = [
     multiplier: 0.9,
     statEffects: { social: 6, stress: 3, charm: 2 },
     resultText: '서로 모르는 부분을 알려주며 공부했다. 혼자였으면 못 풀었을 문제도 있었다.',
-    requiredNpc: { id: 'minji', minAffection: 40, lockedText: '🔒 민지와 친해져야 스터디 그룹 가능 (호감도 40+)' },
+    requiredNpc: { id: 'minji', minAffection: 40, lockedText: '🔒 민지와 친해져야 스터디 그룹 가능 (우정 40+)' },
   },
   {
     id: 'jokbo',
@@ -58,7 +58,7 @@ const EXAM_STRATEGIES: ExamStrategy[] = [
     multiplier: 1.05,
     statEffects: { social: 2, stress: -2 },
     resultText: '족보 덕분에 출제 경향을 파악했다. 전부 맞지는 않았지만 도움이 됐다.',
-    requiredNpc: { id: 'soyeon', minAffection: 45, lockedText: '🔒 소연 선배와 친해져야 족보 획득 가능 (호감도 45+)' },
+    requiredNpc: { id: 'soyeon', minAffection: 40, lockedText: '🔒 소연 선배와 친해져야 족보 획득 가능 (우정 40+)' },
   },
   {
     id: 'give_up',
@@ -85,8 +85,17 @@ export default function ExamEvent({ type, onComplete }: ExamEventProps) {
   const examLabel = type === 'midterm' ? '중간고사' : '기말고사';
   const examEmoji = type === 'midterm' ? '📝' : '📚';
 
-  // Minji soulmate bonus: +0.3 GPA
-  const minjiBonusGpa = (relationships['minji']?.affection ?? 0) >= 90 ? 0.3 : 0;
+  // Minji best friend bonus: +0.3 GPA
+  const minjiFriendship = relationships['minji']?.friendship ?? relationships['minji']?.affection ?? 0;
+  const minjiBonusGpa = minjiFriendship >= 80 ? 0.3 : 0;
+
+  // Find romance partner for dynamic exam support
+  const NPC_KO: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연 선배', hyunwoo: '현우 선배' };
+  const romancePartner = Object.entries(relationships)
+    .filter(([id, r]) => (r.romance ?? 0) >= 25 && NPC_KO[id])
+    .sort(([, a], [, b]) => (b.romance ?? 0) - (a.romance ?? 0))[0];
+  const partnerName = romancePartner ? NPC_KO[romancePartner[0]] : '';
+  const partnerRom = romancePartner ? (romancePartner[1].romance ?? 0) : 0;
 
   const handleChoose = useCallback((strategy: ExamStrategy) => {
     const gpa = calculateExamGpa(stats.knowledge, strategy.multiplier, minjiBonusGpa);
@@ -160,7 +169,10 @@ export default function ExamEvent({ type, onComplete }: ExamEventProps) {
             </div>
 
             {minjiBonusGpa > 0 && (
-              <p className="text-xs text-pink mb-3">💕 민지의 노트 공유 — GPA +{minjiBonusGpa.toFixed(1)} 보너스</p>
+              <p className="text-xs text-sky-400 mb-3">⭐ 민지 (베프)의 노트 공유 — GPA +{minjiBonusGpa.toFixed(1)} 보너스</p>
+            )}
+            {romancePartner && (
+              <p className="text-xs text-pink mb-3">💕 {partnerName}의 응원이 힘이 된다 — 시험 전략에 특별 옵션 추가!</p>
             )}
 
             <button
@@ -179,10 +191,22 @@ export default function ExamEvent({ type, onComplete }: ExamEventProps) {
               <h3 className="text-lg font-bold text-txt-primary">시험 전략을 선택하세요</h3>
               <p className="text-xs text-txt-secondary">준비도 {knowledgePercent}% — 전략이 성적을 좌우합니다</p>
             </div>
-            {EXAM_STRATEGIES.map((strategy) => {
+            {[...EXAM_STRATEGIES, ...(romancePartner ? [{
+              id: 'partner_support',
+              title: `${partnerName}의 응원`,
+              emoji: '💕',
+              description: partnerRom >= 45
+                ? `${partnerName}이(가) 밤새 옆에서 응원해줬다. "힘내. 다 끝나면 맛있는 거 먹으러 가자."`
+                : `${partnerName}이(가) 간식을 가져다줬다. "시험 잘 봐... 응원할게."`,
+              multiplier: partnerRom >= 45 ? 1.08 : 1.03,
+              statEffects: { stress: partnerRom >= 45 ? -10 : -5, charm: 2 },
+              resultText: partnerRom >= 45
+                ? `${partnerName}이(가) 시험이 끝나자 안아줬다. "고생했어. 진짜 잘했을 거야." 마음이 따뜻해졌다.`
+                : `${partnerName}의 응원 덕분에 긴장이 좀 풀렸다. 시험장에서도 괜히 웃음이 나왔다.`,
+            }] as ExamStrategy[] : [])].map((strategy) => {
               const estimatedGpa = calculateExamGpa(stats.knowledge, strategy.multiplier, minjiBonusGpa);
               const grade = getGpaGrade(estimatedGpa);
-              const isLocked = strategy.requiredNpc && (relationships[strategy.requiredNpc.id]?.affection ?? 0) < strategy.requiredNpc.minAffection;
+              const isLocked = strategy.requiredNpc && (relationships[strategy.requiredNpc.id]?.friendship ?? relationships[strategy.requiredNpc.id]?.affection ?? 0) < strategy.requiredNpc.minAffection;
               return (
                 <button
                   key={strategy.id}

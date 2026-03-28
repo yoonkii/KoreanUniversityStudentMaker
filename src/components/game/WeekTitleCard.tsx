@@ -28,35 +28,50 @@ const WEEK_TITLES: Record<number, { title: string }> = {
   16: { title: '마지막 주' },
 };
 
-/** Generate a contextual subtitle based on current game state */
+/** Generate a contextual subtitle based on game state + relationships */
 function getContextualSubtitle(week: number, stats: { stress: number; knowledge: number; social: number; health: number; money: number }): string {
-  // Week-specific overrides
+  const NPC_KO: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연 선배', hyunwoo: '현우 선배' };
+  const rels = useGameStore.getState().relationships;
+
+  // Find romance partner
+  const romantic = Object.entries(rels)
+    .filter(([, r]) => (r.romance ?? 0) >= 10)
+    .sort(([, a], [, b]) => (b.romance ?? 0) - (a.romance ?? 0))[0];
+  const romName = romantic ? NPC_KO[romantic[0]] : '';
+  const romLevel = romantic ? (romantic[1].romance ?? 0) : 0;
+
+  // Week-specific overrides (with romance flavor)
   if (week === 1) return '새로운 시작, 새로운 인연';
   if (week === 4) return '대학 생활의 꽃, 엠티!';
-  if (week === 7) return '첫 번째 고비. 준비된 만큼 보여줄 시간.';
-  if (week === 9) return '캠퍼스가 축제로 물든다';
-  if (week === 14) return '마지막 전투. 최후의 스퍼트!';
-  if (week === 15) return '1학기의 끝, 그리고...';
+  if (week === 7) return romLevel >= 25 ? `시험도 걱정되지만... ${romName} 생각이 더 난다.` : '첫 번째 고비. 준비된 만큼 보여줄 시간.';
+  if (week === 9) return romLevel >= 25 ? `축제, ${romName}과(와) 함께라면 더 빛날 거야.` : '캠퍼스가 축제로 물든다';
+  if (week === 14) return romLevel >= 45 ? `마지막 전투. ${romName}이(가) 응원해주고 있다.` : '마지막 전투. 최후의 스퍼트!';
+  if (week === 15) return romLevel >= 45 ? `1학기의 끝. ${romName}과(와)의 이야기는 계속된다.` : '1학기의 끝, 그리고...';
 
-  // Stat-reactive subtitles — what the player is feeling right now
+  // Romance-reactive subtitles (highest priority after week-specific)
+  if (romLevel >= 45) return `${romName}과(와) 함께라면 어떤 주도 좋다.`;
+  if (romLevel >= 25) return `${romName} 생각에 자꾸 웃음이 나온다.`;
+  if (romLevel >= 10 && Math.random() < 0.4) return `${romName}을(를) 볼 수 있는 한 주. 괜히 설렌다.`;
+
+  // Crisis-level stat overrides
   if (stats.stress > 80) return '한계에 가까워지고 있다... 버틸 수 있을까?';
-  if (stats.stress > 65) return '피곤하다. 조금만 더 힘내자.';
   if (stats.health < 25) return '몸이 무겁다. 쉬어가야 할 것 같은데...';
   if (stats.money < 30000) return '통장이 텅 비어간다. 이번 주도 라면인가.';
+
+  // Positive stat subtitles
   if (stats.knowledge >= 70 && stats.social >= 50) return '공부도 인맥도 순조롭다. 갓생러의 길!';
   if (stats.knowledge >= 60) return '공부가 점점 재밌어지고 있다.';
   if (stats.social >= 60) return '캠퍼스 어딜 가든 아는 얼굴이 있다.';
+  if (stats.stress > 65) return '피곤하다. 조금만 더 힘내자.';
   if (stats.social < 20 && week > 4) return '요즘 혼자인 시간이 많다.';
 
-  // Generic but varied
-  const generic = [
-    '평범한 하루의 시작. 하지만 오늘이 특별해질 수도.',
-    '벚꽃은 졌지만, 아직 할 일이 많다.',
-    '이번 주는 어떤 선택을 하게 될까.',
-    '시간은 기다려주지 않는다.',
-    '매일이 새롭고, 매 순간이 선택이다.',
-  ];
-  return generic[week % generic.length];
+  // Semester phase atmosphere
+  if (week <= 3) return '아직 모든 게 새롭다. 어떤 가능성이든 열려 있다.';
+  if (week <= 6) return '루틴이 잡히기 시작했다. 이 페이스를 유지하자.';
+  if (week <= 10) return '학기가 절반을 넘었다. 뒤돌아보면 많이 왔다.';
+  if (week <= 13) return '끝이 보인다. 남은 시간을 어떻게 쓸까.';
+
+  return '매일이 새롭고, 매 순간이 선택이다.';
 }
 
 export default function WeekTitleCard({ week, onDone }: WeekTitleCardProps) {

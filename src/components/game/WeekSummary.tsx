@@ -63,28 +63,73 @@ function getWeekComment(deltas: Partial<PlayerStats>): string {
   return '무난한 한 주가 지나갔어요 📅';
 }
 
-/** Character diary — personal reflection on the week */
+/** Character diary — personal reflection on the week, relationship-aware */
 export function getDiaryEntry(week: number, deltas: Partial<PlayerStats>, stats: PlayerStats): string {
+  const NPC_KO: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연 선배', hyunwoo: '현우 선배' };
+  const rels = useGameStore.getState().relationships;
+  const prevRels = useGameStore.getState().previousRelationships ?? {};
+
+  // Find NPC with biggest romance change this week
+  let romanceNpc = '';
+  let romanceDelta = 0;
+  let romanceTier = '';
+  // Find NPC with biggest friendship change this week
+  let friendNpc = '';
+  let friendDelta = 0;
+
+  for (const [id, rel] of Object.entries(rels)) {
+    const name = NPC_KO[id];
+    if (!name) continue;
+    const prev = prevRels[id];
+    const rDelta = (rel.romance ?? 0) - (prev?.romance ?? 0);
+    const fDelta = (rel.friendship ?? rel.affection ?? 0) - (prev?.friendship ?? prev?.affection ?? 0);
+    if (rDelta > romanceDelta) { romanceNpc = name; romanceDelta = rDelta; romanceTier = (rel.romance ?? 0) >= 45 ? 'dating' : (rel.romance ?? 0) >= 25 ? 'crush' : 'interest'; }
+    if (fDelta > friendDelta) { friendNpc = name; friendDelta = fDelta; }
+  }
+
   const stress = deltas.stress ?? 0;
   const knowledge = deltas.knowledge ?? 0;
-  const social = deltas.social ?? 0;
 
-  // Week-specific entries
+  // ─── Romance-aware entries (highest priority) ───
+  if (romanceDelta >= 3 && romanceTier === 'dating') {
+    return `${romanceNpc}과(와) 함께한 시간이 꿈만 같았다. 연인이라는 게 아직 실감이 안 난다. 이 행복이 오래 가길.`;
+  }
+  if (romanceDelta >= 2 && romanceTier === 'crush') {
+    return `자꾸 ${romanceNpc} 생각이 난다. 수업 중에도, 밥 먹을 때도. 이게 설렘이라는 거겠지.`;
+  }
+  if (romanceDelta >= 1 && romanceTier === 'interest') {
+    return `${romanceNpc}이(가) 왜 자꾸 신경 쓰이지? 아직 잘 모르겠는 감정인데... 신기하다.`;
+  }
+
+  // ─── Friendship-aware entries ───
+  if (friendDelta >= 3 && friendNpc) {
+    return `${friendNpc}과(와) 이번 주에 많이 가까워진 느낌이다. 같이 있으면 시간이 빨리 간다.`;
+  }
+
+  // ─── Week-specific entries ───
   if (week === 1) return '첫 주가 끝났다. 모든 게 새롭고 어색하지만, 나름 잘 해낸 것 같다. 내일부터 진짜 시작이다.';
   if (week === 4) return 'MT 갔다 왔다. 선배들이랑 밤새 얘기한 게 기억에 남는다. 이래서 대학을 오는 거구나.';
   if (week === 8) return '중간고사 끝! 결과는 모르겠지만, 최선은 다했다. 오늘만큼은 푹 자자.';
   if (week === 9) return '축제 진짜 재밌었다. 캠퍼스가 이렇게 활기찬 건 처음이야.';
   if (week === 15) return '기말고사 끝... 해방이다. 1학기가 이렇게 빨리 지나갈 줄 몰랐다.';
 
-  // Stat-reactive entries
+  // ─── Stat-reactive entries ───
   if (stress > 15 && stats.stress > 70) return '너무 무리했나. 머리가 멍하고 몸이 무겁다. 내일은 좀 쉬어야겠다.';
   if (knowledge > 12) return '열심히 공부한 보람이 느껴진다. 이 페이스 유지하면 좋은 결과가 있을 거야.';
-  if (social > 12) return '이번 주는 사람들이랑 많이 어울렸다. 혼자일 때보다 에너지가 생기는 느낌.';
   if (stress < -8) return '여유로운 한 주였다. 가끔은 이렇게 쉬어가는 것도 중요하다는 걸 배웠다.';
   if (stats.money < 50000) return '통장 잔고가 너무 줄었다... 다음 주엔 알바를 더 넣어야 할 것 같다.';
   if (stats.social < 20 && week > 5) return '요즘 혼자 있는 시간이 많다. 외롭진 않은데... 약간 허전하다.';
 
-  // Generic but personal
+  // ─── Friendship flavor if anyone interacted ───
+  if (friendNpc && friendDelta > 0) {
+    const lines = [
+      `이번 주 ${friendNpc}과(와) 시간을 보냈다. 대학에서 이런 인연을 만나다니.`,
+      `${friendNpc}이(가) 웃을 때 기분이 좋아진다. 좋은 사람을 만난 것 같다.`,
+    ];
+    return lines[week % lines.length];
+  }
+
+  // ─── Generic ───
   const generic = [
     '평범한 한 주. 근데 이런 평범함이 나중에 그리워질 것 같다.',
     '오늘 하늘이 예뻤다. 캠퍼스를 걸으면서 잠깐 생각에 잠겼다.',
@@ -289,6 +334,29 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
           if (stats.money >= 500000 && (stats.money - (weekStatDeltas.money ?? 0)) < 500000) milestones.push({ emoji: '💰', text: '통장 잔고 50만 원 돌파! 여유가 생겼다.' });
           if (stats.money <= 50000 && (stats.money - (weekStatDeltas.money ?? 0)) > 50000) milestones.push({ emoji: '😱', text: '잔고가 5만 원 이하... 다음 주부터 알바 필수!' });
 
+          // ─── Relationship tier milestones ───
+          const NPC_KO: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연 선배', hyunwoo: '현우 선배' };
+          const rels = useGameStore.getState().relationships;
+          const prevRels = useGameStore.getState().previousRelationships ?? {};
+          for (const [npcId, rel] of Object.entries(rels)) {
+            const name = NPC_KO[npcId];
+            if (!name) continue;
+            const fr = rel.friendship ?? rel.affection ?? 0;
+            const prevFr = prevRels[npcId]?.friendship ?? prevRels[npcId]?.affection ?? 0;
+            const rom = rel.romance ?? 0;
+            const prevRom = prevRels[npcId]?.romance ?? 0;
+            // Friendship tier-ups
+            if (prevFr < 20 && fr >= 20) milestones.push({ emoji: '👋', text: `${name}과(와) 아는 사이가 되었다.` });
+            if (prevFr < 40 && fr >= 40) milestones.push({ emoji: '🤝', text: `${name}과(와) 친구가 되었다!` });
+            if (prevFr < 60 && fr >= 60) milestones.push({ emoji: '💛', text: `${name}이(가) 절친이 되었다! 든든한 존재.` });
+            if (prevFr < 80 && fr >= 80) milestones.push({ emoji: '⭐', text: `${name}과(와) 베프가 되었다! 평생 함께할 친구.` });
+            // Romance tier-ups
+            if (prevRom < 10 && rom >= 10) milestones.push({ emoji: '💭', text: `${name}에 대한 관심이 생기기 시작했다...` });
+            if (prevRom < 25 && rom >= 25) milestones.push({ emoji: '💓', text: `${name}을(를) 볼 때마다 심장이 뛴다... 이게 설렘?` });
+            if (prevRom < 45 && rom >= 45) milestones.push({ emoji: '💕', text: `${name}과(와) 연인이 되었다! 캠퍼스 커플 탄생!` });
+            if (prevRom < 70 && rom >= 70) milestones.push({ emoji: '💗', text: `${name}과(와) 깊은 사랑에 빠졌다. 서로 없이는 못 살아.` });
+          }
+
           if (milestones.length === 0) return null;
           return (
             <div className="flex flex-col gap-1.5 mb-4 animate-stat-reveal" style={{ animationDelay: '850ms' }}>
@@ -298,6 +366,80 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
                   <span className="text-xs text-gold/90 font-medium">{m.text}</span>
                 </div>
               ))}
+            </div>
+          );
+        })()}
+
+        {/* Relationship changes this week */}
+        {(() => {
+          const rels = useGameStore.getState().relationships;
+          const prevRels = useGameStore.getState().previousRelationships ?? {};
+          const NPC_KO: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연', hyunwoo: '현우' };
+          const changes: { id: string; name: string; frDelta: number; romDelta: number; fr: number; rom: number; decayWarning: boolean }[] = [];
+
+          for (const [id, rel] of Object.entries(rels)) {
+            const name = NPC_KO[id];
+            if (!name) continue;
+            const prev = prevRels[id];
+            if (!prev && rel.encounters === 0) continue;
+            const fr = rel.friendship ?? rel.affection ?? 0;
+            const prevFr = prev?.friendship ?? prev?.affection ?? 0;
+            const rom = rel.romance ?? 0;
+            const prevRom = prev?.romance ?? 0;
+            const frDelta = fr - prevFr;
+            const romDelta = rom - prevRom;
+            // Decay warning: romance > 0 and no date in 2+ weeks
+            const weeksSinceDate = rel.lastDateWeek ? currentWeek - rel.lastDateWeek : 99;
+            const decayWarning = rom > 0 && weeksSinceDate >= 2;
+            if (frDelta !== 0 || romDelta !== 0 || decayWarning || rel.encounters > 0) {
+              changes.push({ id, name, frDelta, romDelta, fr, rom, decayWarning });
+            }
+          }
+
+          if (changes.length === 0) return null;
+          return (
+            <div className="mb-4 animate-stat-reveal" style={{ animationDelay: '860ms' }}>
+              <p className="text-[10px] text-txt-secondary/50 mb-2">👥 이번 주 인간관계</p>
+              <div className="flex flex-col gap-1.5">
+                {changes.map((c) => (
+                  <div key={c.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03]">
+                    <span className="text-xs text-txt-primary/70 w-10 font-medium">{c.name}</span>
+                    <div className="flex-1 flex items-center gap-2">
+                      {/* Friendship bar + delta */}
+                      <div className="flex items-center gap-1 flex-1">
+                        <div className="w-14 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                          <div className="h-full bg-sky-400/50 rounded-full" style={{ width: `${c.fr}%` }} />
+                        </div>
+                        {c.frDelta !== 0 && (
+                          <span className={`text-[9px] font-mono ${c.frDelta > 0 ? 'text-sky-400/70' : 'text-coral/60'}`}>
+                            {c.frDelta > 0 ? '+' : ''}{c.frDelta}
+                          </span>
+                        )}
+                      </div>
+                      {/* Romance bar + delta (only if romance exists) */}
+                      {(c.rom > 0 || c.romDelta !== 0) && (
+                        <div className="flex items-center gap-1 flex-1">
+                          <div className="w-14 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-full bg-pink/50 rounded-full" style={{ width: `${c.rom}%` }} />
+                          </div>
+                          {c.romDelta !== 0 && (
+                            <span className={`text-[9px] font-mono ${c.romDelta > 0 ? 'text-pink/70' : 'text-coral/60'}`}>
+                              {c.romDelta > 0 ? '+' : ''}{c.romDelta}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {/* Decay warning */}
+                    {c.decayWarning && (
+                      <span className="text-[9px] text-amber-400/70" title="데이트 안 하면 사랑 감소">💔</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {changes.some(c => c.decayWarning) && (
+                <p className="text-[9px] text-amber-400/50 mt-1.5 text-center">💔 오래 데이트 안 하면 사랑이 식어요!</p>
+              )}
             </div>
           );
         })()}

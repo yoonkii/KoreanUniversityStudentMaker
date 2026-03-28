@@ -70,6 +70,18 @@ export const WEEK_13_SCENES: Scene[] = [
         ],
         consequenceText: '조용한 독서실에서 홀로 버티는 밤이 길어졌다.',
       },
+      {
+        id: 'finals_hyunwoo_romantic',
+        text: '(현우 선배에게) 선배, 시험 끝나면... 둘이서 어디 가고 싶어요.',
+        statEffects: { charm: 3, stress: -5 },
+        relationshipEffects: [
+          { characterId: 'hyunwoo', change: 3 },
+          { characterId: 'hyunwoo', change: 2, type: 'romance' as const },
+        ],
+        requiredRelationship: { characterId: 'hyunwoo', minAffection: 30 },
+        requiredStat: { stat: 'charm', min: 40 },
+        consequenceText: '현우가 환하게 웃었다. "좋지! 내가 기가 막히게 좋은 데 알아. 약속이다."',
+      },
     ],
   },
 ];

@@ -16,6 +16,24 @@ import { WEEK_13_SCENES } from '@/data/scenes/week13';
 import { WEEK_14_SCENES } from '@/data/scenes/week14';
 import { WEEK_15_SCENES } from '@/data/scenes/week15';
 
+export type DateOutcomeType = 'gate_fail' | 'awkward' | 'success' | 'great_chemistry';
+export interface DateOutcome {
+  npcId: string;
+  day: DayKey;
+  type: DateOutcomeType;
+  reason?: string; // Why it failed (for gate_fail)
+  romanceGain: number;
+}
+
+export type FriendOutcomeType = 'great' | 'normal' | 'awkward';
+export interface FriendOutcome {
+  npcId: string;
+  day: DayKey;
+  type: FriendOutcomeType;
+  friendshipGain: number;
+  activityId: string;
+}
+
 const STRESS_PENALTY_THRESHOLD = 70;
 const STRESS_GAIN_MULTIPLIER = 0.5;
 
@@ -487,6 +505,132 @@ const WEEKLY_EVENT_POOL: WeeklyEventDef[] = [
       return w >= 5 && (jaemin?.affection ?? 0) >= 40 && (jaemin?.lastInteraction ?? 0) <= w - 3;
     },
   },
+  // ─── Romance Events ───
+  // These fire based on romance tiers and create dramatic emotional moments
+  {
+    id: 'jaemin_flutter',
+    name: '재민이의 눈빛',
+    description: '재민이가 평소와 다르게 너를 바라본다. "야... 너 오늘 왜 이렇게 예뻐 보여?" 장난인 척하지만 귀까지 빨개졌다.',
+    effects: { social: 3, charm: 2, stress: -3 },
+    probability: 0.3,
+    priority: 4,
+    condition: (_, w, rels) => w >= 5 && (rels?.['jaemin']?.romance ?? 0) >= 10 && (rels?.['jaemin']?.romance ?? 0) < 25,
+  },
+  {
+    id: 'minji_study_blush',
+    name: '민지의 동요',
+    description: '도서관에서 민지와 눈이 마주쳤다. 민지가 먼저 고개를 돌리며 "...뭘 봐." 하지만 귀 끝이 빨개진 건 감추지 못했다.',
+    effects: { knowledge: 2, charm: 2, stress: -2 },
+    probability: 0.25,
+    priority: 4,
+    condition: (s, w, rels) => w >= 6 && (rels?.['minji']?.romance ?? 0) >= 10 && s.knowledge >= 50,
+  },
+  {
+    id: 'soyeon_umbrella',
+    name: '소연 선배의 우산',
+    description: '갑자기 비가 온다. 소연 선배가 우산을 씌워준다. "감기 걸리면 안 돼." 어깨가 닿는 거리에서 심장이 뛴다.',
+    effects: { health: 3, social: 3, stress: -5 },
+    probability: 0.25,
+    priority: 4,
+    condition: (_, w, rels) => w >= 5 && (rels?.['soyeon']?.romance ?? 0) >= 10 && (rels?.['soyeon']?.romance ?? 0) < 25,
+  },
+  {
+    id: 'hyunwoo_song',
+    name: '현우 선배의 노래',
+    description: '현우 선배가 동아리방에서 새 곡을 연습 중이다. "이거... 너 생각하면서 만든 건데." 멜로디가 가슴을 울린다.',
+    effects: { charm: 3, social: 3, stress: -5 },
+    probability: 0.25,
+    priority: 4,
+    condition: (s, w, rels) => w >= 6 && (rels?.['hyunwoo']?.romance ?? 0) >= 10 && s.charm >= 40,
+  },
+  {
+    id: 'jaemin_confession',
+    name: '재민이의 고백',
+    description: '밤늦은 기숙사 옥상. 재민이가 진지한 눈으로 말한다. "야... 나 너 좋아해. 진짜로. 장난 아니야." 심장이 멈출 것 같다.',
+    effects: { social: 8, charm: 5, stress: 5 },
+    probability: 0.4,
+    priority: 6,
+    condition: (_, w, rels) => w >= 8 && (rels?.['jaemin']?.romance ?? 0) >= 25 && (rels?.['jaemin']?.romance ?? 0) < 45,
+  },
+  {
+    id: 'minji_confession',
+    name: '민지의 고백',
+    description: '시험이 끝난 저녁, 민지가 불러세운다. "...한 가지만 물어볼게." 떨리는 목소리로 말한다. "나... 너한테 특별해?"',
+    effects: { social: 5, charm: 5, knowledge: 3, stress: 5 },
+    probability: 0.35,
+    priority: 6,
+    condition: (s, w, rels) => w >= 9 && (rels?.['minji']?.romance ?? 0) >= 25 && s.knowledge >= 50 && (rels?.['minji']?.respect ?? 0) >= 60,
+  },
+  {
+    id: 'soyeon_confession',
+    name: '소연 선배의 마음',
+    description: '졸업 준비로 바쁜 소연 선배가 갑자기 손을 잡는다. "후배라서 안 된다고 생각했는데... 마음이 안 되더라."',
+    effects: { social: 8, charm: 3, stress: 3 },
+    probability: 0.35,
+    priority: 6,
+    condition: (s, w, rels) => w >= 10 && (rels?.['soyeon']?.romance ?? 0) >= 25 && s.stress < 40,
+  },
+  {
+    id: 'hyunwoo_confession',
+    name: '현우 선배의 고백',
+    description: '공연이 끝난 뒤, 현우 선배가 무대 뒤로 데려간다. "오늘 노래... 다 너한테 부른 거야. 알고 있었지?"',
+    effects: { social: 8, charm: 8, stress: 3 },
+    probability: 0.35,
+    priority: 6,
+    condition: (s, w, rels) => w >= 9 && (rels?.['hyunwoo']?.romance ?? 0) >= 25 && s.charm >= 50,
+  },
+  {
+    id: 'romance_jealousy_jaemin',
+    name: '재민이의 질투',
+    description: '재민이가 네가 다른 사람과 있는 걸 봤다. "...아무것도 아니야." 하지만 카톡 답장이 늦어졌다.',
+    effects: { stress: 5, social: -2 },
+    probability: 0.2,
+    priority: 5,
+    condition: (_, w, rels) => {
+      const jRom = rels?.['jaemin']?.romance ?? 0;
+      const others = Object.entries(rels ?? {}).filter(([id, r]) => id !== 'jaemin' && (r.romance ?? 0) >= 10);
+      return w >= 7 && jRom >= 15 && others.length > 0;
+    },
+  },
+  {
+    id: 'romance_jealousy_minji',
+    name: '민지의 차가운 태도',
+    description: '민지가 갑자기 차갑다. "바쁘니까 딴 데 가서 놀아." 나중에 재민이가 귓속말한다. "민지 질투하는 거야, 바보야."',
+    effects: { stress: 5, knowledge: -1 },
+    probability: 0.2,
+    priority: 5,
+    condition: (_, w, rels) => {
+      const mRom = rels?.['minji']?.romance ?? 0;
+      const others = Object.entries(rels ?? {}).filter(([id, r]) => id !== 'minji' && (r.romance ?? 0) >= 10);
+      return w >= 7 && mRom >= 15 && others.length > 0;
+    },
+  },
+  {
+    id: 'couple_campus_walk',
+    name: '캠퍼스 산책',
+    description: '연인과 함께 캠퍼스를 걷는다. 벚꽃이 흩날리고, 누군가 "커플이다!" 하고 소리친다. 부끄럽지만 행복하다.',
+    effects: { social: 5, charm: 3, stress: -10, health: 3 },
+    probability: 0.3,
+    priority: 5,
+    condition: (_, w, rels) => {
+      return w >= 8 && Object.values(rels ?? {}).some(r => (r.romance ?? 0) >= 45);
+    },
+  },
+  {
+    id: 'romance_heartbreak_risk',
+    name: '불안한 마음',
+    description: '요즘 연인과 만날 시간이 없다. 카톡도 뜸해졌다. 이대로 괜찮을까... 마음이 불안하다.',
+    effects: { stress: 8, social: -2 },
+    probability: 0.3,
+    priority: 5,
+    condition: (_, w, rels) => {
+      return w >= 8 && Object.entries(rels ?? {}).some(([, r]) => {
+        const rom = r.romance ?? 0;
+        const weeksSinceDate = r.lastDateWeek ? w - r.lastDateWeek : 99;
+        return rom >= 25 && weeksSinceDate >= 3;
+      });
+    },
+  },
 ];
 
 // ─── Weather System ───
@@ -634,15 +778,15 @@ function applyRelationshipBonuses(
   for (const bonus of RELATIONSHIP_BONUSES) {
     const rel = relationships[bonus.npcId];
     if (!rel) continue;
-    const aff = rel.affection;
-    if (aff >= 90) {
+    const fr = rel.friendship ?? rel.affection ?? 0;
+    if (fr >= 80) {       // best_friend tier
       bonus.friendBonus(deltas);
       bonus.closeFriendBonus(deltas);
       bonus.soulmateBonus(deltas);
-    } else if (aff >= 70) {
+    } else if (fr >= 60) { // close_friend tier
       bonus.friendBonus(deltas);
       bonus.closeFriendBonus(deltas);
-    } else if (aff >= 50) {
+    } else if (fr >= 40) { // friend tier
       bonus.friendBonus(deltas);
     }
   }
@@ -713,7 +857,7 @@ export function simulateWeek(
     disableRandomEvents?: boolean;
     relationships?: Record<string, CharacterRelationship>;
   },
-): { statDeltas: Partial<PlayerStats>; scenes: Scene[]; combos: ActiveCombo[]; weeklyEvent: WeeklyEvent | null; skippedActivities?: string[]; npcInteractions: Record<string, number> } {
+): { statDeltas: Partial<PlayerStats>; scenes: Scene[]; combos: ActiveCombo[]; weeklyEvent: WeeklyEvent | null; skippedActivities?: string[]; npcInteractions: Record<string, { friendship: number; romance: number }>; dateOutcomes: DateOutcome[]; friendOutcomes: FriendOutcome[] } {
   const deltas: Record<keyof PlayerStats, number> = {
     knowledge: 0,
     money: 0,
@@ -759,8 +903,21 @@ export function simulateWeek(
     }
   }
 
-  // Track NPC interactions from targeted social activities
-  const npcInteractions: Record<string, number> = {};
+  // Track NPC interactions split by friendship vs romance
+  const npcInteractions: Record<string, { friendship: number; romance: number }> = {};
+  const ensureNpc = (id: string) => { if (!npcInteractions[id]) npcInteractions[id] = { friendship: 0, romance: 0 }; };
+
+  // Track date and friendship outcomes for narrative feedback
+  const dateOutcomes: DateOutcome[] = [];
+  const friendOutcomes: FriendOutcome[] = [];
+
+  // NPC-specific chemistry requirements for romance
+  const NPC_ROMANCE_GATES: Record<string, (stats: PlayerStats, rel?: CharacterRelationship) => boolean> = {
+    minji: (s, r) => s.knowledge >= 50 && (r?.respect ?? 0) >= 60,
+    jaemin: (s, _r) => s.charm >= 30,  // Easiest — just need some charm
+    soyeon: (s, _r) => s.stress < 40,  // Must NOT be stressed
+    hyunwoo: (s, _r) => s.charm >= 50,  // Needs high charm
+  };
 
   // Accumulate raw stat changes with diminishing returns for 4+ repeats
   const activitySeen: Record<string, number> = {};
@@ -777,34 +934,85 @@ export function simulateWeek(
       if (slot.targetNpcId && activity.npcVariants) {
         const variant = activity.npcVariants.find(v => v.npcId === slot.targetNpcId);
         effects = variant?.statEffects ?? activity.statEffects;
+        ensureNpc(slot.targetNpcId);
+        const npcRel = options?.relationships?.[slot.targetNpcId];
 
-        // Relationship affection with randomness (PM3-style)
-        const baseAff = slot.activityId === 'date' ? 2 : 1; // Reduced from 5/3
-        let affGain = baseAff;
+        if (slot.activityId === 'date') {
+          // ─── ROMANCE TRACK ───
+          // Gate 1: Must be friends first (friendship ≥ 40)
+          const friendship = npcRel?.friendship ?? npcRel?.affection ?? 0;
+          // Gate 2: Charm requirement
+          const charmOk = currentStats.charm >= 40;
+          // Gate 3: NPC mood not annoyed
+          const moodOk = npcRel?.mood !== 'annoyed';
+          // Gate 4: NPC-specific chemistry
+          const chemistryGate = NPC_ROMANCE_GATES[slot.targetNpcId];
+          const chemistryOk = !chemistryGate || chemistryGate(currentStats, npcRel);
 
-        // 20% chance: awkward silence, no affection gain
-        // 10% chance: great chemistry, double affection
-        // 15% chance (date only): awkward moment, -1 affection
-        const roll = Math.random();
-        if (roll < 0.10) {
-          affGain = baseAff * 2; // Great chemistry!
-        } else if (roll < 0.30) {
-          affGain = 0; // Didn't click today
-        } else if (slot.activityId === 'date' && roll > 0.85) {
-          affGain = -1; // Awkward date moment
+          if (friendship < 40 || !charmOk || !moodOk || !chemistryOk) {
+            // Date fails — gate requirements not met
+            const cur = npcInteractions[slot.targetNpcId];
+            if (cur.friendship < 4) cur.friendship += 1;
+            // Determine rejection reason
+            let reason = '아직 그런 사이는 아닌 것 같아...';
+            if (friendship < 40) reason = '아직 충분히 친하지 않아서 어색했다.';
+            else if (!charmOk) reason = '매력이 부족해서 인상을 못 남겼다.';
+            else if (!moodOk) reason = '상대가 기분이 안 좋아서 분위기가 영 아니었다.';
+            else if (!chemistryOk) reason = '케미가 안 맞는 느낌... 뭔가 부족하다.';
+            dateOutcomes.push({ npcId: slot.targetNpcId, day, type: 'gate_fail', reason, romanceGain: 0 });
+          } else {
+            // Romance attempt with 30% failure early, 10% at romance 30+
+            const currentRomance = npcRel?.romance ?? 0;
+            const failChance = currentRomance >= 30 ? 0.10 : 0.30;
+            const roll = Math.random();
+
+            if (roll < failChance) {
+              // Failed date — awkward moment
+              const cur = npcInteractions[slot.targetNpcId];
+              if (cur.friendship < 4) cur.friendship += 1;
+              dateOutcomes.push({ npcId: slot.targetNpcId, day, type: 'awkward', romanceGain: 0 });
+            } else {
+              // Successful date — romance gain!
+              let romanceGain = 1;
+              const isGreat = Math.random() < 0.10;
+              if (isGreat) romanceGain = 2;
+
+              // Weekly cap: max +3 romance per NPC
+              const cur = npcInteractions[slot.targetNpcId];
+              if (cur.romance + romanceGain > 3) romanceGain = Math.max(0, 3 - cur.romance);
+              cur.romance += romanceGain;
+              dateOutcomes.push({ npcId: slot.targetNpcId, day, type: isGreat ? 'great_chemistry' : 'success', romanceGain });
+            }
+          }
+        } else {
+          // ─── FRIENDSHIP TRACK ───
+          // friends activity, or any NPC-targeted non-date activity
+          let friendGain = 1; // Base friendship gain (slow)
+          let friendOutcomeType: FriendOutcomeType = 'normal';
+
+          // Randomness: 20% awkward (no gain), 10% great chemistry (double)
+          const roll = Math.random();
+          if (roll < 0.10) {
+            friendGain = 2; // Great time!
+            friendOutcomeType = 'great';
+          } else if (roll < 0.30) {
+            friendGain = 0; // Didn't click today
+            friendOutcomeType = 'awkward';
+          }
+
+          // Weekly cap: max +4 friendship per NPC from activities
+          const cur = npcInteractions[slot.targetNpcId];
+          if (cur.friendship + friendGain > 4) friendGain = Math.max(0, 4 - cur.friendship);
+          cur.friendship += friendGain;
+          friendOutcomes.push({ npcId: slot.targetNpcId, day, type: friendOutcomeType, friendshipGain: friendGain, activityId: slot.activityId });
         }
-
-        // Weekly cap: max +5 affection per NPC from activities
-        const currentGain = npcInteractions[slot.targetNpcId] ?? 0;
-        if (currentGain + affGain > 5) affGain = Math.max(0, 5 - currentGain);
-
-        npcInteractions[slot.targetNpcId] = currentGain + affGain;
       } else {
         effects = activity.statEffects;
-        // Club activity implicitly interacts with Hyunwoo (+1, was +2)
+        // Club activity implicitly interacts with Hyunwoo (+1 friendship)
         if (slot.activityId === 'club') {
-          const currentHw = npcInteractions['hyunwoo'] ?? 0;
-          if (currentHw < 5) npcInteractions['hyunwoo'] = currentHw + 1;
+          ensureNpc('hyunwoo');
+          const cur = npcInteractions['hyunwoo'];
+          if (cur.friendship < 4) cur.friendship += 1;
         }
       }
 
@@ -814,7 +1022,7 @@ export function simulateWeek(
 
       // Hyunwoo close friend: club costs reduced 50%
       const hyunwooRel = options?.relationships?.['hyunwoo'];
-      const clubDiscount = slot.activityId === 'club' && hyunwooRel && hyunwooRel.affection >= 70;
+      const clubDiscount = slot.activityId === 'club' && hyunwooRel && (hyunwooRel.friendship ?? hyunwooRel.affection ?? 0) >= 60;
 
       // Probabilistic variance: ±20% random, 5% crit success (+50%), 5% bad day (-30%)
       const varianceRoll = options?.disableRandomEvents ? 1.0 : (() => {
@@ -924,7 +1132,7 @@ export function simulateWeek(
     deltas.stress -= 3;
     // Hyunwoo soulmate: festival bonus doubled
     const hyunwooRel = options?.relationships?.['hyunwoo'];
-    if (hyunwooRel && hyunwooRel.affection >= 90) {
+    if (hyunwooRel && (hyunwooRel.friendship ?? hyunwooRel.affection ?? 0) >= 80) {
       if (deltas.social > 0) deltas.social = Math.round(deltas.social * 1.5);
       if (deltas.charm > 0) deltas.charm = Math.round(deltas.charm * 1.5);
     }
@@ -936,7 +1144,7 @@ export function simulateWeek(
   }
 
   // ─── Stress Penalty ───
-  const jaeminSoulmate = (options?.relationships?.['jaemin']?.affection ?? 0) >= 90;
+  const jaeminSoulmate = (options?.relationships?.['jaemin']?.friendship ?? options?.relationships?.['jaemin']?.affection ?? 0) >= 80;
   const isOverstressed = currentStats.stress > STRESS_PENALTY_THRESHOLD;
   if (isOverstressed) {
     for (const key of Object.keys(deltas) as (keyof PlayerStats)[]) {
@@ -972,7 +1180,7 @@ export function simulateWeek(
 
   const scenes = getScenesForWeek(currentWeek);
 
-  return { statDeltas: trimmedDeltas, scenes, combos, weeklyEvent, skippedActivities, npcInteractions };
+  return { statDeltas: trimmedDeltas, scenes, combos, weeklyEvent, skippedActivities, npcInteractions, dateOutcomes, friendOutcomes };
 }
 
 /**
