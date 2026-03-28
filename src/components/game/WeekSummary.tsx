@@ -150,12 +150,13 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
   const [reflectionDone, setReflectionDone] = useState(false);
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/40">
-      <GlassPanel variant="strong" className="w-full max-w-lg p-6 animate-modal-enter">
-        {/* Header */}
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
+      <div className="w-full max-w-lg py-8">
+      <GlassPanel variant="strong" className="w-full p-6 animate-modal-enter border border-white/10">
+        {/* Header — dramatic, PM-style */}
         <div className="text-center mb-6">
-          <p className="text-sm text-txt-secondary mb-1">주간 결산</p>
-          <h2 className="text-2xl font-bold text-txt-primary">{currentWeek}주차 완료</h2>
+          <p className="text-xs text-txt-secondary/50 tracking-widest mb-2">WEEK REPORT</p>
+          <h2 className="text-3xl font-black text-txt-primary">{currentWeek}주차 결산</h2>
           <p className="text-sm text-teal/80 mt-1.5">{getWeekComment(weekStatDeltas)}</p>
           {/* Week rating tag */}
           {(() => {
@@ -258,13 +259,18 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
           })}
         </div>
 
-        {/* Random weekly event */}
+        {/* Random weekly event — dramatic presentation */}
         {weeklyEvent && (
-          <div className="flex items-center gap-3 px-4 py-3 mb-4 rounded-xl bg-lavender/10 border border-lavender/20 animate-stat-reveal" style={{ animationDelay: '650ms' }}>
-            <span className="text-xl">🎲</span>
+          <div className="mb-4 rounded-xl bg-gradient-to-r from-lavender/10 to-pink/5 border border-lavender/20 overflow-hidden animate-stat-reveal" style={{ animationDelay: '650ms' }}>
+            <div className="px-4 py-1.5 bg-lavender/10 border-b border-lavender/15">
+              <p className="text-[9px] text-lavender/60 tracking-wider">⚡ 이번 주 사건</p>
+            </div>
+            <div className="flex items-center gap-3 px-4 py-3">
+            <span className="text-2xl">🎲</span>
             <div className="flex-1">
               <div className="text-sm font-bold text-lavender">{weeklyEvent.name}</div>
-              <div className="text-xs text-txt-secondary">{weeklyEvent.description}</div>
+              <div className="text-xs text-txt-secondary mt-0.5">{weeklyEvent.description}</div>
+            </div>
             </div>
           </div>
         )}
@@ -532,6 +538,7 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
           {currentWeek >= 16 ? '🎓 학기 결산 보기' : '다음 주 시작'}
         </button>
       </GlassPanel>
+      </div>
     </div>
   );
 }

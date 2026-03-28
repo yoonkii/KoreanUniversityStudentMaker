@@ -192,20 +192,25 @@ export default function WeeklyOverview({ onContinue }: WeeklyOverviewProps) {
           );
         })()}
 
-        {/* Soyeon companion message (PM2 Cube butler pattern) */}
-        <div className="flex gap-3 px-3 py-3 mb-4 bg-white/5 rounded-xl border-l-2 border-pink/40">
-          <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-pink/10">
-            <Image
-              src={`/assets/characters/soyeon/${soyeon.expression}.png`}
-              alt="소연 선배"
-              width={40}
-              height={40}
-              className="w-full h-full object-cover object-top"
-            />
+        {/* Soyeon advisor — PM3 butler pattern, prominent display */}
+        <div className="mb-5 rounded-xl bg-gradient-to-r from-pink/5 to-lavender/5 border border-pink/15 overflow-hidden">
+          <div className="px-3 py-1.5 bg-pink/5 border-b border-pink/10">
+            <p className="text-[9px] text-pink/50 tracking-wider">💌 선배의 한마디</p>
           </div>
-          <div className="flex-1 min-w-0">
-            <span className="text-[10px] text-pink/70 font-medium">박소연 선배</span>
-            <p className="text-sm text-txt-primary/80 leading-relaxed mt-0.5">{soyeon.text}</p>
+          <div className="flex gap-3 px-4 py-3">
+            <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 border-2 border-pink/20 shadow-lg">
+              <Image
+                src={`/assets/characters/soyeon/${soyeon.expression}.png`}
+                alt="소연 선배"
+                width={56}
+                height={56}
+                className="w-full h-full object-cover object-top"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-xs text-pink/70 font-bold">박소연</span>
+              <p className="text-sm text-txt-primary/80 leading-relaxed mt-1">&ldquo;{soyeon.text}&rdquo;</p>
+            </div>
           </div>
         </div>
 
