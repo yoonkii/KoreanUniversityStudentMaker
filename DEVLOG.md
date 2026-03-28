@@ -1,5 +1,38 @@
 # KUSM Development Log
 
+## Session Summary — 2026-03-28 (AI Next Frontier Integration)
+
+**Scope:** 10 commits. Responds to: "Gemini를 더 적극적으로 활용해서 게임을 더 생동감 있고 인터랙티브하게. next frontier paradigm of game with AI leverage."
+
+### AI Integration — 4 Levels of AI
+
+| Level | Feature | Description |
+|-------|---------|-------------|
+| 4: AI Director | Weekly challenges | Personalized goals based on stats/relationships |
+| 4: AI Director | Dynamic mid-activity events | Gemini generates unique events per week |
+| 3: World Sim | Campus social feed (에브리타임) | NPC posts, rumors, anonymous campus talk |
+| 2: Content Gen | AI-generated ending | Personalized semester reflection |
+| 1: Conversation | Free-form NPC chat | Type anything, Gemini responds in-character |
+| QA: Transparency | AI Thoughts panel | Watch all Gemini interactions live |
+
+### Key Features
+
+**Free-Form NPC Chat** — Players type messages to NPCs in KakaoTalk, Gemini responds in-character:
+- 재민: casual, "ㅋㅋ", joking
+- 민지: tsundere, brief, academic
+- 소연: polite "~요", caring senior
+- 현우: cool, music-focused
+
+**AI-Generated Events** — Narration API extended to produce 2-3 contextual events per week alongside narrations. AI events take priority over 12 canned events. Every playthrough has unique events.
+
+**Campus Social Feed** — 에브리타임-style social media: NPC posts, player rumors, anonymous campus life. Accessible from WeeklyOverview.
+
+**Weekly Challenges** — AI director generates 1-2 goals per week based on player trajectory. Completion gives bonus rewards.
+
+**AI Thoughts Panel** — 🤖 button shows all Gemini API calls in real-time: narrations, scenes, dialogue, campus, events, ending.
+
+---
+
 ## Session Summary — 2026-03-28 (Princess Maker Style Overhaul)
 
 **Scope:** 13 files changed, +1,192 / -1,049 lines. 13 commits. Responds to playtest feedback: "스케줄을 진행하는 부분 완전히 다시 만들어줘. 프린세스 메이커가 어떻게 하는지 공부해봐."

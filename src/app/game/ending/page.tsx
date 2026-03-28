@@ -6,6 +6,7 @@ import { useGameStore } from "@/store/gameStore";
 import { useGameStore as useNewStore } from "@/stores/game-store";
 import type { PlayerStats } from "@/store/types";
 import { ACHIEVEMENTS } from "@/lib/achievements";
+import { logAIThought } from "@/lib/aiThoughtsLog";
 
 /** Determine the player archetype from final stats + relationships */
 function determineArchetype(stats: PlayerStats, relationships?: Record<string, { affection: number; friendship?: number; romance?: number }>): string {
@@ -284,7 +285,12 @@ export default function EndingPage() {
       }),
     })
       .then(r => r.json())
-      .then(data => { if (data.ending) setAIEnding(data.ending); })
+      .then(data => {
+        if (data.ending) {
+          setAIEnding(data.ending);
+          logAIThought('ending', 'AI 엔딩 나레이션 생성', data.ending.slice(0, 100) + '...');
+        }
+      })
       .catch(() => {});
   }, [hydrated, player]); // eslint-disable-line react-hooks/exhaustive-deps
 
