@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import SceneRenderer from '@/components/vn/SceneRenderer';
 import { ORIENTATION_SCENES, ORIENTATION_INTRO, ORIENTATION_OUTRO } from '@/data/orientation-scenes';
@@ -23,6 +23,10 @@ export default function OrientationEvent({ onComplete }: OrientationEventProps) 
   const updateStats = useGameStore((s) => s.updateStats);
   const addEventHistory = useGameStore((s) => s.addEventHistory);
 
+  // Use ref for sceneIndex to avoid stale closure in handleSceneEnd
+  const sceneIndexRef = useRef(sceneIndex);
+  sceneIndexRef.current = sceneIndex;
+
   const handleSceneEnd = useCallback((choice?: Choice) => {
     // Apply choice effects (relationship + stats)
     if (choice) {
@@ -32,7 +36,8 @@ export default function OrientationEvent({ onComplete }: OrientationEventProps) 
       });
     }
 
-    const nextIndex = sceneIndex + 1;
+    const currentIdx = sceneIndexRef.current;
+    const nextIndex = currentIdx + 1;
 
     if (nextIndex > ORIENTATION_SCENES.length) {
       // All scenes + outro done
@@ -45,7 +50,7 @@ export default function OrientationEvent({ onComplete }: OrientationEventProps) 
     } else {
       setSceneIndex(nextIndex);
     }
-  }, [sceneIndex, updateRelationship, updateStats, addEventHistory, onComplete]);
+  }, [updateRelationship, updateStats, addEventHistory, onComplete]);
 
   // Determine current scene
   const currentScene = sceneIndex === -1

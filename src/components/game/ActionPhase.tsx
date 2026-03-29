@@ -165,7 +165,7 @@ interface MidEvent {
 
 const MID_EVENTS: MidEvent[] = [
   {
-    text: '수업 중에 교수님이 갑자기 질문을 던졌다! "이 문제의 답은?"',
+    text: '김 교수님이 갑자기 질문을 던졌다! "이 문제의 답을 말해보세요." 모든 시선이 나에게.',
     choices: [
       { label: '자신 있게 대답한다', effects: { knowledge: 3, charm: 2, stress: 2 } },
       { label: '모른 척 고개를 숙인다', effects: { stress: -2 } },
@@ -174,16 +174,16 @@ const MID_EVENTS: MidEvent[] = [
     probability: 0.25,
   },
   {
-    text: '도서관에서 집중하던 중, 옆자리 사람이 과자를 먹기 시작했다. 바삭바삭...',
+    text: '도서관에서 집중하던 중, 민지가 맞은편에 앉았다. 눈이 마주쳤다가 서로 고개를 돌렸다.',
     choices: [
-      { label: '참고 집중한다', effects: { knowledge: 2, stress: 3 } },
-      { label: '자리를 옮긴다', effects: { stress: -1, knowledge: 1 } },
+      { label: '먼저 인사한다', effects: { social: 2, charm: 1, knowledge: 1 } },
+      { label: '집중을 유지한다', effects: { knowledge: 3, stress: 1 } },
     ],
     condition: (a) => a === 'study',
     probability: 0.2,
   },
   {
-    text: '알바 중에 진상 손님이 왔다. "이거 왜 이렇게 느려요?!"',
+    text: '알바 중에 진상 손님이 왔다. "이거 왜 이렇게 느려요?!" 사장님이 뒤에서 지켜보고 있다.',
     choices: [
       { label: '웃으며 대응한다', effects: { charm: 3, stress: 5, money: 5000 } },
       { label: '매뉴얼대로 대응한다', effects: { stress: 2 } },
@@ -192,16 +192,16 @@ const MID_EVENTS: MidEvent[] = [
     probability: 0.3,
   },
   {
-    text: '운동하다가 옆 사람이 "같이 할래요?" 하고 말을 걸었다.',
+    text: '체육관에서 운동하는데 재민이가 나타났다. "야! 같이 하자! 혼자 하면 재미없잖아!"',
     choices: [
-      { label: '좋아요!', effects: { social: 3, health: 2, charm: 1 } },
-      { label: '아, 저 혼자 할게요', effects: { health: 1 } },
+      { label: '같이 운동한다', effects: { social: 3, health: 2, charm: 1 } },
+      { label: '오늘은 혼자 할래', effects: { health: 1 } },
     ],
     condition: (a) => a === 'exercise',
     probability: 0.2,
   },
   {
-    text: '동아리 연습 중에 선배가 "솔로 한 번 해볼래?" 하고 물었다.',
+    text: '현우 선배가 동아리 연습 중 기타를 건넸다. "이 파트 한 번 해볼래? 네가 하면 잘 어울릴 것 같아."',
     choices: [
       { label: '도전한다!', effects: { charm: 5, stress: 5, social: 2 } },
       { label: '아직 준비가 안 됐어요...', effects: { stress: -2, social: 1 } },
@@ -228,7 +228,7 @@ const MID_EVENTS: MidEvent[] = [
     probability: 0.2,
   },
   {
-    text: '과외 학생이 갑자기 "선생님, 왜 이게 이해가 안 될까요?" 하고 울기 시작했다.',
+    text: '과외 학생 지호가 갑자기 "선생님, 왜 이게 이해가 안 될까요?" 하며 눈물을 보였다.',
     choices: [
       { label: '천천히 다시 설명해준다', effects: { knowledge: 2, charm: 3, stress: 3 } },
       { label: '잠깐 쉬고 다시 하자고 한다', effects: { stress: -2, social: 2 } },
@@ -237,7 +237,7 @@ const MID_EVENTS: MidEvent[] = [
     probability: 0.3,
   },
   {
-    text: '네트워킹 모임에서 유명한 스타트업 대표가 옆자리에 앉았다!',
+    text: '네트워킹 모임에서 유명한 스타트업 대표 김진수 씨가 옆자리에 앉았다!',
     choices: [
       { label: '용기내서 말을 건다', effects: { charm: 5, social: 4, stress: 3 } },
       { label: '명함만 슬쩍 놓는다', effects: { social: 2 } },
@@ -255,7 +255,7 @@ const MID_EVENTS: MidEvent[] = [
     probability: 0.35,
   },
   {
-    text: '친구와 이야기하다가 서로의 고민을 나누게 되었다.',
+    text: '소연 선배와 카페에서 이야기하다가 갑자기 진지해졌다. "사실 나도 요즘 고민이 있어..."',
     choices: [
       { label: '진심으로 들어준다', effects: { social: 4, stress: -3 } },
       { label: '밝은 쪽으로 화제를 돌린다', effects: { charm: 2, stress: -1 } },

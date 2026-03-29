@@ -625,7 +625,7 @@ export default function GameScreen() {
       {(phase === 'planning' || phase === 'summary') && !showActionPhase && <StatsSidebar />}
 
       {/* Main content */}
-      {phase === 'planning' && !showActionPhase && !showPrologue && !showSugangsincheong && !showMT && !showFestival && !showExam && !hasCrisis && (
+      {phase === 'planning' && !showActionPhase && !showPrologue && !showOT && !showSugangsincheong && !showMT && !showFestival && !showExam && !hasCrisis && (
         <div className="lg:ml-72 pt-16 animate-fade-in-up">
           {/* Character status card (PM2 pattern: always show the character) */}
           <div className="px-3 sm:px-4 mb-2">

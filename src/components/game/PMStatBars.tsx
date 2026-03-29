@@ -32,7 +32,7 @@ export default function PMStatBars({ stats, previousStats, showDelta = false }: 
   }, [showDelta, stats]);
 
   return (
-    <div className="flex flex-col gap-1.5 w-52 sm:w-60 px-3 py-2.5 rounded-xl bg-black/70 backdrop-blur-md border border-white/10">
+    <div className="flex flex-col gap-2 w-56 sm:w-64 px-4 py-3 rounded-xl bg-black/70 backdrop-blur-md border border-white/10">
       {STAT_CONFIG.map(({ key, label, emoji, color, max }) => {
         const current = stats[key];
         const prev = previousStats[key];
@@ -43,9 +43,9 @@ export default function PMStatBars({ stats, previousStats, showDelta = false }: 
         const isGood = key === 'stress' ? delta < 0 : delta > 0;
 
         return (
-          <div key={key} className="flex items-center gap-1.5">
-            <span className="text-[10px] w-4 text-center">{emoji}</span>
-            <span className="text-[9px] text-white/50 w-12 truncate">{label}</span>
+          <div key={key} className="flex items-center gap-2">
+            <span className="text-sm w-5 text-center">{emoji}</span>
+            <span className="text-[11px] text-white/60 w-14 truncate font-medium">{label}</span>
             <div className="flex-1 h-3 bg-black/40 rounded-full overflow-hidden relative">
               {/* Delta highlight region */}
               {hasDelta && (
@@ -67,8 +67,8 @@ export default function PMStatBars({ stats, previousStats, showDelta = false }: 
               />
             </div>
             {/* Value + delta */}
-            <div className="w-16 text-right flex items-center justify-end gap-0.5">
-              <span className="text-[10px] text-white/60 font-mono">
+            <div className="w-16 text-right flex items-center justify-end gap-1">
+              <span className="text-xs text-white/70 font-mono font-bold">
                 {key === 'money' ? `${Math.round(current / 10000)}만` : current}
               </span>
               {hasDelta && animated && (
