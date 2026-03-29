@@ -138,9 +138,9 @@ export default function GameScreen() {
 
       clearTimeout(timeoutId);
       setIsLoadingAI(false);
-      if (controller.signal.aborted) return;
+      // Don't bail on abort — fall through to hardcoded scenes
 
-      if (aiScene) {
+      if (aiScene && !controller.signal.aborted) {
         // AI scene succeeded — use it (schedule-contextual, unique each time)
         logAIThought('scene', `${currentWeek}주차 AI 씬 생성`, aiScene.dialogue?.[0]?.text ?? '(씬 생성됨)');
         setSceneQueue([aiScene]);
