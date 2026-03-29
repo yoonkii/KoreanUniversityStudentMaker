@@ -55,10 +55,12 @@ export default function CreatePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0e1a] via-[#1a1040] to-[#2a1535] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background character */}
-      <div className="absolute bottom-0 right-0 w-64 h-80 opacity-15 pointer-events-none">
-        <Image src="/assets/characters/jaemin/happy.png" alt="" fill className="object-contain object-bottom" />
-      </div>
+      {/* Background character — show selected gender */}
+      {gender && (
+        <div className="absolute bottom-0 right-0 w-64 h-96 opacity-20 pointer-events-none">
+          <Image src={`/assets/characters/player/neutral-${gender}.png`} alt="" fill className="object-contain object-bottom" />
+        </div>
+      )}
 
       <div className="w-full max-w-md relative z-10">
         {/* Step 0: Name */}

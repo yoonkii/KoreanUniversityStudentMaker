@@ -536,35 +536,44 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
         })()}
       </div>
 
-      {/* Player character — large semi-transparent display (PM-style full sprite) */}
+      {/* Player character — positioned to be fully visible above stat bars */}
       {!activity.skipped && (
-        <div className="absolute bottom-28 sm:bottom-32 left-2 sm:left-8 z-10 opacity-70" key={`player-${dayIndex}-${activityIndex}`}>
-          <Image
-            src={`/assets/characters/player/${getPlayerExpression(runningStats, activityId, activity, showStats)}-${playerGender}.png`}
-            alt="나"
-            width={180}
-            height={280}
-            className="object-contain object-bottom drop-shadow-[0_0_20px_rgba(0,0,0,0.5)] animate-fade-in"
-          />
+        <div className="absolute bottom-40 sm:bottom-48 left-4 sm:left-16 z-10" key={`player-${dayIndex}-${activityIndex}`}>
+          <div className="w-[120px] h-[200px] sm:w-[160px] sm:h-[260px] relative">
+            <Image
+              src={`/assets/characters/player/${getPlayerExpression(runningStats, activityId, activity, showStats)}-${playerGender}.png`}
+              alt="나"
+              fill
+              className="object-contain object-bottom drop-shadow-[0_4px_24px_rgba(0,0,0,0.6)] animate-fade-in"
+            />
+          </div>
         </div>
       )}
 
-      {/* NPC character — large display with dynamic expression */}
+      {/* NPC character — right side, fully visible */}
       {activity.targetNpcId && !activity.skipped && (
-        <div className="absolute bottom-28 sm:bottom-32 right-2 sm:right-8 z-10 opacity-80" key={`npc-${dayIndex}-${activityIndex}`}>
-          <Image
-            src={getNpcPortraitPath(activity.targetNpcId, getNpcExpression(activity.targetNpcId, activity, showStats))}
-            alt={activity.targetNpcName ?? ''}
-            width={160}
-            height={250}
-            className="object-contain object-bottom drop-shadow-[0_0_20px_rgba(0,0,0,0.5)] animate-fade-in transition-all duration-300"
-          />
-          <p className="text-center text-xs text-white/70 mt-1 font-medium drop-shadow-lg">{activity.targetNpcName}</p>
+        <div className="absolute bottom-40 sm:bottom-48 right-4 sm:right-16 z-10" key={`npc-${dayIndex}-${activityIndex}`}>
+          <div className="w-[110px] h-[180px] sm:w-[150px] sm:h-[240px] relative">
+            <Image
+              src={getNpcPortraitPath(activity.targetNpcId, getNpcExpression(activity.targetNpcId, activity, showStats))}
+              alt={activity.targetNpcName ?? ''}
+              fill
+              className="object-contain object-bottom drop-shadow-[0_4px_24px_rgba(0,0,0,0.6)] animate-fade-in transition-all duration-300"
+            />
+          </div>
+          <p className="text-center text-sm text-white/80 mt-1 font-bold drop-shadow-lg">{activity.targetNpcName}</p>
         </div>
       )}
 
       {/* Calendar display — top left */}
       <div className="absolute top-4 left-4 z-20">
+        {/* AI indicator — shows when Gemini generated this narration */}
+        {getNarration(currentWeek, globalActivityIndex) && (
+          <div className="mb-2 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal/10 border border-teal/20">
+            <span className="text-xs">🤖</span>
+            <span className="text-[10px] text-teal/70 font-medium">AI 나레이션</span>
+          </div>
+        )}
         <CalendarDisplay
           week={currentWeek}
           dayName={currentDay.dayName}
@@ -679,35 +688,35 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
       <div className="absolute bottom-0 left-0 right-0 z-20">
         {/* Outcome/reaction row — appears above narration when stats shown */}
         {showStats && (outcome || npcReaction || thought) && (
-          <div className="px-4 sm:px-6 mb-1 animate-fade-in-up">
+          <div className="px-5 sm:px-8 mb-2 animate-fade-in-up">
             {outcome && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm">
-                <span>{outcome.emoji}</span>
-                <span className={`text-xs ${outcome.color}`}>{outcome.text}</span>
+              <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/60 backdrop-blur-sm border border-white/10">
+                <span className="text-lg">{outcome.emoji}</span>
+                <span className={`text-sm sm:text-base ${outcome.color}`}>{outcome.text}</span>
                 {activity.dateOutcome && activity.dateOutcome.romanceGain > 0 && (
                   <span className="text-[9px] text-pink/60">♥+{activity.dateOutcome.romanceGain}</span>
                 )}
               </div>
             )}
             {!outcome && npcReaction && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/40">
-                <span className="text-[10px]">💬</span>
-                {npcReaction.npcName && <span className="text-[10px] text-pink/50 font-medium">{npcReaction.npcName}:</span>}
-                <span className="text-xs text-white/50 italic">{npcReaction.text}</span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black/50 border border-white/5">
+                <span className="text-sm">💬</span>
+                {npcReaction.npcName && <span className="text-sm text-pink/60 font-bold">{npcReaction.npcName}:</span>}
+                <span className="text-sm text-white/60 italic">{npcReaction.text}</span>
               </div>
             )}
             {!outcome && !npcReaction && thought && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/30">
-                <span className="text-[10px]">💭</span>
-                <span className="text-xs text-white/40 italic">{thought}</span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black/40 border border-white/5">
+                <span className="text-sm">💭</span>
+                <span className="text-sm text-white/50 italic">{thought}</span>
               </div>
             )}
           </div>
         )}
 
-        {/* Main narration box — full width, compact */}
-        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-black/70 backdrop-blur-md border-t border-white/10">
-          <p className="text-sm sm:text-base text-white/90 leading-relaxed max-w-3xl">{narration}</p>
+        {/* Main narration box — full width, readable */}
+        <div className="px-5 sm:px-8 py-4 sm:py-5 bg-black/80 backdrop-blur-md border-t border-white/15">
+          <p className="text-base sm:text-lg text-white/95 leading-relaxed max-w-3xl">{narration}</p>
           <div className="flex items-center justify-between mt-2">
             <div className="flex gap-1.5">
               {days.map((_, i) => (
@@ -728,19 +737,19 @@ export default function ActionPhase({ days, currentStats, onComplete }: ActionPh
 
       {/* Mid-activity event overlay (PM-style random interruption) */}
       {phase === 'midEvent' && currentMidEvent && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in" onClick={(e) => e.stopPropagation()}>
-          <div className="w-full max-w-md px-6 animate-fade-in-up">
-            <div className="bg-black/80 backdrop-blur-md rounded-2xl border border-white/15 p-6">
-              <p className="text-[10px] text-teal/60 tracking-wider mb-2">⚡ 이벤트 발생!</p>
-              <p className="text-sm sm:text-base text-white/90 leading-relaxed mb-5">{currentMidEvent.text}</p>
-              <div className="flex flex-col gap-2">
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50 animate-fade-in" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-lg px-4 animate-fade-in-up">
+            <div className="bg-[#0f1923]/95 backdrop-blur-md rounded-2xl border border-teal/20 p-6 sm:p-8 shadow-2xl">
+              <p className="text-sm text-teal font-bold tracking-wider mb-3">⚡ 이벤트 발생!</p>
+              <p className="text-base sm:text-lg text-white/95 leading-relaxed mb-6">{currentMidEvent.text}</p>
+              <div className="flex flex-col gap-3">
                 {currentMidEvent.choices.map((choice, i) => (
                   <button
                     key={i}
                     onClick={() => handleMidEventChoice(choice.effects)}
-                    className="w-full text-left px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer active:scale-[0.98]"
+                    className="w-full text-left px-5 py-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-teal/30 transition-all cursor-pointer active:scale-[0.98]"
                   >
-                    <p className="text-sm text-white font-medium">{choice.label}</p>
+                    <p className="text-base text-white font-bold">{choice.label}</p>
                     <div className="flex gap-1.5 mt-1.5">
                       {Object.entries(choice.effects).filter(([,v]) => v !== 0).map(([k, v]) => {
                         const labels: Record<string, string> = { knowledge: '준비도', money: '돈', health: '체력', social: '인맥', stress: '스트레스', charm: '매력' };
