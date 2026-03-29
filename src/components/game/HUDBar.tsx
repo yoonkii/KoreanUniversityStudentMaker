@@ -6,6 +6,7 @@ import { getWeatherForWeek } from '@/lib/gameEngine';
 import type { ExamResults } from '@/store/types';
 import RelationshipPanel from './RelationshipPanel';
 import AIThoughtsPanel from './AIThoughtsPanel';
+import { getAIThoughts, subscribeAIThoughts } from '@/lib/aiThoughtsLog';
 
 const SEMESTER_WEEKS = 16;
 
@@ -48,6 +49,16 @@ export default function HUDBar() {
   const relationships = useGameStore((state) => state.relationships);
   const [showRelPanel, setShowRelPanel] = useState(false);
   const [showAIPanel, setShowAIPanel] = useState(false);
+  const [lastAIThought, setLastAIThought] = useState('');
+
+  // Subscribe to AI thoughts for the live indicator
+  useState(() => {
+    const unsub = subscribeAIThoughts(() => {
+      const thoughts = getAIThoughts();
+      if (thoughts.length > 0) setLastAIThought(thoughts[0].label);
+    });
+    return unsub;
+  });
   const knowledge = stats?.knowledge ?? 50;
   const stress = stats?.stress ?? 0;
   const health = stats?.health ?? 100;
@@ -183,14 +194,23 @@ export default function HUDBar() {
       </div>
       {showRelPanel && <RelationshipPanel onClose={() => setShowRelPanel(false)} />}
       <AIThoughtsPanel isOpen={showAIPanel} onClose={() => setShowAIPanel(false)} />
-      {/* AI Thoughts toggle — always visible at bottom-right of HUD */}
-      <button
-        onClick={() => setShowAIPanel(!showAIPanel)}
-        className="fixed bottom-3 right-3 z-40 w-8 h-8 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-sm hover:bg-black/70 transition-colors cursor-pointer"
-        title="AI Thoughts"
-      >
-        🤖
-      </button>
+      {/* AI Thoughts toggle — always visible at bottom-right */}
+      <div className="fixed bottom-3 right-3 z-40 flex items-center gap-2">
+        {lastAIThought && !showAIPanel && (
+          <div className="px-3 py-1.5 rounded-lg bg-teal/10 border border-teal/20 max-w-[200px] animate-fade-in">
+            <p className="text-[10px] text-teal/70 truncate">🤖 {lastAIThought}</p>
+          </div>
+        )}
+        <button
+          onClick={() => setShowAIPanel(!showAIPanel)}
+          className={`w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all cursor-pointer ${
+            showAIPanel ? 'bg-teal/20 border-2 border-teal' : 'bg-black/60 border border-white/15 hover:bg-black/80'
+          }`}
+          title="AI Thoughts"
+        >
+          🤖
+        </button>
+      </div>
     </>
   );
 }

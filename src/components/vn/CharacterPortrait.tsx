@@ -99,7 +99,7 @@ export default function CharacterPortrait({
 
   return (
     <div
-      className={`absolute bottom-0 ${positionClass} w-[200px] md:w-[280px] lg:w-[320px] h-[500px] md:h-[600px] lg:h-[700px] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${activeClass} ${enterClass} ${pulseClass}`}
+      className={`absolute bottom-16 sm:bottom-20 ${positionClass} w-[180px] sm:w-[240px] md:w-[280px] lg:w-[320px] h-[350px] sm:h-[450px] md:h-[550px] lg:h-[650px] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${activeClass} ${enterClass} ${pulseClass}`}
     >
       {imgError ? (
         <SilhouetteFallback isActive={isActive} />
