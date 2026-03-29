@@ -10,23 +10,18 @@ import type { StorytellerMode } from "@/engine/types/story";
 import type { DreamType } from "@/store/types";
 import Image from "next/image";
 
-const MAJORS: { type: MajorType; emoji: string; vibe: string }[] = [
-  { type: "engineering", emoji: "⚙️", vibe: "논리적이고 체계적인" },
-  { type: "business", emoji: "📊", vibe: "실용적이고 사교적인" },
-  { type: "humanities", emoji: "📚", vibe: "깊이 있고 사색적인" },
-  { type: "arts", emoji: "🎨", vibe: "창의적이고 자유로운" },
+const MAJORS: { type: MajorType; emoji: string; vibe: string; effect: string; statHint: string }[] = [
+  { type: "engineering", emoji: "⚙️", vibe: "공과대학", effect: "수업의 준비도 효과 +20%. 민지와 같은 과!", statHint: "📚 준비도↑" },
+  { type: "business", emoji: "📊", vibe: "경영대학", effect: "알바 수입 +20%. 네트워킹 효과 ↑", statHint: "💰 돈↑ 👥 인맥↑" },
+  { type: "humanities", emoji: "📚", vibe: "인문대학", effect: "매력 성장 +20%. 소연 선배와 같은 과!", statHint: "✨ 매력↑" },
+  { type: "arts", emoji: "🎨", vibe: "예술대학", effect: "동아리 효과 +20%. 현우 선배와 친해지기 쉬움!", statHint: "🎵 매력↑ 스트레스↓" },
 ];
 
-const DREAMS: { id: string; label: string; emoji: string; hint: string; bonus: string; style: string }[] = [
-  { id: "scholar", label: "학자의 꿈", emoji: "🎓", hint: "최고의 학점으로 대학원에 진학하고 싶다", bonus: "준비도 +10", style: "교수님의 인정을 받는 모범생" },
-  { id: "social", label: "인맥왕", emoji: "🤝", hint: "캠퍼스에서 모르는 사람이 없는 인싸가 되고 싶다", bonus: "인맥 +10, 매력 +5", style: "사람을 좋아하는 사교형" },
-  { id: "balance", label: "갓생러", emoji: "⚖️", hint: "공부, 운동, 인간관계... 모든 걸 균형 있게 챙기고 싶다", bonus: "체력 +5, 준비도 +3, 인맥 +3", style: "완벽한 균형의 올라운더" },
-  { id: "freedom", label: "마이웨이", emoji: "🌊", hint: "남들의 시선 신경 쓰지 않고 나만의 길을 가고 싶다", bonus: "스트레스 -10, 매력 +5", style: "자유로운 영혼의 낭만파" },
-];
-
-const UNIVERSITIES = [
-  "서울대학교", "연세대학교", "고려대학교", "성균관대학교",
-  "한양대학교", "중앙대학교", "경희대학교", "건국대학교",
+const DREAMS: { id: string; label: string; emoji: string; hint: string; bonus: string; gameplay: string }[] = [
+  { id: "scholar", label: "학자의 꿈", emoji: "🎓", hint: "최고의 학점으로 인정받고 싶다", bonus: "준비도 +10", gameplay: "공부 효과 ↑, 김 교수님과 친해지기 쉬움, 장학금 엔딩 가능" },
+  { id: "social", label: "인맥왕", emoji: "🤝", hint: "캠퍼스에서 모르는 사람 없는 인싸", bonus: "인맥 +10, 매력 +5", gameplay: "친구/데이트 효과 ↑, 모든 NPC 친밀도 보너스, 로맨스 엔딩 유리" },
+  { id: "balance", label: "갓생러", emoji: "⚖️", hint: "공부도 놀기도 운동도 다 잘하고 싶다", bonus: "체력 +5, 준비도 +3, 인맥 +3", gameplay: "콤보 보너스 ↑, 밸런스 엔딩 유리, 위기 저항력 ↑" },
+  { id: "freedom", label: "마이웨이", emoji: "🌊", hint: "남의 눈치 안 보고 나만의 길", bonus: "스트레스 -10, 매력 +5", gameplay: "스트레스 회복 ↑, 탐험/자기관리 효과 ↑, 숨겨진 엔딩 해금 유리" },
 ];
 
 export default function CreatePage() {
@@ -35,18 +30,18 @@ export default function CreatePage() {
   const setGamePhase = useGameStore((s) => s.setGamePhase);
   const legacyCreatePlayer = useLegacyStore((s) => s.createPlayer);
 
-  const [step, setStep] = useState(0); // 0: name, 1: major, 2: dream, 3: confirm
+  const [step, setStep] = useState(0); // 0: name+gender, 1: major, 2: dream, 3: confirm
   const [name, setName] = useState("");
   const [isComposing, setIsComposing] = useState(false);
-  const [university, setUniversity] = useState(UNIVERSITIES[0]);
+  const [gender, setGender] = useState<'male' | 'female' | null>(null);
   const [major, setMajor] = useState<MajorType>("engineering");
   const [dream, setDream] = useState<string>("balance");
 
   const handleStart = () => {
-    if (!name.trim() || isComposing) return;
-    initializeGame(name.trim(), university, major, "cassandra" as StorytellerMode, "ko");
+    if (!name.trim() || isComposing || !gender) return;
+    initializeGame(name.trim(), "한국대학교", major, "cassandra" as StorytellerMode, "ko");
     setGamePhase("playing");
-    legacyCreatePlayer({ name: name.trim(), gender: "male", major, dream: dream as DreamType });
+    legacyCreatePlayer({ name: name.trim(), gender, major, dream: dream as DreamType });
     router.push("/game");
   };
 
@@ -94,26 +89,39 @@ export default function CreatePage() {
                 setIsComposing(false);
                 setName((e.target as HTMLInputElement).value);
               }}
-              onKeyDown={(e) => { if (e.key === 'Enter' && name.trim() && !isComposing) setStep(1); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && name.trim() && !isComposing && gender) setStep(1); }}
               placeholder="이름을 입력하세요"
               autoFocus
               className="w-full px-5 py-4 rounded-2xl border-2 border-white/20 bg-white/5 text-white text-center text-xl placeholder-white/30 focus:border-teal focus:outline-none backdrop-blur-md"
             />
 
-            <select
-              value={university}
-              onChange={(e) => setUniversity(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-white/15 bg-white/5 text-white/80 text-sm focus:border-teal focus:outline-none backdrop-blur-md"
-            >
-              {UNIVERSITIES.map((u) => (
-                <option key={u} value={u} className="bg-[#1a1040]">{u}</option>
+            {/* Gender selection */}
+            <div className="flex gap-3">
+              {([
+                { value: 'male' as const, emoji: '👨‍🎓', label: '남학생' },
+                { value: 'female' as const, emoji: '👩‍🎓', label: '여학생' },
+              ]).map((g) => (
+                <button
+                  key={g.value}
+                  onClick={() => setGender(g.value)}
+                  className={`flex-1 py-4 rounded-xl border-2 text-center transition-all cursor-pointer active:scale-[0.97] ${
+                    gender === g.value
+                      ? 'border-teal bg-teal/15 text-teal'
+                      : 'border-white/15 bg-white/5 text-white/60 hover:border-white/30'
+                  }`}
+                >
+                  <span className="text-3xl block mb-1">{g.emoji}</span>
+                  <span className="text-sm font-medium">{g.label}</span>
+                </button>
               ))}
-            </select>
+            </div>
+
+            <p className="text-center text-xs text-white/20">한국대학교 신입생</p>
 
             <button
               onClick={() => setStep(1)}
-              disabled={!name.trim()}
-              className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${name.trim() ? 'bg-teal/20 text-teal border border-teal/30 hover:bg-teal/30 cursor-pointer active:scale-[0.98]' : 'bg-white/5 text-white/20 cursor-not-allowed'}`}
+              disabled={!name.trim() || !gender}
+              className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${name.trim() && gender ? 'bg-teal/20 text-teal border border-teal/30 hover:bg-teal/30 cursor-pointer active:scale-[0.98]' : 'bg-white/5 text-white/20 cursor-not-allowed'}`}
             >
               다음
             </button>
@@ -136,9 +144,10 @@ export default function CreatePage() {
                   className={`flex items-center gap-4 px-5 py-4 rounded-xl border-2 text-left transition-all cursor-pointer active:scale-[0.98] ${major === m.type ? 'border-teal bg-teal/10' : 'border-white/15 bg-white/5 hover:border-white/30'}`}
                 >
                   <span className="text-3xl">{m.emoji}</span>
-                  <div>
-                    <div className="font-bold text-white">{MAJOR_LABELS[m.type].ko}</div>
-                    <div className="text-xs text-white/50 mt-0.5">{m.vibe} 성격의 당신에게</div>
+                  <div className="flex-1">
+                    <div className="font-bold text-white">{m.vibe}</div>
+                    <div className="text-xs text-teal/70 mt-0.5">{m.effect}</div>
+                    <div className="text-[10px] text-white/30 mt-0.5">{m.statHint}</div>
                   </div>
                 </button>
               ))}
@@ -165,10 +174,8 @@ export default function CreatePage() {
                   <div className="flex-1">
                     <div className="font-bold text-white">{d.label}</div>
                     <div className="text-xs text-white/50 mt-0.5">{d.hint}</div>
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal/15 text-teal">{d.bonus}</span>
-                      <span className="text-[9px] text-white/30">{d.style}</span>
-                    </div>
+                    <div className="text-[10px] text-teal/60 mt-1">{d.gameplay}</div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal/15 text-teal mt-1 inline-block">{d.bonus}</span>
                   </div>
                 </button>
               ))}
@@ -181,8 +188,8 @@ export default function CreatePage() {
           <div className="flex flex-col gap-6 animate-fade-in-up">
             <div className="text-center">
               <span className="text-5xl block mb-3">🎓</span>
-              <h1 className="text-2xl font-bold text-white mb-1">{university}</h1>
-              <p className="text-lg text-white/70">{MAJOR_LABELS[major].ko} · {name}</p>
+              <h1 className="text-2xl font-bold text-white mb-1">한국대학교</h1>
+              <p className="text-lg text-white/70">{MAJORS.find(m => m.type === major)?.vibe} · {name} ({gender === 'female' ? '여' : '남'})</p>
               <div className="mt-3 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10">
                 <span>{selectedDream.emoji}</span>
                 <span className="text-sm text-white/60">{selectedDream.label}</span>
