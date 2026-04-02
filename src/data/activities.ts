@@ -110,6 +110,37 @@ export const ACTIVITIES: Record<string, ActivityDef> = {
     description: '피부관리, 헤어, 쇼핑... 자신에게 투자하는 시간.',
     unlockRequirement: { stat: 'charm', min: 40, label: '매력 40 이상' },
   },
+  // ─── Stat-Unlocked Activities ───
+  studygroup: {
+    id: 'studygroup',
+    name: '스터디 그룹',
+    icon: 'solar:users-group-two-rounded-bold',
+    color: 'gold',
+    statEffects: { knowledge: 7, social: 3, stress: 5 },
+    description: '스터디 그룹에서 함께 공부. 혼자보다 효율적이고 외롭지 않다.',
+    unlockRequirement: { stat: 'knowledge', min: 60, label: '준비도 60 이상' },
+    unlockWeek: 3,
+  },
+  party: {
+    id: 'party',
+    name: '파티',
+    icon: 'solar:confetti-bold',
+    color: 'lavender',
+    statEffects: { social: 15, charm: 5, stress: 8, money: -25000, health: -3 },
+    description: '인맥 덕분에 파티 초대를 받았다. 신나지만 다음 날 피곤하다.',
+    unlockRequirement: { stat: 'social', min: 50, label: '인맥 50 이상' },
+    unlockWeek: 4,
+  },
+  marathon: {
+    id: 'marathon',
+    name: '마라톤 참가',
+    icon: 'solar:medal-ribbon-bold',
+    color: 'teal',
+    statEffects: { health: 20, charm: 6, stress: 4, social: 5, money: -5000 },
+    description: '교내 마라톤 대회. 완주하면 자존감이 치솟는다.',
+    unlockRequirement: { stat: 'health', min: 70, label: '체력 70 이상' },
+    unlockWeek: 5,
+  },
   // ─── Weekend-Only Activities ───
   explore: {
     id: 'explore',

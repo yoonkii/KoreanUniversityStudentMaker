@@ -625,20 +625,42 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
         ))}
       </div>
 
-      {/* ─── Combo Preview ─── */}
-      <div className="flex flex-wrap gap-1.5 sm:gap-2">
-        {activeCombos.map((combo) => (
-          <div
-            key={combo.name}
-            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-xs transition-all duration-200 ${combo.active ? (combo.penalty ? 'bg-coral/15 text-coral border border-coral/30' : 'bg-teal/15 text-teal border border-teal/30') : combo.discovered ? 'bg-white/5 text-txt-secondary/40 border border-white/5' : 'bg-white/[0.02] text-txt-secondary/20 border border-white/[0.03]'}`}
-          >
-            <span>{combo.active ? (combo.penalty ? '!' : '✦') : combo.discovered ? '-' : '?'}</span>
-            <span>{combo.discovered || combo.active ? combo.name : '???'}</span>
-            {combo.active && <span className="font-medium">{combo.effect}</span>}
-            {!combo.discovered && !combo.active && <span className="text-[8px]">미발견</span>}
+      {/* ─── Combo Preview — discovered combos are clickable presets ─── */}
+      {(() => {
+        const COMBO_TEMPLATE: Record<string, string> = {
+          '효율적 학습': 'scholar',
+          '균형 잡힌 생활': 'balanced',
+          '인맥 왕': 'social',
+          '고학생': 'hustler',
+        };
+        return (
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            {activeCombos.map((combo) => {
+              const templateKey = COMBO_TEMPLATE[combo.name];
+              const isClickable = !combo.penalty && !!templateKey && (combo.discovered || combo.active);
+              const baseClass = `flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-xs transition-all duration-200 ${combo.active ? (combo.penalty ? 'bg-coral/15 text-coral border border-coral/30' : 'bg-teal/15 text-teal border border-teal/30') : combo.discovered ? 'bg-white/5 text-txt-secondary/40 border border-white/5' : 'bg-white/[0.02] text-txt-secondary/20 border border-white/[0.03]'} ${isClickable ? 'cursor-pointer hover:brightness-125 active:scale-95' : ''}`;
+              if (isClickable) {
+                return (
+                  <button key={combo.name} onClick={() => applyTemplate(templateKey)} className={baseClass} title={`"${combo.name}" 템플릿 바로 적용`}>
+                    <span>✦</span>
+                    <span>{combo.name}</span>
+                    {combo.active && <span className="font-medium">{combo.effect}</span>}
+                    <span className="text-[8px] opacity-50">탭</span>
+                  </button>
+                );
+              }
+              return (
+                <div key={combo.name} className={baseClass}>
+                  <span>{combo.active ? (combo.penalty ? '!' : '✦') : combo.discovered ? '-' : '?'}</span>
+                  <span>{combo.discovered || combo.active ? combo.name : '???'}</span>
+                  {combo.active && <span className="font-medium">{combo.effect}</span>}
+                  {!combo.discovered && !combo.active && <span className="text-[8px]">미발견</span>}
+                </div>
+              );
+            })}
           </div>
-        ))}
-      </div>
+        );
+      })()}
 
       {/* Energy bar — PM-style constraint visualization */}
       {totalScheduled > 0 && (

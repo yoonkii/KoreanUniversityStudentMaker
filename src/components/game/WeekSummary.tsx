@@ -64,6 +64,49 @@ function getWeekComment(deltas: Partial<PlayerStats>): string {
   return '무난한 한 주가 지나갔어요 📅';
 }
 
+/** Next week teaser — creates anticipation and "one more week" pull */
+function getNextWeekPreview(week: number, stats: PlayerStats): string {
+  const nextWeek = week + 1;
+  // Hard-coded special event teasers
+  if (nextWeek === 4) return '다음 주 예고: MT가 잡혔다! 선배들이랑 1박 2일... 어떤 일이 생길까? 🏕️';
+  if (nextWeek === 7) return '다음 주 예고: 중간고사 시즌 돌입! 📝 준비는 됐나요?';
+  if (nextWeek === 9) return '다음 주 예고: 대동제 축제가 열린다! 🎪 캠퍼스 분위기가 달라질 것 같다.';
+  if (nextWeek === 14) return '다음 주 예고: 기말고사 주간! 📚 1학기의 마지막 고비.';
+  if (nextWeek === 16) return '다음 주 예고: 마지막 주... 학기가 끝나간다. 어떤 마무리를 할까? 🎓';
+  // Relationship threshold teasers
+  const rels = useGameStore.getState().relationships;
+  const NPC_KO: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연 선배', hyunwoo: '현우 선배' };
+  for (const [id, rel] of Object.entries(rels)) {
+    const name = NPC_KO[id];
+    if (!name) continue;
+    const fr = rel.friendship ?? rel.affection ?? 0;
+    const rom = rel.romance ?? 0;
+    if (fr >= 35 && fr < 40) return `다음 주 예고: ${name}이(가) 뭔가 말하고 싶어 하는 것 같다... 💭`;
+    if (rom >= 20 && rom < 25) return `다음 주 예고: ${name}을(를) 볼 때마다 두근거린다. 이 감정, 뭘까? 💓`;
+    if (rom >= 40 && rom < 45) return `다음 주 예고: ${name}과(와)... 더 가까워질 수 있을까? 💕`;
+  }
+  // Stat-based warnings / excitement
+  if (stats.stress >= 65) return '다음 주 예고: 이러다 쓰러지겠어. 다음 주엔 꼭 좀 쉬어야겠다. 😰';
+  if (stats.money < 80000) return '다음 주 예고: 통장이 비어가고 있다... 알바 자리를 더 알아봐야 할 것 같다. 💸';
+  if (stats.knowledge >= 58 && stats.knowledge < 62) return '다음 주 예고: 스터디 그룹을 꾸려볼 수 있을 것 같다. 준비도가 쌓이고 있어! 📖';
+  if (stats.health >= 68 && stats.health < 72) return '다음 주 예고: 마라톤 대회 신청서를 봤다. 체력이라면 이제 자신 있는데... 🏃';
+  if (stats.social >= 48 && stats.social < 52) return '다음 주 예고: 파티 초대장이 들어올 것 같은 예감. 인맥이 넓어지고 있다! 🎉';
+  // Generic week-based teasers
+  const teasers: Record<number, string> = {
+    2: '다음 주 예고: 새로운 얼굴들과 조금씩 친해질 수 있을까? 아직 모든 게 낯설다. 👋',
+    3: '다음 주 예고: 캠퍼스 생활에 점점 익숙해지는 느낌이다. 무언가 좋은 일이 있을 것 같다. ✨',
+    5: '다음 주 예고: 5주 차. 조금씩 이 생활의 패턴이 보이기 시작한다. 🗓️',
+    6: '다음 주 예고: 중간고사가 점점 다가온다. 지금부터 준비해야 하지 않을까? 📚',
+    8: '다음 주 예고: 시험이 끝나면 잠깐 숨을 돌릴 수 있을 것 같다. 조금만 더! 💪',
+    10: '다음 주 예고: 후반부 시작. 1학기가 절반쯤 지났다. 어떻게 마무리할까? 🍂',
+    11: '다음 주 예고: 가을 캠퍼스... 뭔가 낭만적인 일이 생길 것 같은 예감이다. 🍁',
+    12: '다음 주 예고: 남은 주가 몇 주 안 된다. 하고 싶었던 걸 지금 해야 할지도. ⏰',
+    13: '다음 주 예고: 기말 시즌이 다가온다. 준비도를 최대한 올려야 한다. 🎯',
+    15: '다음 주 예고: 드디어 마지막 주. 1학기 마무리를 어떻게 할지 생각해봐야겠다. 🌅',
+  };
+  return teasers[nextWeek] ?? `다음 주 예고: ${nextWeek}주 차가 기다리고 있다. 어떤 이야기가 펼쳐질까? ✨`;
+}
+
 /** Character diary — personal reflection on the week, relationship-aware */
 export function getDiaryEntry(week: number, deltas: Partial<PlayerStats>, stats: PlayerStats): string {
   const NPC_KO: Record<string, string> = { jaemin: '재민', minji: '민지', soyeon: '소연 선배', hyunwoo: '현우 선배' };
@@ -551,6 +594,16 @@ export default function WeekSummary({ onContinue }: WeekSummaryProps) {
                   <span className="text-[9px] text-txt-secondary">{mood.label}</span>
                 </button>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Next Week Preview — anticipation hook */}
+        {currentWeek < 16 && (
+          <div className="mb-4 animate-stat-reveal" style={{ animationDelay: '930ms' }}>
+            <div className="px-4 py-3 rounded-xl bg-white/[0.03] border border-white/5">
+              <p className="text-[10px] text-txt-secondary/40 mb-1.5">📺 다음 주 예고</p>
+              <p className="text-sm text-txt-primary/60 italic leading-relaxed">{getNextWeekPreview(currentWeek, stats)}</p>
             </div>
           </div>
         )}
