@@ -371,7 +371,9 @@ export default function GameScreen() {
   const stressShake = stats.stress >= 90 ? 'animate-subtle-shake' : '';
 
   return (
-    <div className={`min-h-[100dvh] bg-navy relative ${stressShake}`} style={healthDesaturation ? { filter: healthDesaturation } : undefined}>
+    <div className={`h-[100dvh] overflow-y-auto overflow-x-hidden bg-navy relative ${stressShake}`}>
+      {/* Health desaturation overlay — separate from root so fixed elements (HUD) are unaffected */}
+      {healthDesaturation && <div className="fixed inset-0 pointer-events-none z-[2]" style={{ backdropFilter: healthDesaturation }} />}
       {/* Semester phase ambient glow — subtle color shift by season */}
       <div className="fixed inset-0 pointer-events-none z-0 transition-all duration-1000" style={{
         background: currentWeek <= 3 ? 'radial-gradient(ellipse at 50% 0%, rgba(245,160,181,0.04) 0%, transparent 60%)' // 봄 — cherry blossom pink

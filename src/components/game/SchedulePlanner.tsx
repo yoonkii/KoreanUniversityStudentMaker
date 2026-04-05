@@ -387,7 +387,7 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
   });
 
   return (
-    <div className="flex flex-col h-full max-w-3xl mx-auto p-3 sm:p-4 gap-3 sm:gap-4">
+    <div className="flex flex-col h-full max-w-3xl mx-auto p-3 sm:p-4 gap-2">
       {/* Campus life ticker — what ALL NPCs are doing right now */}
       {(() => {
         const campus = getWeeklyRoutines(currentWeek);
@@ -598,7 +598,7 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
                 <button
                   key={key}
                   onClick={() => handleCellTap(day, time)}
-                  className={`h-10 flex flex-col items-center justify-center transition-colors duration-100 cursor-pointer ${isEmpty ? (canFill ? 'bg-white/8 hover:bg-white/15' : 'bg-navy hover:bg-white/5') : 'hover:brightness-125'}`}
+                  className={`h-8 flex flex-col items-center justify-center transition-colors duration-100 cursor-pointer ${isEmpty ? (canFill ? 'bg-white/8 hover:bg-white/15' : 'bg-navy hover:bg-white/5') : 'hover:brightness-125'}`}
                   style={activity ? { backgroundColor: `${colorHex}18` } : undefined}
                   title={activity ? `${activity.name}${npcName ? ` (${npcName})` : ''} — 탭하여 제거` : selectedActivity ? `${ACTIVITIES[selectedActivity]?.name} 배정` : '활동을 먼저 선택하세요'}
                 >
@@ -729,7 +729,7 @@ export default function SchedulePlanner({ onComplete }: SchedulePlannerProps) {
       })()}
 
       {/* ─── Confirm ─── */}
-      <div className="mt-auto pt-2 sm:pt-4">
+      <div className="sticky bottom-0 z-10 pt-2 pb-2 -mx-3 px-3 sm:-mx-4 sm:px-4 bg-navy/95 backdrop-blur-sm border-t border-white/5">
         <button
           onClick={handleConfirm}
           disabled={totalScheduled === 0}
