@@ -197,7 +197,7 @@ export default function SceneRenderer({ scene, onSceneEnd, activityId, timeLabel
   );
 
   return (
-    <div className="relative w-full h-[100dvh] overflow-hidden">
+    <div className="relative w-full h-full overflow-hidden">
       {/* Z-30: Activity banner — slides in from top */}
       <div style={{ transform: bannerVisible ? 'translateY(0)' : 'translateY(-110%)', transition: 'transform 0.4s cubic-bezier(0.4,0,0.2,1)', backgroundColor: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)', borderBottom: `2px solid ${activity.color}` }} className="absolute top-0 left-0 right-0 z-30 flex items-center gap-3 px-5 py-3">
         <span className="text-2xl leading-none">{activity.icon}</span>

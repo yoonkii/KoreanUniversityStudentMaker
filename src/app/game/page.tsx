@@ -60,9 +60,12 @@ export default function GameScreen() {
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const hydrated = useGameStore((s) => s._hasHydrated);
   const abortRef = useRef<AbortController | null>(null);
+  const transitionTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [sceneTransitionLabel, setSceneTransitionLabel] = useState<string | null>(null);
+  const [transitionOpaque, setTransitionOpaque] = useState(false);
 
-  // Cleanup abort controller on unmount
-  useEffect(() => { return () => { abortRef.current?.abort(); }; }, []);
+  // Cleanup on unmount
+  useEffect(() => { return () => { abortRef.current?.abort(); transitionTimersRef.current.forEach(clearTimeout); }; }, []);
 
   // ESC key toggles pause menu
   useEffect(() => {
@@ -281,7 +284,16 @@ export default function GameScreen() {
 
     const nextIndex = currentSceneIndex + 1;
     if (nextIndex < sceneQueue.length) {
-      setCurrentSceneIndex(nextIndex);
+      // Brief fade-to-black transition between scenes
+      const nextScn = sceneQueue[nextIndex];
+      const timeLabel = nextScn.backgroundVariant === 'night' || nextScn.backgroundVariant === 'evening' ? '저녁' : nextScn.backgroundVariant === 'morning' ? '오전' : '오후';
+      transitionTimersRef.current.forEach(clearTimeout);
+      setSceneTransitionLabel(`${nextScn.location} · ${timeLabel}`);
+      const t1 = setTimeout(() => setTransitionOpaque(true), 16);
+      const t2 = setTimeout(() => setCurrentSceneIndex(nextIndex), 400);
+      const t3 = setTimeout(() => setTransitionOpaque(false), 700);
+      const t4 = setTimeout(() => setSceneTransitionLabel(null), 1000);
+      transitionTimersRef.current = [t1, t2, t3, t4];
     } else {
       // All scenes done -- apply weekly stat deltas and show summary
       const weekDeltas = useGameStore.getState().weekStatDeltas;
@@ -694,11 +706,13 @@ export default function GameScreen() {
       )}
 
       {phase === 'simulation' && currentScene && (
-        <SceneRenderer
-          key={currentScene.id}
-          scene={currentScene}
-          onSceneEnd={handleSceneEnd}
-        />
+        <div className="fixed inset-0 z-40">
+          <SceneRenderer
+            key={currentScene.id}
+            scene={currentScene}
+            onSceneEnd={handleSceneEnd}
+          />
+        </div>
       )}
 
       {phase === 'summary' && !showKakao && !showWeeklyOverview && (
@@ -727,6 +741,13 @@ export default function GameScreen() {
       {/* Week title card — brief cinematic moment at start of each week */}
       {phase === 'planning' && showWeekTitle && !showPrologue && (
         <WeekTitleCard week={currentWeek} onDone={() => setShowWeekTitle(false)} />
+      )}
+
+      {/* Scene transition overlay — fade-to-black between scenes */}
+      {sceneTransitionLabel !== null && (
+        <div className={`fixed inset-0 z-50 bg-black flex items-center justify-center pointer-events-none transition-opacity duration-200 ${transitionOpaque ? 'opacity-100' : 'opacity-0'}`}>
+          <p className="text-white/60 text-sm tracking-[0.25em]">{sceneTransitionLabel}</p>
+        </div>
       )}
     </div>
   );

@@ -73,7 +73,7 @@ export default function DialogueBox({ characterId, text, onContinue }: DialogueB
   const accentColor = characterId ? CHARACTER_COLOR_MAP[characterId] ?? '#8B95A8' : undefined;
 
   const nameStyle = accentColor
-    ? { backgroundColor: `${accentColor}33` }
+    ? { backgroundColor: `${accentColor}22`, color: accentColor, border: `1px solid ${accentColor}55` }
     : undefined;
 
   return (
@@ -93,18 +93,14 @@ export default function DialogueBox({ characterId, text, onContinue }: DialogueB
       <div className="mb-3">
         <span
           className="inline-block px-3 py-1 rounded-full text-sm font-semibold"
-          style={
-            nameStyle ?? {
-              color: 'var(--color-txt-secondary)',
-            }
-          }
+          style={nameStyle ?? { color: 'var(--color-txt-secondary)', border: '1px solid rgba(255,255,255,0.12)' }}
         >
           {speakerName}
         </span>
       </div>
 
       {/* Dialogue text */}
-      <p className="text-lg leading-relaxed break-keep text-txt-primary min-h-[3.5rem]">
+      <p className="text-xl leading-relaxed break-keep text-txt-primary min-h-[3.5rem]" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
         {text.slice(0, displayedLength)}
         {!isComplete && (
           <span className="inline-block w-0.5 h-5 bg-txt-primary ml-0.5 animate-pulse align-middle" />
